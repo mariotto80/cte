@@ -1,67 +1,109 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Il mio sito su GitHub Pages</title>
-  <meta name="description" content="Sito statico pubblicato su GitHub Pages.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GestOffer Energy PRO v3</title>
+  <link rel="stylesheet" href="./style.css" />
+  <meta name="robots" content="noindex,nofollow" />
 </head>
 <body>
-  <header class="container">
-    <nav class="nav">
-      <div class="logo">✨ GitHub Pages</div>
-      <ul class="menu">
-        <li><a href="./">Home</a></li>
-        <li><a href="chi-siamo.html">Chi siamo</a></li>
-        <li><a href="#contatti">Contatti</a></li>
-      </ul>
-    </nav>
-    <div class="hero">
-      <h1>Pronto a pubblicare il tuo sito?</h1>
-      <p>Questa è una landing page di esempio, già ottimizzata per essere pubblicata su GitHub Pages.</p>
-      <a class="cta" href="https://docs.github.com/it/pages" target="_blank" rel="noopener">Scopri GitHub Pages</a>
-    </div>
+  <header class="app-header">
+    <h1>GestOffer Energy PRO v3</h1>
   </header>
 
   <main class="container">
-    <section class="grid">
-      <div class="card">
-        <h3>Veloce</h3>
-        <p>Carica i file nel repository e il sito è online in pochi minuti.</p>
-      </div>
-      <div class="card">
-        <h3>Sicuro</h3>
-        <p>Hosting statico con HTTPS automatico.</p>
-      </div>
-      <div class="card">
-        <h3>Gratuito</h3>
-        <p>Perfetto per portfolio, documentazione e landing page.</p>
-      </div>
+    <section class="uploader">
+      <label class="file-label">
+        <input id="fileInput" type="file" accept="application/pdf" />
+        Carica PDF
+      </label>
+      <button id="downloadBtn" disabled>Scarica PDF</button>
     </section>
 
-    <section class="panel">
-      <h2>Come personalizzarlo</h2>
-      <ol>
-        <li>Modifica testi e immagini a piacere.</li>
-        <li>Aggiungi nuove pagine duplicando <code>chi-siamo.html</code>.</li>
-        <li>Pubblica su GitHub Pages seguendo la guida nel messaggio.</li>
-      </ol>
+    <section class="viewer">
+      <div class="toolbar">
+        <button id="prevBtn" disabled>Prec</button>
+        <span id="pageInfo">Pag. <span id="pageNum">—</span>/<span id="pageCount">—</span></span>
+        <button id="nextBtn" disabled>Succ</button>
+        <span class="spacer"></span>
+        <button id="zoomOut" disabled>−</button>
+        <span id="zoomLevel">100%</span>
+        <button id="zoomIn" disabled>+</button>
+        <label class="mode">
+          Modalità:
+          <select id="pageMode">
+            <option value="single">Una pagina</option>
+            <option value="all">Tutte le pagine</option>
+          </select>
+        </label>
+      </div>
+      <div id="pdfViewport" class="viewport"></div>
+    </section>
+
+    <section class="ocr">
+      <div class="ocr-actions">
+        <button id="ocrBtn" disabled>OCR documento</button>
+        <span id="ocrProgress"></span>
+      </div>
+      <div class="ocr-fields">
+        <label>Fornitore
+          <select id="fornitoreSelect">
+            <option value="">— Seleziona —</option>
+            <option>A2A</option>
+            <option>EDISON</option>
+            <option>DUFERCO</option>
+            <option>SINERGY</option>
+            <option>SORGENIA</option>
+            <option>ITALPOWER</option>
+            <option>SEGNO VERDE</option>
+          </select>
+        </label>
+        <label>Spread <input id="spreadInput" type="text" placeholder="es. 0,012 €/kWh" /></label>
+        <label>Fisso <input id="fissoInput" type="text" placeholder="€/mese" /></label>
+        <label>Scadenza <input id="scadenzaInput" type="text" placeholder="es. 31/12/2025" /></label>
+      </div>
+      <pre id="ocrText" class="ocr-text"></pre>
+    </section>
+
+    <section class="archivio">
+      <h2>Archivio offerte per società</h2>
+      <div class="filters">
+        <label>Società
+          <select id="societaFilter">
+            <option value="">Tutte</option>
+            <option>PMI</option>
+            <option>Micro</option>
+            <option>Domestici</option>
+          </select>
+        </label>
+        <label>Fornitore
+          <select id="fornitoreFilter">
+            <option value="">Tutti</option>
+            <option>A2A</option>
+            <option>EDISON</option>
+            <option>DUFERCO</option>
+            <option>SINERGY</option>
+            <option>SORGENIA</option>
+            <option>ITALPOWER</option>
+            <option>SEGNO VERDE</option>
+          </select>
+        </label>
+      </div>
+      <div id="cards" class="cards"></div>
     </section>
   </main>
 
-  <footer id="contatti" class="footer">
-    <div class="container footgrid">
-      <p>© <span id="year"></span> Il Mio Sito. Tutti i diritti riservati.</p>
-      <p><a href="mailto:info@example.com">info@example.com</a> · <a href="https://tuonomeutente.github.io" target="_blank" rel="noopener">Visita la versione pubblicata</a></p>
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+  <!-- PDF.js (CDN) -->
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.min.mjs';
+    window.pdfjsLib = pdfjsLib;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.mjs';
   </script>
+
+  <!-- Tesseract.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <script src="./app.js"></script>
 </body>
 </html>
