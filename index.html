@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Il mio sito su GitHub Pages</title>
+  <meta name="description" content="Sito statico pubblicato su GitHub Pages.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="container">
+    <nav class="nav">
+      <div class="logo">✨ GitHub Pages</div>
+      <ul class="menu">
+        <li><a href="./">Home</a></li>
+        <li><a href="chi-siamo.html">Chi siamo</a></li>
+        <li><a href="#contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="hero">
+      <h1>Pronto a pubblicare il tuo sito?</h1>
+      <p>Questa è una landing page di esempio, già ottimizzata per essere pubblicata su GitHub Pages.</p>
+      <a class="cta" href="https://docs.github.com/it/pages" target="_blank" rel="noopener">Scopri GitHub Pages</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="grid">
+      <div class="card">
+        <h3>Veloce</h3>
+        <p>Carica i file nel repository e il sito è online in pochi minuti.</p>
+      </div>
+      <div class="card">
+        <h3>Sicuro</h3>
+        <p>Hosting statico con HTTPS automatico.</p>
+      </div>
+      <div class="card">
+        <h3>Gratuito</h3>
+        <p>Perfetto per portfolio, documentazione e landing page.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Come personalizzarlo</h2>
+      <ol>
+        <li>Modifica testi e immagini a piacere.</li>
+        <li>Aggiungi nuove pagine duplicando <code>chi-siamo.html</code>.</li>
+        <li>Pubblica su GitHub Pages seguendo la guida nel messaggio.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer id="contatti" class="footer">
+    <div class="container footgrid">
+      <p>© <span id="year"></span> Il Mio Sito. Tutti i diritti riservati.</p>
+      <p><a href="mailto:info@example.com">info@example.com</a> · <a href="https://tuonomeutente.github.io" target="_blank" rel="noopener">Visita la versione pubblicata</a></p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
