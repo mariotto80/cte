@@ -1,4 +1,5 @@
-# 🔋 EnergiaCorp Premium - Gestione Offerte Energia
+# 🔋 EnergiaCorp Premium - Gestione Offerte Energia  
+<img width="2000" height="1000" alt="Progetto senza titolo (13)" src="https://github.com/user-attachments/assets/13566ce1-7bd1-4237-a9b3-1ed653e53c41" />
 
 Web application avanzata per la gestione delle offerte di luce e gas tramite riconoscimento OCR automatico dei PDF.
 
