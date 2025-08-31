@@ -883,3 +883,441 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('✅ App.js caricato completamente - versione landing page');
+// ===== FUNZIONI ANTEPRIMA FILE E OCR =====
+
+// Variabili globali per l'anteprima
+let currentFile = null;
+let ocrResults = null;
+
+/**
+ * Gestisce la selezione del file con anteprima
+ */
+async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        currentFile = file;
+        await showFilePreview(file);
+        await processFileWithOCR(file);
+    }
+}
+
+/**
+ * Gestisce il drop del file con anteprima  
+ */
+async function handleFileDrop(e) {
+    e.preventDefault();
+    const dropZone = e.currentTarget;
+    dropZone.style.borderColor = '#d1d5db';
+    dropZone.style.background = '#f9fafb';
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        currentFile = file;
+
+        // Aggiorna input file
+        const fileInput = document.getElementById('pdf-file');
+        if (fileInput) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+        }
+
+        await showFilePreview(file);
+        await processFileWithOCR(file);
+    }
+}
+
+/**
+ * Mostra anteprima del file caricato
+ */
+async function showFilePreview(file) {
+    console.log('ðŸ“„ Creazione anteprima per:', file.name);
+
+    let previewContainer = document.getElementById('file-preview-container');
+
+    if (!previewContainer) {
+        // Crea container anteprima se non esiste
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'file-preview-container';
+        previewContainer.className = 'file-preview-container';
+
+        const uploadContainer = document.querySelector('.upload-container');
+        if (uploadContainer) {
+            uploadContainer.appendChild(previewContainer);
+        }
+    }
+
+    // Informazioni file
+    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+    const fileType = file.type || 'Tipo non identificato';
+
+    let previewContent = '';
+    let thumbnailHtml = '';
+
+    // Genera thumbnail basato sul tipo
+    if (file.type.includes('pdf')) {
+        thumbnailHtml = `
+            <div class="file-thumbnail pdf-thumb">
+                <i class="fas fa-file-pdf"></i>
+                <span class="file-type">PDF</span>
+            </div>
+        `;
+    } else if (file.type.includes('image')) {
+        // Crea anteprima immagine
+        const imageUrl = URL.createObjectURL(file);
+        thumbnailHtml = `
+            <div class="file-thumbnail image-thumb">
+                <img src="${imageUrl}" alt="Anteprima" onload="URL.revokeObjectURL(this.src)">
+            </div>
+        `;
+    } else {
+        thumbnailHtml = `
+            <div class="file-thumbnail unknown-thumb">
+                <i class="fas fa-file"></i>
+                <span class="file-type">FILE</span>
+            </div>
+        `;
+    }
+
+    previewContent = `
+        <div class="preview-header">
+            <h4><i class="fas fa-eye"></i> Anteprima File</h4>
+            <button class="btn-remove-file" onclick="removeFilePreview()" title="Rimuovi file">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="preview-body">
+            ${thumbnailHtml}
+
+            <div class="file-details">
+                <div class="file-info">
+                    <h5>${file.name}</h5>
+                    <div class="file-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-weight-hanging"></i>
+                            ${fileSize} MB
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-file-alt"></i>
+                            ${file.type.split('/')[1]?.toUpperCase() || 'N/D'}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            ${new Date().toLocaleString('it-IT')}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="processing-status">
+                    <div class="status-indicator processing">
+                        <div class="status-spinner"></div>
+                        <span>Elaborazione OCR in corso...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ocr-summary" id="ocr-summary" style="display: none;">
+            <!-- Il riassunto OCR verrÃ  inserito qui -->
+        </div>
+    `;
+
+    previewContainer.innerHTML = previewContent;
+    previewContainer.style.display = 'block';
+
+    // Smooth scroll to preview
+    previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Elabora il file con OCR e mostra riassunto
+ */
+async function processFileWithOCR(file) {
+    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+        showNotification('âŒ Formato non supportato. Usa PDF o immagini (JPG, PNG).', 'error');
+        updateProcessingStatus('error', 'Formato file non supportato');
+        return;
+    }
+
+    console.log('ðŸ” Inizio OCR per:', file.name);
+    updateProcessingStatus('processing', 'Elaborazione OCR in corso...');
+
+    try {
+        // Simula elaborazione OCR (in produzione userai API reale)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Dati mock OCR estratti
+        const extractedData = {
+            fornitore: file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, ' ').trim() || 'Fornitore Estratto',
+            nome_offerta: 'Offerta Standard',
+            categoria: 'Domestico',
+            tipo_prezzo: 'Fisso',
+            prezzo_luce: Math.round((Math.random() * 0.1 + 0.15) * 10000) / 10000,
+            prezzo_gas: Math.round((Math.random() * 0.5 + 0.8) * 10000) / 10000,
+            quota_fissa_luce: Math.round((Math.random() * 10 + 10) * 100) / 100,
+            quota_fissa_gas: Math.round((Math.random() * 8 + 8) * 100) / 100,
+            commissioni: 0.00,
+            scadenza: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+            durata_mesi: 12,
+            confidence: Math.round((Math.random() * 0.2 + 0.8) * 100) // 80-100%
+        };
+
+        ocrResults = extractedData;
+        updateProcessingStatus('success', 'OCR completato con successo!');
+        showOCRSummary(extractedData);
+        populateOCRForm(extractedData);
+
+        showNotification('âœ… OCR completato! Verifica i dati estratti.', 'success');
+
+    } catch (error) {
+        console.error('âŒ Errore OCR:', error);
+        updateProcessingStatus('error', 'Errore durante elaborazione OCR');
+        showNotification('âŒ Errore durante elaborazione OCR: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Aggiorna lo stato di elaborazione
+ */
+function updateProcessingStatus(status, message) {
+    const statusElement = document.querySelector('.processing-status .status-indicator');
+    if (!statusElement) return;
+
+    // Remove existing classes
+    statusElement.classList.remove('processing', 'success', 'error');
+    statusElement.classList.add(status);
+
+    const spinner = statusElement.querySelector('.status-spinner');
+    const text = statusElement.querySelector('span');
+
+    switch(status) {
+        case 'processing':
+            spinner.style.display = 'block';
+            statusElement.innerHTML = `
+                <div class="status-spinner"></div>
+                <span>${message}</span>
+            `;
+            break;
+        case 'success':
+            statusElement.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            break;
+        case 'error':
+            statusElement.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                <span>${message}</span>
+            `;
+            break;
+    }
+}
+
+/**
+ * Mostra il riassunto dei dati OCR estratti
+ */
+function showOCRSummary(data) {
+    const summaryContainer = document.getElementById('ocr-summary');
+    if (!summaryContainer) return;
+
+    const confidence = data.confidence || 85;
+    const confidenceColor = confidence >= 90 ? '#059669' : confidence >= 70 ? '#d97706' : '#dc2626';
+
+    summaryContainer.innerHTML = `
+        <div class="summary-header">
+            <h4><i class="fas fa-robot"></i> Dati Estratti da OCR</h4>
+            <div class="confidence-badge" style="background: rgba(${confidence >= 90 ? '5, 150, 105' : confidence >= 70 ? '217, 119, 6' : '220, 38, 38'}, 0.1); color: ${confidenceColor};">
+                <i class="fas fa-brain"></i>
+                AffidabilitÃ : ${confidence}%
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-section">
+                <h5><i class="fas fa-building"></i> Informazioni Fornitore</h5>
+                <div class="data-pairs">
+                    <div class="data-pair">
+                        <span class="label">Fornitore:</span>
+                        <span class="value highlight">${data.fornitore}</span>
+                    </div>
+                    <div class="data-pair">
+                        <span class="label">Nome Offerta:</span>
+                        <span class="value">${data.nome_offerta}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h5><i class="fas fa-tag"></i> Tipologia</h5>
+                <div class="data-pairs">
+                    <div class="data-pair">
+                        <span class="label">Categoria:</span>
+                        <span class="value category-${data.categoria.toLowerCase()}">${data.categoria}</span>
+                    </div>
+                    <div class="data-pair">
+                        <span class="label">Tipo Prezzo:</span>
+                        <span class="value">${data.tipo_prezzo}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h5><i class="fas fa-euro-sign"></i> Prezzi Estratti</h5>
+                <div class="data-pairs">
+                    <div class="data-pair">
+                        <span class="label">Prezzo Luce:</span>
+                        <span class="value price">${data.prezzo_luce.toFixed(4)} â‚¬/kWh</span>
+                    </div>
+                    <div class="data-pair">
+                        <span class="label">Prezzo Gas:</span>
+                        <span class="value price">${data.prezzo_gas.toFixed(4)} â‚¬/Smc</span>
+                    </div>
+                    <div class="data-pair">
+                        <span class="label">Commissioni:</span>
+                        <span class="value ${data.commissioni === 0 ? 'success' : 'warning'}">${data.commissioni.toFixed(2)} â‚¬</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h5><i class="fas fa-calendar"></i> Dettagli Contrattuali</h5>
+                <div class="data-pairs">
+                    <div class="data-pair">
+                        <span class="label">Scadenza:</span>
+                        <span class="value">${new Date(data.scadenza).toLocaleDateString('it-IT')}</span>
+                    </div>
+                    <div class="data-pair">
+                        <span class="label">Durata:</span>
+                        <span class="value">${data.durata_mesi} mesi</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-actions">
+            <button class="btn-accept-ocr" onclick="acceptOCRData()">
+                <i class="fas fa-check"></i>
+                <span>Conferma e Procedi</span>
+            </button>
+            <button class="btn-edit-ocr" onclick="editOCRData()">
+                <i class="fas fa-edit"></i>
+                <span>Modifica Dati</span>
+            </button>
+        </div>
+    `;
+
+    summaryContainer.style.display = 'block';
+
+    // Smooth scroll al riassunto
+    summaryContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Conferma i dati OCR e procede al form
+ */
+function acceptOCRData() {
+    if (!ocrResults) {
+        showNotification('âŒ Nessun dato OCR disponibile', 'error');
+        return;
+    }
+
+    showNotification('âœ… Dati OCR confermati! Procedi alla compilazione.', 'success');
+
+    // Scroll al form
+    const form = document.getElementById('ocr-form');
+    if (form) {
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Evidenzia i campi pre-compilati
+    setTimeout(() => {
+        highlightPrefilledFields();
+    }, 500);
+}
+
+/**
+ * Permette di modificare i dati OCR
+ */
+function editOCRData() {
+    showNotification('ðŸ“ Modifica i dati nel form sottostante', 'info');
+
+    // Scroll al form
+    const form = document.getElementById('ocr-form');
+    if (form) {
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+/**
+ * Evidenzia i campi pre-compilati dal OCR
+ */
+function highlightPrefilledFields() {
+    const form = document.getElementById('ocr-form');
+    if (!form) return;
+
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            input.classList.add('prefilled');
+
+            // Rimuovi evidenziazione dopo 3 secondi
+            setTimeout(() => {
+                input.classList.remove('prefilled');
+            }, 3000);
+        }
+    });
+}
+
+/**
+ * Rimuove l'anteprima file
+ */
+function removeFilePreview() {
+    const previewContainer = document.getElementById('file-preview-container');
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+        previewContainer.innerHTML = '';
+    }
+
+    // Reset file input
+    const fileInput = document.getElementById('pdf-file');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+
+    // Reset variabili
+    currentFile = null;
+    ocrResults = null;
+
+    showNotification('ðŸ—‘ï¸ File rimosso', 'info');
+}
+
+/**
+ * Popola il form OCR con i dati estratti (funzione esistente migliorata)
+ */
+function populateOCRForm(data) {
+    const form = document.getElementById('ocr-form');
+    if (!form) return;
+
+    Object.keys(data).forEach(key => {
+        if (key === 'confidence') return; // Skip confidence
+
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input && data[key] !== null && data[key] !== '') {
+            input.value = data[key];
+
+            // Evidenzia campi pre-compilati
+            input.style.backgroundColor = '#f0f9ff';
+            input.style.borderColor = '#0284c7';
+            input.style.transition = 'all 0.3s ease';
+
+            // Animazione leggera
+            setTimeout(() => {
+                input.style.backgroundColor = '';
+                input.style.borderColor = '';
+            }, 2000);
+        }
+    });
+}
+
+console.log('âœ… Funzioni anteprima file e OCR caricate');
