@@ -70,23 +70,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function initializeApp() {
-    try {
-        console.log('🔄 Starting app initialization...');
-        
-        // Load initial data first
-        await loadInitialData();
-        console.log('✅ Initial data loaded');
-        
-        // Initialize theme
-        initializeTheme();
-        console.log('✅ Theme initialized');
-        
-        // Initialize OCR worker (in background)
-        initializeOCR().then(() => {
-            console.log('✅ OCR worker initialized');
-        }).catch(err => {
-            console.warn('⚠️ OCR initialization failed, will use simulation');
-        });
+  try {
+    // Controlla se utente è loggato
+    const user = await getCurrentUser()
+    
+    if (!user) {
+      // Mostra login
+      document.getElementById('login-modal').style.display = 'flex'
+      return
+    }
+    
+    // User loggato - carica i dati
+    await loadOffersFromDatabase()
+    setupEventListeners()
+    initializeDashboard()
+    updateLastUpdate()
+    showSection('dashboard')
+    
+  } catch (error) {
+    console.error('Error initializing app:', error)
+    showNotification('Errore caricamento applicazione', 'error')
+  }
+}
+
         
         // Setup event listeners - Critical fix
         setTimeout(() => {
@@ -112,162 +118,29 @@ async function initializeApp() {
     }
 }
 
-// Load Initial Data
-async function loadInitialData() {
-    const initialData = [
-        {
-            "id": "OFF_001",
-            "fornitore": "A2A Energia",
-            "nome_offerta": "A2A Energia Variabile Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1185,
-            "spread_luce": 0.0084,
-            "prezzo_gas": 0.3098,
-            "spread_gas": 0.054,
-            "quota_fissa_luce": 7.53,
-            "quota_fissa_gas": 6.02,
-            "commissioni": 15.13,
-            "scadenza": "2027-08-21",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true,
-            "confidence_score": 0.95
-        },
-        {
-            "id": "OFF_002",
-            "fornitore": "Enel Energia",
-            "nome_offerta": "Enel Energia Bioraria Casa",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1245,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.4123,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 9.50,
-            "quota_fissa_gas": 8.75,
-            "commissioni": 12.50,
-            "scadenza": "2026-12-31",
-            "durata_mesi": 12,
-            "data_inserimento": "2025-08-31 11:01:00",
-            "attivo": true,
-            "confidence_score": 0.98
-        },
-        {
-            "id": "OFF_003",
-            "fornitore": "Edison",
-            "nome_offerta": "Edison World Casa Luce e Gas",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1337,
-            "spread_luce": 0.0095,
-            "prezzo_gas": 0.4421,
-            "spread_gas": 0.075,
-            "quota_fissa_luce": 8.20,
-            "quota_fissa_gas": 7.85,
-            "commissioni": 18.25,
-            "scadenza": "2027-06-30",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 11:01:00",
-            "attivo": true,
-            "confidence_score": 0.92
-        },
-        {
-            "id": "OFF_004",
-            "fornitore": "Sorgenia",
-            "nome_offerta": "Next Energy Sunlight Micro",
-            "categoria": "Micro",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1208,
-            "spread_luce": 0.006,
-            "prezzo_gas": 0.4371,
-            "spread_gas": 0.080,
-            "quota_fissa_luce": 12.65,
-            "quota_fissa_gas": 11.65,
-            "commissioni": 5.00,
-            "scadenza": "2027-12-31",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 11:01:00",
-            "attivo": true,
-            "confidence_score": 0.94
-        },
-        {
-            "id": "OFF_005",
-            "fornitore": "Iren Mercato",
-            "nome_offerta": "IrenLuceGas Fisso PMI",
-            "categoria": "PMI",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1568,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.5111,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 25.25,
-            "quota_fissa_gas": 28.37,
-            "commissioni": 15.98,
-            "scadenza": "2028-03-31",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 11:01:00",
-            "attivo": true,
-            "confidence_score": 0.97
-        },
-        {
-            "id": "OFF_006",
-            "fornitore": "Wekiwi",
-            "nome_offerta": "Wekiwi Variabile Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.0879,
-            "spread_luce": 0.0141,
-            "prezzo_gas": 0.3152,
-            "spread_gas": 0.0841,
-            "quota_fissa_luce": 8.85,
-            "quota_fissa_gas": 7.3,
-            "commissioni": 20.8,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true,
-            "confidence_score": 0.91
-        },
-        {
-            "id": "OFF_007",
-            "fornitore": "Illumia",
-            "nome_offerta": "Illumia Fisso Micro",
-            "categoria": "Micro",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1188,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.4577,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 13.03,
-            "quota_fissa_gas": 12.48,
-            "commissioni": 0.94,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true,
-            "confidence_score": 0.96
-        },
-        {
-            "id": "OFF_008",
-            "fornitore": "Tate",
-            "nome_offerta": "Tate Fisso PMI",
-            "categoria": "PMI",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1531,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.513,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 25.61,
-            "quota_fissa_gas": 20.41,
-            "commissioni": 9.43,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true,
-            "confidence_score": 0.93
-        }
-    ];
+async function loadOffersFromDatabase() {
+  try {
+    showLoadingState(true)
+    
+    const result = await loadOffers()
+    
+    if (result.error) {
+      throw new Error(result.error.message)
+    }
+    
+    offers = result.data || []
+    filteredOffers = [...offers]
+    
+    updateDashboard()
+    updateOffersTable()
+    
+  } catch (error) {
+    console.error('Error loading offers:', error)
+    showNotification('Errore caricamento offerte: ' + error.message, 'error')
+  } finally {
+    showLoadingState(false)
+  }
+}
     
     offers = initialData.filter(offer => offer.attivo);
     filteredOffers = [...offers];
