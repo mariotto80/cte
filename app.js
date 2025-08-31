@@ -1,4 +1,3 @@
-
 // ===== GLOBAL VARIABLES =====
 let offers = [];
 let filteredOffers = [];
