@@ -13,7 +13,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* ===== LANDING PAGE STYLES ===== */
+        /* Reset e Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8fafc;
+        }
+
+        /* Landing Page Styles */
         .landing-page {
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -58,7 +72,7 @@
             margin-bottom: 2rem;
         }
 
-        .landing-logo .brand-icon {
+        .brand-icon {
             width: 60px;
             height: 60px;
             background: rgba(255, 255, 255, 0.2);
@@ -176,7 +190,7 @@
             font-size: 0.9rem;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 16px 20px;
             border: 2px solid #e1e5e9;
@@ -188,7 +202,7 @@
             box-sizing: border-box;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -245,6 +259,27 @@
             background: rgba(102, 126, 234, 0.2);
         }
 
+        .btn-primary {
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
         .auth-footer {
             text-align: center;
             color: #666;
@@ -278,7 +313,7 @@
             opacity: 0.9;
         }
 
-        /* Email Error/Success Screens */
+        /* Email Status Screens */
         .email-status-screen {
             display: flex;
             align-items: center;
@@ -367,27 +402,6 @@
             gap: 1rem;
         }
 
-        .btn-primary {
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #667eea;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary:hover {
-            background: white;
-            transform: translateY(-2px);
-        }
-
         .btn-link {
             padding: 8px 16px;
             background: transparent;
@@ -398,6 +412,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
+            display: inline-block;
         }
 
         .btn-link:hover {
@@ -408,6 +423,566 @@
         /* App Container - Initially Hidden */
         .app-container {
             display: none;
+        }
+
+        /* App Styles */
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header__container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .header__brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header__brand .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .brand-text span {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .header__nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .nav-btn.active:hover {
+            background: #5a6fd8;
+        }
+
+        .header__actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #user-name {
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1f2937;
+        }
+
+        .section-header p {
+            margin: 0;
+            color: #6b7280;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .kpi-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .kpi-content h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .kpi-content p {
+            color: #6b7280;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container h3 {
+            margin: 0 0 1.5rem 0;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .top-offers {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .top-offers h3 {
+            margin: 0 0 1.5rem 0;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .top-offer-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .top-offer-section h4 {
+            color: #667eea;
+            font-weight: 600;
+            margin: 0 0 0.75rem 0;
+        }
+
+        .top-offer-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .top-offer-card h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .top-offer-card p {
+            margin: 0.25rem 0;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .price-info {
+            display: flex;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .price-info span {
+            font-size: 0.75rem;
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .savings {
+            font-weight: 600;
+            color: #059669 !important;
+        }
+
+        /* Upload Area */
+        .upload-container {
+            margin: 2rem 0;
+        }
+
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h3 {
+            margin: 0 0 0.5rem 0;
+            color: #374151;
+        }
+
+        .upload-area p {
+            margin: 0;
+            color: #6b7280;
+        }
+
+        /* OCR Form */
+        .ocr-form-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .ocr-form h3 {
+            margin: 0 0 2rem 0;
+            color: #1f2937;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+
+        /* Filters */
+        .filters-container {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .filter-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .offers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .offers-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+
+        .offers-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .offers-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .offers-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .category-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-badge.domestico {
+            background: rgba(34, 197, 94, 0.1);
+            color: #059669;
+            border: 1px solid #059669;
+        }
+
+        .category-badge.micro {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid #d97706;
+        }
+
+        .category-badge.pmi {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid #dc2626;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.1);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* Loading States */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loader {
+            text-align: center;
+            color: white;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        /* Analytics */
+        .analytics-container {
+            background: white;
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .analytics-icon {
+            font-size: 4rem;
+            color: #d1d5db;
+            margin-bottom: 2rem;
+        }
+
+        .analytics-container h3 {
+            color: #374151;
+            margin: 0 0 1rem 0;
+        }
+
+        .analytics-container p {
+            color: #6b7280;
+            margin: 0 0 2rem 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .coming-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .feature-item {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .feature-item i {
+            color: #667eea;
+        }
+
+        .feature-item span {
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        /* Footer */
+        .footer {
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 0 2rem;
+            color: #6b7280;
+        }
+
+        .footer-content p {
+            margin: 0.5rem 0;
         }
 
         /* Responsive */
@@ -430,8 +1005,29 @@
                 grid-template-columns: 1fr;
             }
 
-            .status-container {
-                padding: 2rem 1.5rem;
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header__nav {
+                flex-wrap: wrap;
+            }
+
+            .offers-table {
+                font-size: 0.8rem;
+            }
+
+            .offers-table th,
+            .offers-table td {
+                padding: 0.5rem 0.5rem;
+            }
+
+            .main-content {
+                padding: 1rem;
             }
         }
 
@@ -451,13 +1047,24 @@
             .email-status-screen {
                 padding: 1rem;
             }
+
+            .theme-toggle {
+                top: 1rem;
+                left: 1rem;
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Theme Support */
+        [data-theme="dark"] {
+            --bg-primary: #1f2937;
+            --bg-secondary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
         }
 
         /* Loading Animation */
-        .loading-dots {
-            display: inline-block;
-        }
-
         .loading-dots::after {
             content: '';
             animation: dots 2s infinite;
@@ -468,6 +1075,15 @@
             40% { content: '.'; }
             60% { content: '..'; }
             80%, 100% { content: '...'; }
+        }
+
+        /* Hide sections by default */
+        .section {
+            display: none;
+        }
+
+        .section:first-child {
+            display: block;
         }
     </style>
 </head>
@@ -582,11 +1198,8 @@
         </div>
     </div>
 
-    <!-- Rest of the HTML remains the same... -->
+    <!-- Main Application -->
     <div id="app-container" class="app-container">
-        <!-- Full app content here - same as before -->
-        <!-- (Including all sections: dashboard, upload, gestione, analisi) -->
-
         <!-- Main Loader -->
         <div id="main-loader" class="loader-overlay" style="display: none;">
             <div class="loader">
@@ -598,7 +1211,6 @@
         <!-- Theme Toggle -->
         <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
             <i class="fas fa-moon"></i>
-            <i class="fas fa-sun"></i>
         </button>
 
         <!-- Header -->
@@ -634,7 +1246,7 @@
                 </nav>
 
                 <div class="header__actions">
-                    <span id="user-name" style="margin-right: 1rem; color: var(--color-text);"></span>
+                    <span id="user-name"></span>
                     <button id="logout-btn" class="btn-secondary">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
@@ -643,39 +1255,51 @@
             </div>
         </header>
 
-        <!-- Main Content Sections -->
+        <!-- Main Content -->
         <main class="main-content">
-            <!-- Dashboard, Upload, Gestione, Analisi sections - same as before -->
+            <!-- Dashboard Section -->
             <section id="dashboard-section" class="section">
                 <div class="section-header">
                     <h2>Dashboard Offerte Energia</h2>
                     <p>Panoramica completa delle tue offerte luce e gas</p>
                 </div>
 
+                <!-- KPI Cards -->
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="kpi-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
                         <div class="kpi-content">
                             <h3 id="total-offers">0</h3>
                             <p>Offerte Totali</p>
                         </div>
                     </div>
+
                     <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-home"></i></div>
+                        <div class="kpi-icon">
+                            <i class="fas fa-home"></i>
+                        </div>
                         <div class="kpi-content">
                             <h3 id="domestico-count">0</h3>
                             <p>Domestico</p>
                         </div>
                     </div>
+
                     <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-building"></i></div>
+                        <div class="kpi-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
                         <div class="kpi-content">
                             <h3 id="micro-count">0</h3>
                             <p>Micro</p>
                         </div>
                     </div>
+
                     <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-industry"></i></div>
+                        <div class="kpi-icon">
+                            <i class="fas fa-industry"></i>
+                        </div>
                         <div class="kpi-content">
                             <h3 id="pmi-count">0</h3>
                             <p>PMI</p>
@@ -683,52 +1307,59 @@
                     </div>
                 </div>
 
+                <!-- Charts and Top Offers -->
                 <div class="dashboard-grid">
                     <div class="chart-container">
                         <h3>Prezzi Medi per Categoria</h3>
                         <canvas id="category-chart"></canvas>
                     </div>
+
                     <div class="top-offers">
                         <h3>Migliori Offerte</h3>
                         <div class="top-offer-section">
                             <h4>Domestico</h4>
-                            <div id="top-domestico"></div>
+                            <div id="top-domestico">Nessuna offerta disponibile</div>
                         </div>
                         <div class="top-offer-section">
                             <h4>Micro</h4>
-                            <div id="top-micro"></div>
+                            <div id="top-micro">Nessuna offerta disponibile</div>
                         </div>
                         <div class="top-offer-section">
                             <h4>PMI</h4>
-                            <div id="top-pmi"></div>
+                            <div id="top-pmi">Nessuna offerta disponibile</div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Upload Section -->
-            <section id="upload-section" class="section" style="display: none;">
+            <!-- Upload OCR Section -->
+            <section id="upload-section" class="section">
                 <div class="section-header">
                     <h2>Upload PDF con OCR Avanzato</h2>
                     <p>Carica un PDF di offerta energia per estrazione automatica dei dati</p>
                 </div>
 
+                <!-- Upload Area -->
                 <div class="upload-container">
                     <div id="upload-area" class="upload-area">
-                        <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
                         <h3>Trascina qui il tuo PDF o clicca per selezionare</h3>
                         <p>Supportati: PDF, immagini (JPG, PNG). Max 5 pagine.</p>
                         <input type="file" id="pdf-file" accept=".pdf,image/*" style="display: none;">
                     </div>
 
+                    <!-- Progress Bar -->
                     <div id="ocr-progress" class="progress-container" style="display: none;">
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar"></div>
+                        <div class="progress-bar-bg" style="background: #e5e7eb; border-radius: 10px; overflow: hidden; height: 10px;">
+                            <div class="progress-bar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
                         </div>
-                        <p id="progress-text">Inizializzazione OCR avanzato<span class="loading-dots"></span></p>
+                        <p id="progress-text" style="text-align: center; margin: 1rem 0; color: #6b7280;">Inizializzazione OCR avanzato<span class="loading-dots"></span></p>
                     </div>
                 </div>
 
+                <!-- OCR Form -->
                 <div class="ocr-form-container">
                     <form id="ocr-form" class="ocr-form">
                         <h3>Dati Estratti - Verifica e Correggi</h3>
@@ -739,10 +1370,12 @@
                                 <input type="text" name="fornitore" required>
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="nome_offerta">Nome Offerta</label>
                                 <input type="text" name="nome_offerta" required>
                             </div>
+
                             <div class="form-group">
                                 <label for="categoria">Categoria</label>
                                 <select name="categoria" required>
@@ -751,6 +1384,7 @@
                                     <option value="PMI">PMI</option>
                                 </select>
                             </div>
+
                             <div class="form-group">
                                 <label for="tipo_prezzo">Tipo Prezzo</label>
                                 <select name="tipo_prezzo" required>
@@ -758,43 +1392,52 @@
                                     <option value="Variabile">Variabile</option>
                                 </select>
                             </div>
+
                             <div class="form-group">
                                 <label for="prezzo_luce">Prezzo Luce (€/kWh)</label>
                                 <input type="number" name="prezzo_luce" step="0.0001" required>
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="spread_luce">Spread Luce (€/kWh)</label>
                                 <input type="number" name="spread_luce" step="0.0001" value="0">
                             </div>
+
                             <div class="form-group">
                                 <label for="prezzo_gas">Prezzo Gas (€/Smc)</label>
                                 <input type="number" name="prezzo_gas" step="0.0001" required>
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="spread_gas">Spread Gas (€/Smc)</label>
                                 <input type="number" name="spread_gas" step="0.0001" value="0">
                             </div>
+
                             <div class="form-group">
                                 <label for="quota_fissa_luce">Quota Fissa Luce (€/mese)</label>
                                 <input type="number" name="quota_fissa_luce" step="0.01" required>
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="quota_fissa_gas">Quota Fissa Gas (€/mese)</label>
                                 <input type="number" name="quota_fissa_gas" step="0.01" required>
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="commissioni">Commissioni (€)</label>
                                 <input type="number" name="commissioni" step="0.01" value="0">
                                 <span class="confidence-indicator"></span>
                             </div>
+
                             <div class="form-group">
                                 <label for="scadenza">Scadenza</label>
                                 <input type="date" name="scadenza" required>
                             </div>
+
                             <div class="form-group">
                                 <label for="durata_mesi">Durata (mesi)</label>
                                 <select name="durata_mesi" required>
@@ -819,214 +1462,273 @@
                 </div>
             </section>
 
-            <!-- Other sections... -->
+            <!-- Gestione Offerte Section -->
+            <section id="gestione-section" class="section">
+                <div class="section-header">
+                    <h2>Gestione Offerte</h2>
+                    <p>Visualizza, modifica ed elimina le tue offerte salvate</p>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-container">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="filter-categoria">Categoria</label>
+                            <select id="filter-categoria" class="filter-control">
+                                <option value="">Tutte le categorie</option>
+                                <option value="Domestico">Domestico</option>
+                                <option value="Micro">Micro</option>
+                                <option value="PMI">PMI</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-fornitore">Fornitore</label>
+                            <select id="filter-fornitore" class="filter-control">
+                                <option value="">Tutti i fornitori</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-tipo-prezzo">Tipo Prezzo</label>
+                            <select id="filter-tipo-prezzo" class="filter-control">
+                                <option value="">Tutti i tipi</option>
+                                <option value="Fisso">Fisso</option>
+                                <option value="Variabile">Variabile</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="search-offers">Ricerca</label>
+                            <input type="text" id="search-offers" class="filter-control" placeholder="Cerca per nome o fornitore...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offers Table -->
+                <div class="table-container">
+                    <table id="offers-table" class="offers-table">
+                        <thead>
+                            <tr>
+                                <th>Fornitore</th>
+                                <th>Nome Offerta</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th>Prezzo Luce</th>
+                                <th>Prezzo Gas</th>
+                                <th>Commissioni</th>
+                                <th>Scadenza</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Analisi Section -->
+            <section id="analisi-section" class="section">
+                <div class="section-header">
+                    <h2>Analisi Avanzata</h2>
+                    <p>Statistiche dettagliate e confronti delle tue offerte</p>
+                </div>
+
+                <div class="analytics-container">
+                    <div class="analytics-placeholder">
+                        <div class="analytics-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h3>Sezione Analytics in Sviluppo</h3>
+                        <p>Stiamo preparando grafici avanzati, confronti automatici e analytics predittive per ottimizzare la tua gestione delle offerte energia.</p>
+                        <div class="coming-features">
+                            <div class="feature-item">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Grafici comparativi per categoria</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-trend-up"></i>
+                                <span>Trend dei prezzi energia</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-calculator"></i>
+                                <span>Calcolatore risparmi automatico</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2025 EnergiaCorp Premium. Ultimo aggiornamento: <span id="last-update"></span></p>
+                <p>Piattaforma intelligente per la gestione delle offerte energetiche</p>
+            </div>
+        </footer>
     </div>
 
-    <!-- JavaScript Libraries -->
+    <!-- JavaScript Libraries - ORDINE IMPORTANTE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
 
+    <!-- App Scripts -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
 
     <script>
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-
+        // Landing Page + Email Error Logic
         document.addEventListener('DOMContentLoaded', async function() {
             let isSignupMode = false;
 
-            console.log('🚀 App inizializzata, controllo URL...');
+            console.log('🚀 Landing page initialized');
 
-            // ===== CHECK FOR ERRORS IN URL =====
+            // Check for email errors
             const urlParams = new URLSearchParams(window.location.search);
             const urlHash = window.location.hash;
             const hashParams = new URLSearchParams(urlHash.substring(1));
 
-            console.log('URL Hash:', urlHash);
-            console.log('Hash Params:', hashParams.toString());
-
-            // Check for email link errors
             const error = hashParams.get('error') || urlParams.get('error');
             const errorCode = hashParams.get('error_code') || urlParams.get('error_code');
             const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
 
             if (error) {
-                console.log('❌ Errore rilevato:', error, errorCode, errorDescription);
-
-                let title, message, iconClass, actions;
-
-                if (errorCode === 'otp_expired' || error === 'access_denied') {
-                    title = '⏰ Link Email Scaduto';
-                    message = `Il link di conferma email è scaduto o non valido.
-                    <br><br>
-                    I link di conferma scadono dopo <strong>1 ora</strong> per motivi di sicurezza.
-                    <br><br>
-                    <strong>Soluzioni:</strong><br>
-                    • Richiedi una nuova email di conferma<br>
-                    • Oppure registrati nuovamente`;
-                    iconClass = 'warning';
-                    actions = `
-                        <div class="status-actions">
-                            <button onclick="requestNewConfirmation()" class="btn-primary">
-                                <i class="fas fa-envelope"></i>
-                                Richiedi Nuova Email
-                            </button>
-                            <a href="${window.location.origin + window.location.pathname}" class="btn-link">
-                                <i class="fas fa-home"></i>
-                                Torna alla Home
-                            </a>
-                        </div>
-                    `;
-                } else {
-                    title = '❌ Errore di Conferma';
-                    message = `Si è verificato un errore durante la conferma email:
-                    <br><br>
-                    <strong>Errore:</strong> ${errorDescription || error}`;
-                    iconClass = 'error';
-                    actions = `
-                        <div class="status-actions">
-                            <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
-                                <i class="fas fa-home"></i>
-                                Torna alla Home
-                            </a>
-                        </div>
-                    `;
-                }
-
-                document.body.innerHTML = `
-                    <div class="email-status-screen">
-                        <div class="status-container">
-                            <div class="status-icon ${iconClass}">
-                                <i class="fas fa-${iconClass === 'warning' ? 'exclamation-triangle' : iconClass === 'error' ? 'times' : 'check'}"></i>
-                            </div>
-                            <h2 class="status-title">${title}</h2>
-                            <div class="status-message">${message}</div>
-                            ${actions}
-                        </div>
-                    </div>
-                `;
-
-                // Clean URL
-                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+                handleEmailError(error, errorCode, errorDescription);
                 return;
             }
 
-            // Check for successful email confirmation
+            // Check for email confirmation
             const hasEmailConfirmation = urlParams.get('type') === 'signup' || 
                                        urlHash.includes('access_token') || 
                                        urlParams.get('token_hash') ||
                                        hashParams.get('type') === 'email_confirmation';
 
             if (hasEmailConfirmation) {
-                console.log('✉️ Conferma email rilevata, processando...');
+                handleEmailConfirmation();
+                return;
+            }
 
+            // Check if already logged in
+            try {
+                const currentUser = await getCurrentUser();
+                if (currentUser) {
+                    showApp(currentUser);
+                    return;
+                }
+            } catch (error) {
+                console.log('No user logged in, showing landing');
+            }
+
+            // Setup landing page
+            setupLandingPage();
+
+            function handleEmailError(error, errorCode, errorDescription) {
+                let title, message, iconClass;
+
+                if (errorCode === 'otp_expired' || error === 'access_denied') {
+                    title = '⏰ Link Email Scaduto';
+                    message = 'Il link di conferma email è scaduto. I link scadono dopo 1 ora per sicurezza.';
+                    iconClass = 'warning';
+                } else {
+                    title = '❌ Errore Email';
+                    message = 'Si è verificato un errore durante la conferma email.';
+                    iconClass = 'error';
+                }
+
+                document.body.innerHTML = `
+                    <div class="email-status-screen">
+                        <div class="status-container">
+                            <div class="status-icon ${iconClass}">
+                                <i class="fas fa-${iconClass === 'warning' ? 'exclamation-triangle' : 'times'}"></i>
+                            </div>
+                            <h2 class="status-title">${title}</h2>
+                            <div class="status-message">${message}</div>
+                            <div class="status-actions">
+                                <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
+                                    <i class="fas fa-home"></i>
+                                    Torna alla Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+            }
+
+            function handleEmailConfirmation() {
                 document.body.innerHTML = `
                     <div class="email-status-screen">
                         <div class="status-container">
                             <div class="status-icon loading">
                                 <div class="loading-spinner"></div>
                             </div>
-                            <h2 class="status-title">Conferma Email in Corso...</h2>
-                            <div class="status-message">Stiamo verificando la tua email, attendi un momento.</div>
+                            <h2 class="status-title">Conferma Email...</h2>
+                            <div class="status-message">Elaborazione in corso...</div>
                         </div>
                     </div>
                 `;
 
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+                setTimeout(async () => {
+                    try {
+                        const user = await getCurrentUser();
 
-                    const user = await getCurrentUser();
-                    console.log('Utente dopo conferma:', user);
+                        if (user) {
+                            document.body.innerHTML = `
+                                <div class="email-status-screen">
+                                    <div class="status-container">
+                                        <div class="status-icon success">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <h2 class="status-title">✅ Email Confermata!</h2>
+                                        <div class="status-message">Benvenuto! Reindirizzamento alla dashboard...</div>
+                                    </div>
+                                </div>
+                            `;
 
-                    if (user) {
+                            setTimeout(() => {
+                                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            throw new Error('Confirmation failed');
+                        }
+                    } catch (error) {
                         document.body.innerHTML = `
                             <div class="email-status-screen">
                                 <div class="status-container">
-                                    <div class="status-icon success">
-                                        <i class="fas fa-check"></i>
+                                    <div class="status-icon error">
+                                        <i class="fas fa-times"></i>
                                     </div>
-                                    <h2 class="status-title">✅ Email Confermata!</h2>
-                                    <div class="status-message">
-                                        Benvenuto in EnergiaCorp Premium!<br>
-                                        Verrai reindirizzato alla dashboard tra pochi secondi...
-                                    </div>
+                                    <h2 class="status-title">❌ Errore</h2>
+                                    <div class="status-message">Errore durante la conferma email</div>
                                     <div class="status-actions">
-                                        <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
-                                            <i class="fas fa-tachometer-alt"></i>
-                                            Vai alla Dashboard
-                                        </a>
+                                        <a href="${window.location.origin + window.location.pathname}" class="btn-primary">Torna alla Home</a>
                                     </div>
                                 </div>
                             </div>
                         `;
-
-                        setTimeout(() => {
-                            window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
-                            window.location.reload();
-                        }, 3000);
-
-                    } else {
-                        throw new Error('Conferma email fallita');
                     }
-
-                } catch (error) {
-                    console.error('Errore conferma email:', error);
-                    document.body.innerHTML = `
-                        <div class="email-status-screen">
-                            <div class="status-container">
-                                <div class="status-icon error">
-                                    <i class="fas fa-times"></i>
-                                </div>
-                                <h2 class="status-title">❌ Errore Conferma</h2>
-                                <div class="status-message">
-                                    Non siamo riusciti a confermare la tua email.<br>
-                                    Prova a registrarti di nuovo o contatta il supporto.
-                                    <br><br>
-                                    <strong>Errore:</strong> ${error.message}
-                                </div>
-                                <div class="status-actions">
-                                    <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
-                                        <i class="fas fa-home"></i>
-                                        Torna alla Home
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                return;
+                }, 3000);
             }
 
-            // ===== RESTO DEL CODICE NORMALE =====
-            try {
-                const currentUser = await getCurrentUser();
+            function showApp(user) {
+                document.getElementById('landing-page').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
 
-                if (currentUser) {
-                    document.getElementById('landing-page').style.display = 'none';
-                    document.getElementById('app-container').style.display = 'block';
-
-                    const userName = document.getElementById('user-name');
-                    if (userName && currentUser.user_metadata?.full_name) {
-                        userName.textContent = 'Ciao, ' + currentUser.user_metadata.full_name;
-                    }
-
-                    if (typeof initializeApp === 'function') {
-                        await initializeApp();
-                    }
-                    return;
+                const userName = document.getElementById('user-name');
+                if (userName && user.user_metadata?.full_name) {
+                    userName.textContent = 'Ciao, ' + user.user_metadata.full_name;
                 }
-            } catch (error) {
-                console.log('Nessun utente loggato');
-            }
 
-            // Setup landing page
-            setupLandingPage();
+                if (typeof initializeApp === 'function') {
+                    initializeApp();
+                }
+            }
 
             function setupLandingPage() {
                 const loginTab = document.getElementById('login-tab');
@@ -1034,13 +1736,9 @@
                 const signupFields = document.getElementById('signup-fields');
                 const authTitle = document.getElementById('auth-title');
                 const authSubmitText = document.getElementById('auth-submit-text');
-                const authFooterText = document.getElementById('auth-footer-text');
                 const resendBtn = document.getElementById('resend-confirmation');
 
-                loginTab.addEventListener('click', () => switchToLogin());
-                signupTab.addEventListener('click', () => switchToSignup());
-
-                function switchToLogin() {
+                loginTab?.addEventListener('click', () => {
                     isSignupMode = false;
                     loginTab.classList.add('active');
                     signupTab.classList.remove('active');
@@ -1048,23 +1746,21 @@
                     resendBtn.style.display = 'none';
                     authTitle.textContent = 'Accedi alla Piattaforma';
                     authSubmitText.textContent = 'Accedi alla Dashboard';
-                    authFooterText.textContent = 'Accedendo accetti i nostri termini di servizio';
-                }
+                });
 
-                function switchToSignup() {
+                signupTab?.addEventListener('click', () => {
                     isSignupMode = true;
                     signupTab.classList.add('active');
                     loginTab.classList.remove('active');
                     signupFields.style.display = 'block';
                     resendBtn.style.display = 'none';
                     authTitle.textContent = 'Crea il Tuo Account';
-                    authSubmitText.textContent = 'Crea Account e Accedi';
-                    authFooterText.textContent = 'Registrandoti accetti i nostri termini di servizio';
-                }
+                    authSubmitText.textContent = 'Crea Account';
+                });
 
-                // Auth form handling
+                // Auth form
                 const authForm = document.getElementById('auth-form');
-                authForm.addEventListener('submit', async (e) => {
+                authForm?.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
                     const submitBtn = document.getElementById('auth-submit');
@@ -1072,113 +1768,80 @@
 
                     try {
                         submitBtn.disabled = true;
-                        authSubmitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Caricamento...</span>';
+                        authSubmitText.textContent = 'Elaborazione...';
 
                         const email = document.getElementById('email').value;
                         const password = document.getElementById('password').value;
 
-                        let result;
-
                         if (isSignupMode) {
                             const fullName = document.getElementById('full-name').value;
-                            result = await signUp(email, password, fullName);
+                            const result = await signUp(email, password, fullName);
 
                             if (!result.error) {
-                                alert('📧 Registrazione completata!\n\nControlla la tua email per confermare l\'account.\n\n⚠️ IMPORTANTE: Il link scade dopo 1 ora!\n\n📩 Controlla anche la cartella SPAM.');
-                                switchToLogin();
+                                alert('📧 Registrazione completata! Controlla la tua email per confermare.');
+                                loginTab.click();
                                 document.getElementById('email').value = email;
                                 resendBtn.style.display = 'block';
-                                return;
+                            } else {
+                                alert('❌ ' + result.error.message);
                             }
                         } else {
-                            result = await signIn(email, password);
+                            const result = await signIn(email, password);
 
                             if (!result.error) {
-                                document.getElementById('landing-page').style.display = 'none';
-                                document.getElementById('app-container').style.display = 'block';
-
-                                const userName = document.getElementById('user-name');
-                                if (userName && result.data.user.user_metadata?.full_name) {
-                                    userName.textContent = 'Ciao, ' + result.data.user.user_metadata.full_name;
+                                showApp(result.data.user);
+                            } else {
+                                let errorMessage = result.error.message;
+                                if (errorMessage.includes('Invalid login credentials')) {
+                                    errorMessage = 'Email o password non corretti';
+                                } else if (errorMessage.includes('Email not confirmed')) {
+                                    errorMessage = 'Email non confermata. Controlla la tua casella email.';
+                                    resendBtn.style.display = 'block';
                                 }
-
-                                if (typeof initializeApp === 'function') {
-                                    await initializeApp();
-                                }
-                                return;
+                                alert('❌ ' + errorMessage);
                             }
                         }
 
-                        let errorMessage = result.error.message;
-                        if (errorMessage.includes('Invalid login credentials')) {
-                            errorMessage = 'Email o password non corretti. Verifica i dati inseriti.';
-                        } else if (errorMessage.includes('Email not confirmed')) {
-                            errorMessage = 'Email non ancora confermata. Controlla la tua casella email e clicca sul link di conferma.\n\n⚠️ Se il link è scaduto (dopo 1 ora), usa il pulsante "Invia Nuova Email".';
-                            resendBtn.style.display = 'block';
-                        }
-
-                        alert('❌ ' + errorMessage);
-
                     } catch (error) {
-                        alert('❌ Errore di connessione: ' + error.message);
+                        alert('❌ Errore: ' + error.message);
                     } finally {
                         submitBtn.disabled = false;
                         authSubmitText.textContent = originalText;
                     }
                 });
 
-                // Resend confirmation handler  
-                resendBtn.addEventListener('click', async () => {
+                // Resend confirmation
+                resendBtn?.addEventListener('click', async () => {
                     const email = document.getElementById('email').value;
                     if (!email) {
-                        alert('Inserisci la tua email prima di richiedere una nuova conferma.');
+                        alert('Inserisci la tua email');
                         return;
                     }
 
                     try {
-                        resendBtn.disabled = true;
-                        resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio...';
-
-                        // This would require a custom function in supabase.js
-                        await requestNewConfirmationEmail(email);
-
-                        alert('✅ Nuova email di conferma inviata!\n\nControlla la tua casella email (anche SPAM).\n\n⚠️ Il nuovo link scadrà dopo 1 ora.');
-
+                        if (typeof requestNewConfirmationEmail === 'function') {
+                            await requestNewConfirmationEmail(email);
+                            alert('✅ Nuova email inviata!');
+                        }
                     } catch (error) {
-                        alert('❌ Errore invio email: ' + error.message);
-                    } finally {
-                        resendBtn.disabled = false;
-                        resendBtn.innerHTML = '<i class="fas fa-envelope"></i> Invia Nuova Email di Conferma';
+                        alert('❌ Errore: ' + error.message);
                     }
                 });
             }
         });
 
-        // Global function for the error screen button
-        async function requestNewConfirmation() {
-            const email = prompt('Inserisci la tua email per ricevere una nuova conferma:');
-            if (!email) return;
-
-            try {
-                await requestNewConfirmationEmail(email);
-                alert('✅ Nuova email di conferma inviata!\n\nControlla la tua casella email (anche SPAM).');
-
-                // Redirect to home
-                window.location.href = window.location.origin + window.location.pathname;
-
-            } catch (error) {
-                alert('❌ Errore: ' + error.message);
-            }
-        }
-
-        // Add this function to supabase.js
+        // Global function for resending confirmation
         async function requestNewConfirmationEmail(email) {
             const { error } = await supabaseClient.auth.resend({
                 type: 'signup',
                 email: email
             });
-
             if (error) throw error;
+        }
+
+        // PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
 </body>
