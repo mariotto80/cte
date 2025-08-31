@@ -1,3 +1,12 @@
+// Import delle funzioni Supabase (se usi moduli ES6)
+import { 
+  signUp, signIn, signOut, getCurrentUser,
+  createOffer, getOffers, updateOffer, deleteOffer,
+  subscribeToOffers
+} from './supabase-operations.js'
+
+// Oppure se non usi moduli ES6, include i file con <script> tag
+
 // Global Variables
 let offers = [];
 let filteredOffers = [];
