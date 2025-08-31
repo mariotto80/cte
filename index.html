@@ -2,108 +2,543 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GestOffer Energy PRO v3</title>
-  <link rel="stylesheet" href="./style.css" />
-  <meta name="robots" content="noindex,nofollow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SM Solutions – Bollette Smart</title>
+  <meta name="description" content="Carica bollette PDF/JPG, OCR, estrazione dati e dashboard. Salvataggio su Supabase o modalità Demo locale." />
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --brand: #0ea5e9; }
+    html,body{height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+    /* Sostituisce l'uso di @apply (che richiede build) con CSS puro */
+    .card{ background:#fff; border-radius:1rem; box-shadow:0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06); padding:1.5rem; }
+    .badge{ display:inline-flex; align-items:center; gap:.5rem; padding:.25rem .5rem; border-radius:.5rem; font-size:.8rem; }
+    .badge-info{ background:#e0f2fe; color:#0369a1; }
+    .mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+  </style>
+  <!-- Supabase JS (UMD) -->
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+  <!-- PDF.js -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js" integrity="sha512-rX2mTqg8m0t7xkE3gqJ/tlD4aM3v3qjUOq6m9Q0v5qvR6oK0Ff5JmVnM3zvK1MDsV0xG1UqTSSpYlQxJ/RqVfA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- Tesseract.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
 </head>
-<body>
-  <header class="app-header">
-    <h1>GestOffer Energy PRO v3</h1>
+<body class="min-h-screen bg-slate-50">
+  <noscript>
+    <div class="bg-red-600 text-white p-3 text-center">Questa app richiede JavaScript attivo.</div>
+  </noscript>
+
+  <header class="sticky top-0 z-10 bg-white/70 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-sky-500 grid place-items-center text-white font-bold">SM</div>
+      <div class="flex-1">
+        <h1 class="text-xl font-bold">Bollette Smart</h1>
+        <p class="text-sm text-slate-500">OCR ➜ parsing ➜ Supabase ➜ dashboard</p>
+      </div>
+      <button id="btnSettings" class="px-3 py-2 text-sm rounded-lg border hover:bg-slate-100">Impostazioni</button>
+    </div>
   </header>
 
-  <main class="container">
-    <section class="uploader">
-      <label class="file-label">
-        <input id="fileInput" type="file" accept="application/pdf" />
-        Carica PDF
-      </label>
-      <button id="downloadBtn" disabled>Scarica PDF</button>
+  <div id="demoBanner" class="hidden">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <span class="badge badge-info">🧪 Modalità Demo</span>
+      <span class="text-sm text-slate-700">Nessuna credenziale Supabase trovata: i documenti verranno <strong>salvati localmente</strong> (LocalStorage) e <strong>non</strong> caricati su Supabase. Configura le credenziali per passare alla modalità cloud.</span>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <!-- Sezione Upload -->
+    <section class="card">
+      <h2 class="text-lg font-semibold mb-2">1) Carica bolletta (PDF/JPG/PNG)</h2>
+      <p class="text-sm text-slate-600 mb-4">Estrarremo i dati principali: <em>fornitore, importo, scadenza, PDR/POD, spread, costi fissi</em>.</p>
+      <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
+        <input id="fileInput" type="file" accept="application/pdf,image/*" class="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" />
+        <button id="btnProcess" class="px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50">Processa & Salva</button>
+        <div id="status" class="text-sm text-slate-600"></div>
+      </div>
     </section>
 
-    <section class="viewer">
-      <div class="toolbar">
-        <button id="prevBtn" disabled>Prec</button>
-        <span id="pageInfo">Pag. <span id="pageNum">—</span>/<span id="pageCount">—</span></span>
-        <button id="nextBtn" disabled>Succ</button>
-        <span class="spacer"></span>
-        <button id="zoomOut" disabled>−</button>
-        <span id="zoomLevel">100%</span>
-        <button id="zoomIn" disabled>+</button>
-        <label class="mode">
-          Modalità:
-          <select id="pageMode">
-            <option value="single">Una pagina</option>
-            <option value="all">Tutte le pagine</option>
-          </select>
-        </label>
+    <!-- Sezione Elenco documenti -->
+    <section class="card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold">2) Documenti salvati</h2>
+        <div class="flex gap-2 items-center">
+          <input id="search" placeholder="Cerca fornitore / POD / cliente" class="px-3 py-2 rounded-lg border w-64" />
+          <button id="btnRefresh" class="px-3 py-2 rounded-lg border hover:bg-slate-100">Aggiorna</button>
+        </div>
       </div>
-      <div id="pdfViewport" class="viewport"></div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="text-left px-3 py-2">Data</th>
+              <th class="text-left px-3 py-2">Cliente</th>
+              <th class="text-left px-3 py-2">Fornitore</th>
+              <th class="text-left px-3 py-2">Importo €</th>
+              <th class="text-left px-3 py-2">Scadenza</th>
+              <th class="text-left px-3 py-2">POD/PDR</th>
+              <th class="text-left px-3 py-2">Spread</th>
+              <th class="text-left px-3 py-2">Fissi €/mese</th>
+              <th class="text-left px-3 py-2">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="ocr">
-      <div class="ocr-actions">
-        <button id="ocrBtn" disabled>OCR documento</button>
-        <span id="ocrProgress"></span>
+    <!-- Sezione Dashboard -->
+    <section class="card">
+      <h2 class="text-lg font-semibold mb-4">3) Dashboard</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <canvas id="spendBySupplier"></canvas>
+        </div>
+        <div>
+          <canvas id="dueDates"></canvas>
+        </div>
+        <div>
+          <canvas id="monthlyTotals"></canvas>
+        </div>
       </div>
-      <div class="ocr-fields">
-        <label>Fornitore
-          <select id="fornitoreSelect">
-            <option value="">— Seleziona —</option>
-            <option>A2A</option>
-            <option>EDISON</option>
-            <option>DUFERCO</option>
-            <option>SINERGY</option>
-            <option>SORGENIA</option>
-            <option>ITALPOWER</option>
-            <option>SEGNO VERDE</option>
-          </select>
-        </label>
-        <label>Spread <input id="spreadInput" type="text" placeholder="es. 0,012 €/kWh" /></label>
-        <label>Fisso <input id="fissoInput" type="text" placeholder="€/mese" /></label>
-        <label>Scadenza <input id="scadenzaInput" type="text" placeholder="es. 31/12/2025" /></label>
-      </div>
-      <pre id="ocrText" class="ocr-text"></pre>
     </section>
 
-    <section class="archivio">
-      <h2>Archivio offerte per società</h2>
-      <div class="filters">
-        <label>Società
-          <select id="societaFilter">
-            <option value="">Tutte</option>
-            <option>PMI</option>
-            <option>Micro</option>
-            <option>Domestici</option>
-          </select>
-        </label>
-        <label>Fornitore
-          <select id="fornitoreFilter">
-            <option value="">Tutti</option>
-            <option>A2A</option>
-            <option>EDISON</option>
-            <option>DUFERCO</option>
-            <option>SINERGY</option>
-            <option>SORGENIA</option>
-            <option>ITALPOWER</option>
-            <option>SEGNO VERDE</option>
-          </select>
-        </label>
+    <!-- Sezione Test automatici -->
+    <section class="card">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">4) Test automatici (unit test)</h2>
+        <button id="btnRunTests" class="px-3 py-2 rounded-lg border hover:bg-slate-100">Esegui test</button>
       </div>
-      <div id="cards" class="cards"></div>
+      <p class="text-sm text-slate-600 mb-3">Confermano che funzioni chiave come parsing e formattazione lavorino come previsto. I test non richiedono Supabase.</p>
+      <pre id="testOutput" class="mono text-xs bg-slate-100 p-3 rounded-lg overflow-x-auto">(nessun test eseguito)</pre>
     </section>
   </main>
 
-  <!-- PDF.js (CDN) -->
-  <script type="module">
-    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.min.mjs';
-    window.pdfjsLib = pdfjsLib;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.mjs';
+  <!-- Modale impostazioni -->
+  <dialog id="settingsModal" class="p-0 rounded-2xl w-full max-w-xl">
+    <form method="dialog" class="card !rounded-2xl">
+      <h3 class="text-lg font-semibold mb-2">Impostazioni</h3>
+      <p class="text-sm text-slate-600 mb-4">Inserisci le credenziali Supabase del tuo progetto.</p>
+      <div class="grid gap-3">
+        <label class="text-sm">Supabase URL
+          <input id="sbUrl" class="mt-1 px-3 py-2 rounded-lg border w-full" placeholder="https://YOUR-PROJECT.supabase.co" />
+        </label>
+        <label class="text-sm">Supabase anon key
+          <input id="sbKey" class="mt-1 px-3 py-2 rounded-lg border w-full" placeholder="ey..." />
+        </label>
+        <label class="text-sm">Bucket storage (opz.)
+          <input id="sbBucket" class="mt-1 px-3 py-2 rounded-lg border w-full" placeholder="bollette" />
+        </label>
+      </div>
+      <p id="settingsError" class="text-sm text-red-600 mt-2"></p>
+      <div class="flex justify-end gap-2 mt-4">
+        <button class="px-3 py-2 rounded-lg border">Chiudi</button>
+        <button id="btnSaveSettings" value="default" class="px-3 py-2 rounded-lg bg-sky-600 text-white">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  // ------------------ Utility ------------------
+  const $ = (sel) => document.querySelector(sel);
+  const fmt = (n) => (n == null || isNaN(n)) ? "" : new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+  const parseEuro = (s) => {
+    if (!s) return null;
+    // accetta "1.234,56" o "1234.56" o "€ 123,45"
+    s = s.replace(/[^0-9,\.]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '');
+    if (/,/.test(s) && /\./.test(s)) s = s.replace(/\./g,'').replace(',', '.');
+    else if (/,/.test(s)) s = s.replace(',', '.');
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  };
+  const toISODate = (s) => {
+    // cerca formati tipici: 31/08/2025, 2025-08-31, 31-08-25, ecc.
+    if (!s) return null;
+    const m = s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+    if (m) {
+      let [_, d, mo, y] = m; y = y.length === 2 ? '20'+y : y;
+      return `${y.padStart(4,'0')}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+    const m2 = s.match(/(20\d{2})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    if (m2) {
+      let [_, y, mo, d] = m2;
+      return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+    return null;
+  };
+
+  // ------------------ Stato & Supabase ------------------
+  let SB_URL = localStorage.getItem('sbUrl') || '';
+  let SB_KEY = localStorage.getItem('sbKey') || '';
+  let SB_BUCKET = localStorage.getItem('sbBucket') || 'bollette';
+  let supa = null;
+
+  const hasSBConfig = () => Boolean(SB_URL && SB_KEY);
+
+  function ensureSupabase() {
+    if (!hasSBConfig()) return null; // non lancia più errore: permette modalità Demo
+    if (!supa) supa = supabase.createClient(SB_URL, SB_KEY);
+    return supa;
+  }
+
+  async function ensureStorageBucket() {
+    const client = ensureSupabase();
+    if (!client) return; // in demo non fa nulla
+    try {
+      const { error } = await client.storage.createBucket(SB_BUCKET, { public: true });
+      if (error && !String(error.message).includes('already exists')) console.warn('Storage:', error.message);
+    } catch (e) { console.warn('Storage create bucket skipped:', e.message); }
+  }
+
+  // ------------------ DB helpers (cloud o demo) ------------------
+  let demoItems = [];
+  const loadDemo = () => { try { demoItems = JSON.parse(localStorage.getItem('demoDocuments')||'[]'); } catch { demoItems = []; } };
+  const saveDemo = () => localStorage.setItem('demoDocuments', JSON.stringify(demoItems));
+
+  async function ensureTables() {
+    const client = ensureSupabase();
+    if (!client) return; // in demo non controlla
+    const { error } = await client.from('documents').select('id').limit(1);
+    if (error) {
+      console.warn('Tabella "documents" mancante o RLS blocca la select:', error.message);
+      $('#status').textContent = '⚠️ Verifica tabella "documents" e RLS in Supabase.';
+    }
+  }
+
+  async function uploadToStorage(file) {
+    const client = ensureSupabase();
+    if (!client) return '';
+    await ensureStorageBucket();
+    const name = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9_.-]/g,'_')}`;
+    const { error } = await client.storage.from(SB_BUCKET).upload(name, file, { upsert: false, contentType: file.type });
+    if (error) throw new Error(error.message);
+    const { data: pub } = client.storage.from(SB_BUCKET).getPublicUrl(name);
+    return pub.publicUrl;
+  }
+
+  async function insertDocument(rec) {
+    const client = ensureSupabase();
+    if (!client) {
+      // modalità Demo: salva localmente
+      demoItems.unshift({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...rec });
+      saveDemo();
+      return;
+    }
+    const { error } = await client.from('documents').insert(rec);
+    if (error) throw new Error(error.message);
+  }
+
+  async function fetchDocuments(query) {
+    const client = ensureSupabase();
+    if (!client) {
+      loadDemo();
+      let data = [...demoItems];
+      if (query) {
+        const q = query.toLowerCase();
+        data = data.filter(r => (r.fornitore||'').toLowerCase().includes(q) || (r.pod_pdr||'').toLowerCase().includes(q) || (r.cliente||'').toLowerCase().includes(q));
+      }
+      return data;
+    }
+    let qB = client.from('documents').select('*').order('created_at', { ascending: false }).limit(1000);
+    if (query) qB = qB.or(`fornitore.ilike.%${query}%,pod_pdr.ilike.%${query}%,cliente.ilike.%${query}%`);
+    const { data, error } = await qB;
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  // ------------------ OCR / PDF ------------------
+  function setupPdfWorker() {
+    try { if (window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js'; } } catch {}
+  }
+
+  async function pdfToText(file) {
+    setupPdfWorker();
+    // prova PDF testuale
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      if (!window.pdfjsLib) throw new Error('pdfjs non caricato');
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const strings = content.items.map(i => i.str);
+        text += strings.join('\n') + '\n\n';
+      }
+      if (text.trim().length >= 100) return text;
+    } catch (e) {
+      console.log('PDF estrazione testuale fallita, si userà OCR:', e.message);
+    }
+    // fallback OCR
+    return await imageOCR(file);
+  }
+
+  async function imageOCR(fileOrBlob) {
+    const blob = fileOrBlob;
+    const img = await blobToImage(blob);
+    const dataUrl = imageToDataURL(img);
+    // versione semplice: API di alto livello
+    const { data: { text } } = await Tesseract.recognize(dataUrl, 'ita');
+    return text;
+  }
+
+  function blobToImage(blob) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.src = url;
+    });
+  }
+  function imageToDataURL(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL('image/png');
+  }
+
+  // ------------------ Parsing bollette ------------------
+  function parseFields(text) {
+    const lower = text.replace(/\s+/g, ' ').toLowerCase();
+    const find = (re) => { const m = lower.match(re); return m ? m[1].trim() : null; };
+
+    const fornitore = find(/fornitore:?\s*([a-z0-9 .\-]+?)(?= pod| pdr| cliente| intestat| importo| scadenza|\n|$)/);
+    const importoStr = find(/importo(?:\s*totale)?\s*[:€]*\s*([0-9.,]+)/);
+    const importo = parseEuro(importoStr);
+    const scadStr = find(/scadenza\s*[:]*\s*([0-9\/-]{6,10})/);
+    const scadenza = toISODate(scadStr);
+    const pod = find(/pod[:\s]*([a-z0-9]{6,20})/);
+    const pdr = find(/pdr[:\s]*([a-z0-9]{6,20})/);
+    const pod_pdr = (pod || pdr || null);
+    const spreadStr = find(/spread\s*[:]*\s*([0-9.,]+)/);
+    const spread = parseEuro(spreadStr);
+    const fissiStr = find(/(oneri\s*fissi|quota\s*fissa|costi\s*fissi)\s*[:€]*\s*([0-9.,]+)/);
+    const fissi_mese = fissiStr ? parseEuro(fissiStr) : null;
+    const cliente = find(/intestat(?:o|a)\s*:?\s*([a-z0-9 .\-']{3,60})/);
+
+    return { cliente, fornitore, importo, scadenza, pod_pdr, spread, fissi_mese };
+  }
+
+  // ------------------ UI rendering ------------------
+  let charts = {};
+
+  function renderRows(items) {
+    const tbody = $('#rows');
+    tbody.innerHTML = '';
+    for (const it of items) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b hover:bg-slate-50';
+      tr.innerHTML = `
+        <td class="px-3 py-2">${new Date(it.created_at).toLocaleDateString('it-IT')}</td>
+        <td class="px-3 py-2">${it.cliente || ''}</td>
+        <td class="px-3 py-2">${it.fornitore || ''}</td>
+        <td class="px-3 py-2">${fmt(it.importo)}</td>
+        <td class="px-3 py-2">${it.scadenza || ''}</td>
+        <td class="px-3 py-2">${it.pod_pdr || ''}</td>
+        <td class="px-3 py-2">${it.spread ?? ''}</td>
+        <td class="px-3 py-2">${it.fissi_mese ? fmt(it.fissi_mese) : ''}</td>
+        <td class="px-3 py-2">${it.url_file ? `<a class="text-sky-700 underline" target="_blank" href="${it.url_file}">Apri</a>` : '<span class="text-slate-400">—</span>'}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function groupBy(arr, key) { return arr.reduce((acc,cur)=>{const k=cur[key]||'N/D';acc[k]=(acc[k]||[]).concat(cur);return acc;},{}); }
+
+  function renderCharts(items) {
+    const destroy = (id)=>{ if (charts[id]){ charts[id].destroy(); delete charts[id]; } };
+
+    // Spesa per fornitore
+    const bySupp = groupBy(items,'fornitore');
+    const labels1 = Object.keys(bySupp);
+    const data1 = labels1.map(l=> bySupp[l].reduce((s,r)=> s + (r.importo||0), 0));
+    destroy('spendBySupplier');
+    charts.spendBySupplier = new Chart($('#spendBySupplier'), { type:'doughnut', data:{ labels: labels1, datasets:[{ data: data1 }]}, options:{ plugins:{ legend:{ position:'bottom' }}}});
+
+    // Scadenze per giorno
+    const mapDue = {};
+    for (const r of items) if (r.scadenza) mapDue[r.scadenza] = (mapDue[r.scadenza]||0)+1;
+    const labels2 = Object.keys(mapDue).sort();
+    const data2 = labels2.map(k=>mapDue[k]);
+    destroy('dueDates');
+    charts.dueDates = new Chart($('#dueDates'), { type:'bar', data:{ labels: labels2, datasets:[{ label:'N. scadenze', data: data2 }]}, options:{ scales:{ x:{ ticks:{ autoSkip:true, maxRotation:0 }}}}});
+
+    // Totali mensili
+    const mapMonth = {};
+    for (const r of items) if (r.created_at){ const d=new Date(r.created_at); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; mapMonth[key]=(mapMonth[key]||0)+(r.importo||0); }
+    const labels3 = Object.keys(mapMonth).sort();
+    const data3 = labels3.map(k=> mapMonth[k]);
+    destroy('monthlyTotals');
+    charts.monthlyTotals = new Chart($('#monthlyTotals'), { type:'line', data:{ labels: labels3, datasets:[{ label:'Totale €', data: data3 }]}, options:{ plugins:{ legend:{ display:true }}}});
+  }
+
+  async function refresh(query) {
+    try {
+      const items = await fetchDocuments(query);
+      renderRows(items);
+      renderCharts(items);
+    } catch (e) {
+      console.error(e);
+      $('#status').textContent = 'Errore caricamento elenco: ' + e.message;
+    }
+  }
+
+  function reflectMode() {
+    const demo = !hasSBConfig();
+    $('#demoBanner').classList.toggle('hidden', !demo);
+  }
+
+  // ------------------ Event handlers ------------------
+  $('#btnSettings').addEventListener('click', ()=> $('#settingsModal').showModal());
+  $('#btnSaveSettings').addEventListener('click', (ev)=>{
+    ev.preventDefault();
+    const url = $('#sbUrl').value.trim();
+    const key = $('#sbKey').value.trim();
+    const bucket = $('#sbBucket').value.trim()||'bollette';
+
+    $('#settingsError').textContent = '';
+    // Validazione minima
+    if (url && !/^https:\/\/.*supabase\.(co|in)$/.test(url)) {
+      $('#settingsError').textContent = 'URL Supabase non sembra valido.';
+      return;
+    }
+    if (url && !key) {
+      $('#settingsError').textContent = 'Inserisci anche la anon key.';
+      return;
+    }
+
+    SB_URL = url; SB_KEY = key; SB_BUCKET = bucket;
+    localStorage.setItem('sbUrl', SB_URL);
+    localStorage.setItem('sbKey', SB_KEY);
+    localStorage.setItem('sbBucket', SB_BUCKET);
+    supa = null; // reset client
+    $('#settingsModal').close();
+    reflectMode();
+    ensureTables();
+    refresh($('#search').value.trim());
+  });
+
+  $('#btnRefresh').addEventListener('click', ()=> refresh($('#search').value.trim()));
+  $('#search').addEventListener('input', (e)=> refresh(e.target.value.trim()));
+
+  $('#btnProcess').addEventListener('click', async () => {
+    const file = $('#fileInput').files?.[0];
+    if (!file) { alert('Seleziona un file.'); return; }
+    $('#status').textContent = '⏳ Elaborazione in corso…';
+    try {
+      await ensureTables();
+      const text = file.type === 'application/pdf' ? await pdfToText(file) : await imageOCR(file);
+      const fields = parseFields(text);
+      let url_file = '';
+      try { url_file = await uploadToStorage(file); } catch (e) { console.warn('Upload storage fallito:', e.message); }
+      const rec = { ...fields, url_file, testo_raw: text };
+      await insertDocument(rec);
+      $('#status').textContent = hasSBConfig() ? '✅ Salvato su Supabase!' : '💾 Salvato in locale (Demo).';
+      await refresh($('#search').value.trim());
+    } catch (e) {
+      console.error(e);
+      $('#status').textContent = '❌ Errore: ' + e.message;
+    }
+  });
+
+  // ------------------ Test automatici ------------------
+  function assertEqual(name, a, b) { return { name, ok: JSON.stringify(a) === JSON.stringify(b), got:a, expected:b }; }
+  function assertTrue(name, cond) { return { name, ok: !!cond, got:cond, expected:true }; }
+
+  function runTests() {
+    const results = [];
+
+    // parseEuro
+    results.push(assertEqual('parseEuro 1.234,56', parseEuro('1.234,56'), 1234.56));
+    results.push(assertEqual('parseEuro € 123,45', parseEuro('€ 123,45'), 123.45));
+    results.push(assertEqual('parseEuro 1234.56', parseEuro('1234.56'), 1234.56));
+
+    // toISODate
+    results.push(assertEqual('toISODate 31/08/2025', toISODate('31/08/2025'), '2025-08-31'));
+    results.push(assertEqual('toISODate 2025-08-31', toISODate('2025-08-31'), '2025-08-31'));
+    results.push(assertEqual('toISODate 31-08-25', toISODate('31-08-25'), '2025-08-31'));
+
+    // parseFields (mock)
+    const sample = `Fornitore: Segno Verde\nIntestato a: Mario Rossi\nPOD: IT001E123456789\nImporto totale: € 98,77\nScadenza: 15/09/2025\nSpread: 0,09\nOneri fissi: 7,50`;
+    const fields = parseFields(sample);
+    results.push(assertEqual('parseFields fornitore', fields.fornitore, 'segno verde'));
+    results.push(assertEqual('parseFields cliente', fields.cliente, 'mario rossi'));
+    results.push(assertEqual('parseFields pod/pdr', fields.pod_pdr, 'it001e123456789'));
+    results.push(assertEqual('parseFields importo', fields.importo, 98.77));
+    results.push(assertEqual('parseFields scadenza', fields.scadenza, '2025-09-15'));
+    results.push(assertEqual('parseFields spread', fields.spread, 0.09));
+    results.push(assertEqual('parseFields fissi', fields.fissi_mese, 7.50));
+
+    const passed = results.filter(r=>r.ok).length;
+    const out = [
+      `Test eseguiti: ${results.length} – ✅ superati: ${passed} – ❌ falliti: ${results.length-passed}`,
+      ...results.map(r=> `${r.ok ? '✅' : '❌'} ${r.name}\n  got: ${JSON.stringify(r.got)}\n  expected: ${JSON.stringify(r.expected)}`)
+    ].join('\n');
+    $('#testOutput').textContent = out;
+  }
+
+  $('#btnRunTests').addEventListener('click', runTests);
+
+  // init UI
+  window.addEventListener('DOMContentLoaded', async ()=>{
+    // carica demo e riflette modalità
+    loadDemo();
+    reflectMode();
+
+    // compila impostazioni
+    $('#sbUrl').value = SB_URL; $('#sbKey').value = SB_KEY; $('#sbBucket').value = SB_BUCKET;
+
+    try { await ensureTables(); } catch(e) { console.warn(e.message); }
+    await refresh('');
+  });
+
   </script>
 
-  <!-- Tesseract.js (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!--
+  ============================
+  ISTRUZIONI SUPABASE (SQL RLS)
+  ============================
+  1) Crea tabella "documents":
 
-  <script src="./app.js"></script>
+  create table if not exists public.documents (
+    id uuid primary key default gen_random_uuid(),
+    created_at timestamptz default now(),
+    cliente text,
+    fornitore text,
+    importo numeric,
+    scadenza date,
+    pod_pdr text,
+    spread numeric,
+    fissi_mese numeric,
+    url_file text,
+    testo_raw text
+  );
+
+  2) Abilita RLS:
+  alter table public.documents enable row level security;
+
+  3) Policy lettura/scrittura aperta per anon (per ambienti di test – in produzione limita per user_id):
+
+  create policy "anon read" on public.documents for select using (true);
+  create policy "anon insert" on public.documents for insert with check (true);
+
+  4) Storage bucket pubblico (opzionale): crea bucket "bollette" e abilita public.
+
+  NOTE ERRORI COMUNI:
+  - 42601 syntax error near "," → controlla SQL copiato (usa esattamente il blocco sopra).
+  - 42703 column "polname" does not exist → query su pg_policies: usa policyname.
+  - RLS: "new row violates row-level security policy" → crea policy di insert (punto 3).
+
+  ============================
+  DEPLOY SU GITHUB PAGES
+  ============================
+  - Metti questo file come index.html alla radice del branch gh-pages o main.
+  - Se non vedi la grafica: i CSS sono incorporati e i CDN sono assoluti. Aggiungi un file vuoto ".nojekyll" alla radice.
+  - Per SPA con router servirebbe un 404.html che reindirizza a index; qui non serve.
+  -->
 </body>
 </html>
