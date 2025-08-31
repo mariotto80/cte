@@ -109,3 +109,20 @@ async function deleteOffer(offerId) {
 }
 
 console.log('Supabase loaded successfully!')
+// Funzione per richiedere nuova email di conferma
+async function requestNewConfirmationEmail(email) {
+    try {
+        const { error } = await supabaseClient.auth.resend({
+            type: 'signup',
+            email: email
+        });
+        
+        if (error) throw error;
+        return { error: null };
+        
+    } catch (error) {
+        console.error('Resend confirmation error:', error);
+        return { error };
+    }
+}
+
