@@ -1,4 +1,4 @@
-// app.js - EnergiaCorp Premium Application Logic
+// app.js - EnergiaCorp Premium Fixed per Landing Page
 // ===== VARIABILI GLOBALI =====
 let offers = [];
 let filteredOffers = [];
@@ -162,6 +162,7 @@ function showSection(sectionName) {
     // Aggiorna navigazione
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
+        // Reset style
         btn.style.background = 'transparent';
         btn.style.color = '#6b7280';
     });
@@ -193,6 +194,7 @@ function showSection(sectionName) {
 
 function initializeDashboard() {
     console.log('🏠 Dashboard pronta per caricamento dati...');
+    // Inizializzazione base - i dati vengono caricati in loadOffersFromDatabase
 }
 
 function updateDashboard() {
@@ -273,7 +275,7 @@ function updateCharts() {
         console.warn('⚠️ Chart.js non disponibile, salto grafici');
         const chartContainer = document.querySelector('.chart-container');
         if (chartContainer) {
-            chartContainer.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 2rem;">📊 Grafici non disponibili - Chart.js non caricato</p>';
+            chartContainer.innerHTML = '<p style="text-align: center; color: #9ca3af;">📊 Grafici non disponibili - Chart.js non caricato</p>';
         }
         return;
     }
@@ -372,7 +374,7 @@ function updateCharts() {
         console.error('❌ Errore creazione grafico:', error);
         const chartContainer = document.querySelector('.chart-container');
         if (chartContainer) {
-            chartContainer.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 2rem;">❌ Errore caricamento grafico</p>';
+            chartContainer.innerHTML = '<p style="text-align: center; color: #ef4444;">❌ Errore caricamento grafico</p>';
         }
     }
 }
@@ -632,7 +634,7 @@ async function processFileWithOCR(file) {
     console.log('🔍 Inizio OCR per:', file.name);
     showNotification(`🚀 Elaborazione OCR di "${file.name}"...`, 'info');
 
-    // Simula elaborazione OCR
+    // Simula elaborazione OCR (implementazione completa separata)
     const mockData = {
         fornitore: file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, ' ').trim() || 'Fornitore Estratto',
         nome_offerta: 'Offerta Standard',
@@ -880,4 +882,4 @@ if (typeof window !== 'undefined') {
     console.log('🐛 Debug utilities disponibili in window.debugApp');
 }
 
-console.log('✅ App.js caricato completamente - versione pulita');
+console.log('✅ App.js caricato completamente - versione landing page');
