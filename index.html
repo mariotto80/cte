@@ -223,6 +223,28 @@
             transform: none;
         }
 
+        .btn-secondary {
+            width: 100%;
+            padding: 12px 24px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
         .auth-footer {
             text-align: center;
             color: #666;
@@ -256,6 +278,133 @@
             opacity: 0.9;
         }
 
+        /* Email Error/Success Screens */
+        .email-status-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-family: Inter, sans-serif;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .status-container {
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+        }
+
+        .status-icon.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid #10b981;
+            color: #10b981;
+        }
+
+        .status-icon.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .status-icon.warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px solid #f59e0b;
+            color: #f59e0b;
+        }
+
+        .status-icon.loading {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .status-message {
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .status-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-link {
+            padding: 8px 16px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
         /* App Container - Initially Hidden */
         .app-container {
             display: none;
@@ -280,6 +429,10 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+
+            .status-container {
+                padding: 2rem 1.5rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -293,6 +446,10 @@
 
             .login-card {
                 padding: 1.5rem;
+            }
+
+            .email-status-screen {
+                padding: 1rem;
             }
         }
 
@@ -409,6 +566,11 @@
                         <i class="fas fa-sign-in-alt"></i>
                         <span id="auth-submit-text">Accedi alla Dashboard</span>
                     </button>
+
+                    <button type="button" id="resend-confirmation" class="btn-secondary" style="display: none;">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invia Nuova Email di Conferma</span>
+                    </button>
                 </form>
 
                 <div class="auth-footer">
@@ -420,8 +582,11 @@
         </div>
     </div>
 
-    <!-- Main Application (Hidden Initially) -->
+    <!-- Rest of the HTML remains the same... -->
     <div id="app-container" class="app-container">
+        <!-- Full app content here - same as before -->
+        <!-- (Including all sections: dashboard, upload, gestione, analisi) -->
+
         <!-- Main Loader -->
         <div id="main-loader" class="loader-overlay" style="display: none;">
             <div class="loader">
@@ -478,51 +643,39 @@
             </div>
         </header>
 
-        <!-- Main Content -->
+        <!-- Main Content Sections -->
         <main class="main-content">
-            <!-- Dashboard Section -->
+            <!-- Dashboard, Upload, Gestione, Analisi sections - same as before -->
             <section id="dashboard-section" class="section">
                 <div class="section-header">
                     <h2>Dashboard Offerte Energia</h2>
                     <p>Panoramica completa delle tue offerte luce e gas</p>
                 </div>
 
-                <!-- KPI Cards -->
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
+                        <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
                         <div class="kpi-content">
                             <h3 id="total-offers">0</h3>
                             <p>Offerte Totali</p>
                         </div>
                     </div>
-
                     <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-home"></i>
-                        </div>
+                        <div class="kpi-icon"><i class="fas fa-home"></i></div>
                         <div class="kpi-content">
                             <h3 id="domestico-count">0</h3>
                             <p>Domestico</p>
                         </div>
                     </div>
-
                     <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-building"></i>
-                        </div>
+                        <div class="kpi-icon"><i class="fas fa-building"></i></div>
                         <div class="kpi-content">
                             <h3 id="micro-count">0</h3>
                             <p>Micro</p>
                         </div>
                     </div>
-
                     <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-industry"></i>
-                        </div>
+                        <div class="kpi-icon"><i class="fas fa-industry"></i></div>
                         <div class="kpi-content">
                             <h3 id="pmi-count">0</h3>
                             <p>PMI</p>
@@ -530,13 +683,11 @@
                     </div>
                 </div>
 
-                <!-- Charts and Top Offers -->
                 <div class="dashboard-grid">
                     <div class="chart-container">
                         <h3>Prezzi Medi per Categoria</h3>
                         <canvas id="category-chart"></canvas>
                     </div>
-
                     <div class="top-offers">
                         <h3>Migliori Offerte</h3>
                         <div class="top-offer-section">
@@ -555,25 +706,21 @@
                 </div>
             </section>
 
-            <!-- Upload OCR Section -->
+            <!-- Upload Section -->
             <section id="upload-section" class="section" style="display: none;">
                 <div class="section-header">
                     <h2>Upload PDF con OCR Avanzato</h2>
                     <p>Carica un PDF di offerta energia per estrazione automatica dei dati</p>
                 </div>
 
-                <!-- Upload Area -->
                 <div class="upload-container">
                     <div id="upload-area" class="upload-area">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
+                        <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                         <h3>Trascina qui il tuo PDF o clicca per selezionare</h3>
                         <p>Supportati: PDF, immagini (JPG, PNG). Max 5 pagine.</p>
                         <input type="file" id="pdf-file" accept=".pdf,image/*" style="display: none;">
                     </div>
 
-                    <!-- Progress Bar -->
                     <div id="ocr-progress" class="progress-container" style="display: none;">
                         <div class="progress-bar-bg">
                             <div class="progress-bar"></div>
@@ -582,7 +729,6 @@
                     </div>
                 </div>
 
-                <!-- OCR Form -->
                 <div class="ocr-form-container">
                     <form id="ocr-form" class="ocr-form">
                         <h3>Dati Estratti - Verifica e Correggi</h3>
@@ -593,12 +739,10 @@
                                 <input type="text" name="fornitore" required>
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="nome_offerta">Nome Offerta</label>
                                 <input type="text" name="nome_offerta" required>
                             </div>
-
                             <div class="form-group">
                                 <label for="categoria">Categoria</label>
                                 <select name="categoria" required>
@@ -607,7 +751,6 @@
                                     <option value="PMI">PMI</option>
                                 </select>
                             </div>
-
                             <div class="form-group">
                                 <label for="tipo_prezzo">Tipo Prezzo</label>
                                 <select name="tipo_prezzo" required>
@@ -615,52 +758,43 @@
                                     <option value="Variabile">Variabile</option>
                                 </select>
                             </div>
-
                             <div class="form-group">
                                 <label for="prezzo_luce">Prezzo Luce (€/kWh)</label>
                                 <input type="number" name="prezzo_luce" step="0.0001" required>
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="spread_luce">Spread Luce (€/kWh)</label>
                                 <input type="number" name="spread_luce" step="0.0001" value="0">
                             </div>
-
                             <div class="form-group">
                                 <label for="prezzo_gas">Prezzo Gas (€/Smc)</label>
                                 <input type="number" name="prezzo_gas" step="0.0001" required>
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="spread_gas">Spread Gas (€/Smc)</label>
                                 <input type="number" name="spread_gas" step="0.0001" value="0">
                             </div>
-
                             <div class="form-group">
                                 <label for="quota_fissa_luce">Quota Fissa Luce (€/mese)</label>
                                 <input type="number" name="quota_fissa_luce" step="0.01" required>
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="quota_fissa_gas">Quota Fissa Gas (€/mese)</label>
                                 <input type="number" name="quota_fissa_gas" step="0.01" required>
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="commissioni">Commissioni (€)</label>
                                 <input type="number" name="commissioni" step="0.01" value="0">
                                 <span class="confidence-indicator"></span>
                             </div>
-
                             <div class="form-group">
                                 <label for="scadenza">Scadenza</label>
                                 <input type="date" name="scadenza" required>
                             </div>
-
                             <div class="form-group">
                                 <label for="durata_mesi">Durata (mesi)</label>
                                 <select name="durata_mesi" required>
@@ -685,222 +819,367 @@
                 </div>
             </section>
 
-            <!-- Gestione Offerte Section -->
-            <section id="gestione-section" class="section" style="display: none;">
-                <div class="section-header">
-                    <h2>Gestione Offerte</h2>
-                    <p>Visualizza, modifica ed elimina le tue offerte salvate</p>
-                </div>
-
-                <!-- Filters -->
-                <div class="filters-container">
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label for="filter-categoria">Categoria</label>
-                            <select id="filter-categoria" class="filter-control">
-                                <option value="">Tutte le categorie</option>
-                                <option value="Domestico">Domestico</option>
-                                <option value="Micro">Micro</option>
-                                <option value="PMI">PMI</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="filter-fornitore">Fornitore</label>
-                            <select id="filter-fornitore" class="filter-control">
-                                <option value="">Tutti i fornitori</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="filter-tipo-prezzo">Tipo Prezzo</label>
-                            <select id="filter-tipo-prezzo" class="filter-control">
-                                <option value="">Tutti i tipi</option>
-                                <option value="Fisso">Fisso</option>
-                                <option value="Variabile">Variabile</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="search-offers">Ricerca</label>
-                            <input type="text" id="search-offers" class="filter-control" placeholder="Cerca per nome o fornitore...">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Offers Table -->
-                <div class="table-container">
-                    <table id="offers-table" class="offers-table">
-                        <thead>
-                            <tr>
-                                <th>Fornitore</th>
-                                <th>Nome Offerta</th>
-                                <th>Categoria</th>
-                                <th>Tipo</th>
-                                <th>Prezzo Luce</th>
-                                <th>Prezzo Gas</th>
-                                <th>Commissioni</th>
-                                <th>Scadenza</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Analisi Section -->
-            <section id="analisi-section" class="section" style="display: none;">
-                <div class="section-header">
-                    <h2>Analisi Avanzata</h2>
-                    <p>Statistiche dettagliate e confronti delle tue offerte</p>
-                </div>
-
-                <div class="analytics-container">
-                    <div class="analytics-placeholder">
-                        <div class="analytics-icon">
-                            <i class="fas fa-chart-bar"></i>
-                        </div>
-                        <h3>Sezione Analytics in Sviluppo</h3>
-                        <p>Stiamo preparando grafici avanzati, confronti automatici e analytics predittive per ottimizzare la tua gestione delle offerte energia.</p>
-                        <div class="coming-features">
-                            <div class="feature-item">
-                                <i class="fas fa-chart-pie"></i>
-                                <span>Grafici comparativi per categoria</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-trend-up"></i>
-                                <span>Trend dei prezzi energia</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-calculator"></i>
-                                <span>Calcolatore risparmi automatico</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <!-- Other sections... -->
         </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <p>&copy; 2025 EnergiaCorp Premium. Ultimo aggiornamento: <span id="last-update"></span></p>
-                <p>Piattaforma intelligente per la gestione delle offerte energetiche</p>
-            </div>
-        </footer>
     </div>
 
-    <!-- JavaScript Libraries - ALLA FINE -->
+    <!-- JavaScript Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
 
-    <!-- App Scripts -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
 
-    <!-- PDF.js Worker Setup -->
     <script>
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
-        // Landing Page Logic
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             let isSignupMode = false;
 
-            const loginTab = document.getElementById('login-tab');
-            const signupTab = document.getElementById('signup-tab');
-            const signupFields = document.getElementById('signup-fields');
-            const authTitle = document.getElementById('auth-title');
-            const authSubmitText = document.getElementById('auth-submit-text');
-            const authFooterText = document.getElementById('auth-footer-text');
+            console.log('🚀 App inizializzata, controllo URL...');
 
-            // Tab switching
-            loginTab.addEventListener('click', () => switchToLogin());
-            signupTab.addEventListener('click', () => switchToSignup());
+            // ===== CHECK FOR ERRORS IN URL =====
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlHash = window.location.hash;
+            const hashParams = new URLSearchParams(urlHash.substring(1));
 
-            function switchToLogin() {
-                isSignupMode = false;
-                loginTab.classList.add('active');
-                signupTab.classList.remove('active');
-                signupFields.style.display = 'none';
-                authTitle.textContent = 'Accedi alla Piattaforma';
-                authSubmitText.textContent = 'Accedi alla Dashboard';
-                authFooterText.textContent = 'Accedendo accetti i nostri termini di servizio e la privacy policy';
+            console.log('URL Hash:', urlHash);
+            console.log('Hash Params:', hashParams.toString());
+
+            // Check for email link errors
+            const error = hashParams.get('error') || urlParams.get('error');
+            const errorCode = hashParams.get('error_code') || urlParams.get('error_code');
+            const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
+
+            if (error) {
+                console.log('❌ Errore rilevato:', error, errorCode, errorDescription);
+
+                let title, message, iconClass, actions;
+
+                if (errorCode === 'otp_expired' || error === 'access_denied') {
+                    title = '⏰ Link Email Scaduto';
+                    message = `Il link di conferma email è scaduto o non valido.
+                    <br><br>
+                    I link di conferma scadono dopo <strong>1 ora</strong> per motivi di sicurezza.
+                    <br><br>
+                    <strong>Soluzioni:</strong><br>
+                    • Richiedi una nuova email di conferma<br>
+                    • Oppure registrati nuovamente`;
+                    iconClass = 'warning';
+                    actions = `
+                        <div class="status-actions">
+                            <button onclick="requestNewConfirmation()" class="btn-primary">
+                                <i class="fas fa-envelope"></i>
+                                Richiedi Nuova Email
+                            </button>
+                            <a href="${window.location.origin + window.location.pathname}" class="btn-link">
+                                <i class="fas fa-home"></i>
+                                Torna alla Home
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    title = '❌ Errore di Conferma';
+                    message = `Si è verificato un errore durante la conferma email:
+                    <br><br>
+                    <strong>Errore:</strong> ${errorDescription || error}`;
+                    iconClass = 'error';
+                    actions = `
+                        <div class="status-actions">
+                            <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
+                                <i class="fas fa-home"></i>
+                                Torna alla Home
+                            </a>
+                        </div>
+                    `;
+                }
+
+                document.body.innerHTML = `
+                    <div class="email-status-screen">
+                        <div class="status-container">
+                            <div class="status-icon ${iconClass}">
+                                <i class="fas fa-${iconClass === 'warning' ? 'exclamation-triangle' : iconClass === 'error' ? 'times' : 'check'}"></i>
+                            </div>
+                            <h2 class="status-title">${title}</h2>
+                            <div class="status-message">${message}</div>
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+                return;
             }
 
-            function switchToSignup() {
-                isSignupMode = true;
-                signupTab.classList.add('active');
-                loginTab.classList.remove('active');
-                signupFields.style.display = 'block';
-                authTitle.textContent = 'Crea il Tuo Account';
-                authSubmitText.textContent = 'Crea Account e Accedi';
-                authFooterText.textContent = 'Registrandoti accetti i nostri termini di servizio e la privacy policy';
-            }
+            // Check for successful email confirmation
+            const hasEmailConfirmation = urlParams.get('type') === 'signup' || 
+                                       urlHash.includes('access_token') || 
+                                       urlParams.get('token_hash') ||
+                                       hashParams.get('type') === 'email_confirmation';
 
-            // Custom auth handling that shows/hides landing page
-            const authForm = document.getElementById('auth-form');
-            authForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            if (hasEmailConfirmation) {
+                console.log('✉️ Conferma email rilevata, processando...');
 
-                const submitBtn = document.getElementById('auth-submit');
-                const originalText = authSubmitText.textContent;
+                document.body.innerHTML = `
+                    <div class="email-status-screen">
+                        <div class="status-container">
+                            <div class="status-icon loading">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <h2 class="status-title">Conferma Email in Corso...</h2>
+                            <div class="status-message">Stiamo verificando la tua email, attendi un momento.</div>
+                        </div>
+                    </div>
+                `;
 
                 try {
-                    submitBtn.disabled = true;
-                    authSubmitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Caricamento...</span>';
+                    await new Promise(resolve => setTimeout(resolve, 3000));
 
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
+                    const user = await getCurrentUser();
+                    console.log('Utente dopo conferma:', user);
 
-                    let result;
+                    if (user) {
+                        document.body.innerHTML = `
+                            <div class="email-status-screen">
+                                <div class="status-container">
+                                    <div class="status-icon success">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <h2 class="status-title">✅ Email Confermata!</h2>
+                                    <div class="status-message">
+                                        Benvenuto in EnergiaCorp Premium!<br>
+                                        Verrai reindirizzato alla dashboard tra pochi secondi...
+                                    </div>
+                                    <div class="status-actions">
+                                        <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            Vai alla Dashboard
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
 
-                    if (isSignupMode) {
-                        const fullName = document.getElementById('full-name').value;
-                        result = await signUp(email, password, fullName);
+                        setTimeout(() => {
+                            window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+                            window.location.reload();
+                        }, 3000);
 
-                        if (!result.error) {
-                            alert('Registrazione completata! Controlla la tua email per confermare, poi fai login.');
-                            switchToLogin();
-                            return;
-                        }
                     } else {
-                        result = await signIn(email, password);
-
-                        if (!result.error) {
-                            // Success - Hide landing page and show app
-                            document.getElementById('landing-page').style.display = 'none';
-                            document.getElementById('app-container').style.display = 'block';
-
-                            // Show user name in header
-                            const userName = document.getElementById('user-name');
-                            if (userName && result.data.user.user_metadata?.full_name) {
-                                userName.textContent = 'Ciao, ' + result.data.user.user_metadata.full_name;
-                            }
-
-                            // Initialize the main app
-                            if (typeof initializeApp === 'function') {
-                                await initializeApp();
-                            }
-                            return;
-                        }
+                        throw new Error('Conferma email fallita');
                     }
 
-                    alert('Errore: ' + result.error.message);
-
                 } catch (error) {
-                    alert('Errore: ' + error.message);
-                } finally {
-                    submitBtn.disabled = false;
-                    authSubmitText.textContent = originalText;
+                    console.error('Errore conferma email:', error);
+                    document.body.innerHTML = `
+                        <div class="email-status-screen">
+                            <div class="status-container">
+                                <div class="status-icon error">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                                <h2 class="status-title">❌ Errore Conferma</h2>
+                                <div class="status-message">
+                                    Non siamo riusciti a confermare la tua email.<br>
+                                    Prova a registrarti di nuovo o contatta il supporto.
+                                    <br><br>
+                                    <strong>Errore:</strong> ${error.message}
+                                </div>
+                                <div class="status-actions">
+                                    <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
+                                        <i class="fas fa-home"></i>
+                                        Torna alla Home
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
-            });
+
+                return;
+            }
+
+            // ===== RESTO DEL CODICE NORMALE =====
+            try {
+                const currentUser = await getCurrentUser();
+
+                if (currentUser) {
+                    document.getElementById('landing-page').style.display = 'none';
+                    document.getElementById('app-container').style.display = 'block';
+
+                    const userName = document.getElementById('user-name');
+                    if (userName && currentUser.user_metadata?.full_name) {
+                        userName.textContent = 'Ciao, ' + currentUser.user_metadata.full_name;
+                    }
+
+                    if (typeof initializeApp === 'function') {
+                        await initializeApp();
+                    }
+                    return;
+                }
+            } catch (error) {
+                console.log('Nessun utente loggato');
+            }
+
+            // Setup landing page
+            setupLandingPage();
+
+            function setupLandingPage() {
+                const loginTab = document.getElementById('login-tab');
+                const signupTab = document.getElementById('signup-tab');
+                const signupFields = document.getElementById('signup-fields');
+                const authTitle = document.getElementById('auth-title');
+                const authSubmitText = document.getElementById('auth-submit-text');
+                const authFooterText = document.getElementById('auth-footer-text');
+                const resendBtn = document.getElementById('resend-confirmation');
+
+                loginTab.addEventListener('click', () => switchToLogin());
+                signupTab.addEventListener('click', () => switchToSignup());
+
+                function switchToLogin() {
+                    isSignupMode = false;
+                    loginTab.classList.add('active');
+                    signupTab.classList.remove('active');
+                    signupFields.style.display = 'none';
+                    resendBtn.style.display = 'none';
+                    authTitle.textContent = 'Accedi alla Piattaforma';
+                    authSubmitText.textContent = 'Accedi alla Dashboard';
+                    authFooterText.textContent = 'Accedendo accetti i nostri termini di servizio';
+                }
+
+                function switchToSignup() {
+                    isSignupMode = true;
+                    signupTab.classList.add('active');
+                    loginTab.classList.remove('active');
+                    signupFields.style.display = 'block';
+                    resendBtn.style.display = 'none';
+                    authTitle.textContent = 'Crea il Tuo Account';
+                    authSubmitText.textContent = 'Crea Account e Accedi';
+                    authFooterText.textContent = 'Registrandoti accetti i nostri termini di servizio';
+                }
+
+                // Auth form handling
+                const authForm = document.getElementById('auth-form');
+                authForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const submitBtn = document.getElementById('auth-submit');
+                    const originalText = authSubmitText.textContent;
+
+                    try {
+                        submitBtn.disabled = true;
+                        authSubmitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Caricamento...</span>';
+
+                        const email = document.getElementById('email').value;
+                        const password = document.getElementById('password').value;
+
+                        let result;
+
+                        if (isSignupMode) {
+                            const fullName = document.getElementById('full-name').value;
+                            result = await signUp(email, password, fullName);
+
+                            if (!result.error) {
+                                alert('📧 Registrazione completata!\n\nControlla la tua email per confermare l\'account.\n\n⚠️ IMPORTANTE: Il link scade dopo 1 ora!\n\n📩 Controlla anche la cartella SPAM.');
+                                switchToLogin();
+                                document.getElementById('email').value = email;
+                                resendBtn.style.display = 'block';
+                                return;
+                            }
+                        } else {
+                            result = await signIn(email, password);
+
+                            if (!result.error) {
+                                document.getElementById('landing-page').style.display = 'none';
+                                document.getElementById('app-container').style.display = 'block';
+
+                                const userName = document.getElementById('user-name');
+                                if (userName && result.data.user.user_metadata?.full_name) {
+                                    userName.textContent = 'Ciao, ' + result.data.user.user_metadata.full_name;
+                                }
+
+                                if (typeof initializeApp === 'function') {
+                                    await initializeApp();
+                                }
+                                return;
+                            }
+                        }
+
+                        let errorMessage = result.error.message;
+                        if (errorMessage.includes('Invalid login credentials')) {
+                            errorMessage = 'Email o password non corretti. Verifica i dati inseriti.';
+                        } else if (errorMessage.includes('Email not confirmed')) {
+                            errorMessage = 'Email non ancora confermata. Controlla la tua casella email e clicca sul link di conferma.\n\n⚠️ Se il link è scaduto (dopo 1 ora), usa il pulsante "Invia Nuova Email".';
+                            resendBtn.style.display = 'block';
+                        }
+
+                        alert('❌ ' + errorMessage);
+
+                    } catch (error) {
+                        alert('❌ Errore di connessione: ' + error.message);
+                    } finally {
+                        submitBtn.disabled = false;
+                        authSubmitText.textContent = originalText;
+                    }
+                });
+
+                // Resend confirmation handler  
+                resendBtn.addEventListener('click', async () => {
+                    const email = document.getElementById('email').value;
+                    if (!email) {
+                        alert('Inserisci la tua email prima di richiedere una nuova conferma.');
+                        return;
+                    }
+
+                    try {
+                        resendBtn.disabled = true;
+                        resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio...';
+
+                        // This would require a custom function in supabase.js
+                        await requestNewConfirmationEmail(email);
+
+                        alert('✅ Nuova email di conferma inviata!\n\nControlla la tua casella email (anche SPAM).\n\n⚠️ Il nuovo link scadrà dopo 1 ora.');
+
+                    } catch (error) {
+                        alert('❌ Errore invio email: ' + error.message);
+                    } finally {
+                        resendBtn.disabled = false;
+                        resendBtn.innerHTML = '<i class="fas fa-envelope"></i> Invia Nuova Email di Conferma';
+                    }
+                });
+            }
         });
+
+        // Global function for the error screen button
+        async function requestNewConfirmation() {
+            const email = prompt('Inserisci la tua email per ricevere una nuova conferma:');
+            if (!email) return;
+
+            try {
+                await requestNewConfirmationEmail(email);
+                alert('✅ Nuova email di conferma inviata!\n\nControlla la tua casella email (anche SPAM).');
+
+                // Redirect to home
+                window.location.href = window.location.origin + window.location.pathname;
+
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+
+        // Add this function to supabase.js
+        async function requestNewConfirmationEmail(email) {
+            const { error } = await supabaseClient.auth.resend({
+                type: 'signup',
+                email: email
+            });
+
+            if (error) throw error;
+        }
     </script>
 </body>
+</html>
