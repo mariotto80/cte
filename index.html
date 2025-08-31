@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Offerte Energia - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header__container">
+            <div class="header__brand">
+                <i class="fas fa-bolt"></i>
+                <h1>EnergiaCorp Dashboard</h1>
+            </div>
+            <nav class="header__nav">
+                <button class="nav-btn active" data-section="dashboard">
+                    <i class="fas fa-chart-dashboard"></i>
+                    Dashboard
+                </button>
+                <button class="nav-btn" data-section="upload">
+                    <i class="fas fa-file-upload"></i>
+                    Upload PDF
+                </button>
+                <button class="nav-btn" data-section="gestione">
+                    <i class="fas fa-table"></i>
+                    Gestione Offerte
+                </button>
+                <button class="nav-btn" data-section="analisi">
+                    <i class="fas fa-chart-line"></i>
+                    Analisi
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar__section">
+                <h3>Filtri Rapidi</h3>
+                <div class="filter-group">
+                    <label>Categoria</label>
+                    <select id="filter-categoria" class="form-control">
+                        <option value="">Tutte</option>
+                        <option value="Domestico">Domestico</option>
+                        <option value="Micro">Micro</option>
+                        <option value="PMI">PMI</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Fornitore</label>
+                    <select id="filter-fornitore" class="form-control">
+                        <option value="">Tutti</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tipo Prezzo</label>
+                    <select id="filter-tipo" class="form-control">
+                        <option value="">Tutti</option>
+                        <option value="Fisso">Fisso</option>
+                        <option value="Variabile">Variabile</option>
+                    </select>
+                </div>
+                <button class="btn btn--primary" onclick="applyFilters()">
+                    <i class="fas fa-filter"></i>
+                    Applica Filtri
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard Principale</h2>
+                    <p>Panoramica delle offerte energetiche</p>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-card__icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="kpi-card__content">
+                            <h3 id="total-offers">0</h3>
+                            <p>Offerte Totali</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card__icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="kpi-card__content">
+                            <h3 id="avg-luce">€0.00</h3>
+                            <p>Prezzo Medio Luce</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card__icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="kpi-card__content">
+                            <h3 id="avg-gas">€0.00</h3>
+                            <p>Prezzo Medio Gas</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card__icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="kpi-card__content">
+                            <h3 id="avg-spread">0.00%</h3>
+                            <p>Spread Medio</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Offers by Category -->
+                <div class="top-offers-section">
+                    <h3>Migliori Offerte per Categoria</h3>
+                    <div class="category-tabs">
+                        <button class="tab-btn active" data-category="Domestico">Domestico</button>
+                        <button class="tab-btn" data-category="Micro">Micro</button>
+                        <button class="tab-btn" data-category="PMI">PMI</button>
+                    </div>
+                    <div id="top-offers-container" class="offers-grid"></div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-section">
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <h3>Confronto Prezzi per Categoria</h3>
+                        <canvas id="price-comparison-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload PDF Section -->
+            <section id="upload-section" class="content-section">
+                <div class="section-header">
+                    <h2>Upload PDF Offerte</h2>
+                    <p>Carica un PDF per estrarre automaticamente i dati dell'offerta</p>
+                </div>
+
+                <div class="upload-container">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-area__content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Trascina qui il PDF o clicca per selezionare</h3>
+                            <p>Formati supportati: PDF (max 10MB)</p>
+                            <input type="file" id="pdf-file" accept=".pdf" style="display: none;">
+                            <button class="btn btn--primary" onclick="document.getElementById('pdf-file').click()">
+                                Seleziona File
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- OCR Processing -->
+                    <div id="ocr-processing" class="ocr-processing hidden">
+                        <div class="processing-animation">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Elaborazione OCR in corso...</h3>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="ocr-progress"></div>
+                            </div>
+                            <p id="ocr-status">Scansione documento...</p>
+                        </div>
+                    </div>
+
+                    <!-- Extracted Data Form -->
+                    <div id="extracted-data-form" class="extracted-form hidden">
+                        <h3>Dati Estratti - Verifica e Correggi</h3>
+                        <form id="offer-form" class="offer-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Fornitore</label>
+                                    <input type="text" id="fornitore" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nome Offerta</label>
+                                    <input type="text" id="nome_offerta" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Categoria</label>
+                                    <select id="categoria" class="form-control" required>
+                                        <option value="">Seleziona categoria</option>
+                                        <option value="Domestico">Domestico</option>
+                                        <option value="Micro">Micro</option>
+                                        <option value="PMI">PMI</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tipo Prezzo</label>
+                                    <select id="tipo_prezzo" class="form-control" required>
+                                        <option value="Fisso">Fisso</option>
+                                        <option value="Variabile">Variabile</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Prezzo Luce (€/kWh)</label>
+                                    <input type="number" id="prezzo_luce" class="form-control" step="0.0001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Spread Luce</label>
+                                    <input type="number" id="spread_luce" class="form-control" step="0.0001">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Prezzo Gas (€/Smc)</label>
+                                    <input type="number" id="prezzo_gas" class="form-control" step="0.0001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Spread Gas</label>
+                                    <input type="number" id="spread_gas" class="form-control" step="0.0001">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quota Fissa Luce (€/mese)</label>
+                                    <input type="number" id="quota_fissa_luce" class="form-control" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quota Fissa Gas (€/mese)</label>
+                                    <input type="number" id="quota_fissa_gas" class="form-control" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Commissioni (€)</label>
+                                    <input type="number" id="commissioni" class="form-control" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Scadenza Offerta</label>
+                                    <input type="date" id="scadenza" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn--outline" onclick="resetUpload()">
+                                    <i class="fas fa-times"></i>
+                                    Annulla
+                                </button>
+                                <button type="submit" class="btn btn--primary">
+                                    <i class="fas fa-check"></i>
+                                    Salva Offerta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestione Offerte Section -->
+            <section id="gestione-section" class="content-section">
+                <div class="section-header">
+                    <h2>Gestione Offerte</h2>
+                    <p>Visualizza, modifica ed elimina le offerte esistenti</p>
+                </div>
+
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-offers" placeholder="Cerca offerte..." class="form-control">
+                    </div>
+                    <button class="btn btn--outline" onclick="exportToCSV()">
+                        <i class="fas fa-download"></i>
+                        Export CSV
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table id="offers-table" class="offers-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('fornitore')">Fornitore <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('nome_offerta')">Offerta <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('categoria')">Categoria <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('tipo_prezzo')">Tipo <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('prezzo_luce')">Luce (€/kWh) <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('prezzo_gas')">Gas (€/Smc) <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable('scadenza')">Scadenza <i class="fas fa-sort"></i></th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="offers-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Analisi Section -->
+            <section id="analisi-section" class="content-section">
+                <div class="section-header">
+                    <h2>Analisi Avanzata</h2>
+                    <p>Confronti dettagliati e trend di mercato</p>
+                </div>
+
+                <div class="analysis-grid">
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <h3>Confronto per Fornitore</h3>
+                        <canvas id="supplier-comparison-chart"></canvas>
+                    </div>
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <h3>Analisi Spread e Commissioni</h3>
+                        <canvas id="spread-analysis-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="best-offers-analysis">
+                    <h3>Migliori Offerte per Scenario</h3>
+                    <div class="scenario-selector">
+                        <label>Scegli scenario:</label>
+                        <select id="scenario-selector" class="form-control">
+                            <option value="prezzo_totale">Miglior Prezzo Totale</option>
+                            <option value="prezzo_luce">Miglior Prezzo Luce</option>
+                            <option value="prezzo_gas">Miglior Prezzo Gas</option>
+                            <option value="commissioni">Minori Commissioni</option>
+                        </select>
+                    </div>
+                    <div id="scenario-results" class="scenario-results"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer__content">
+            <p>&copy; 2025 EnergiaCorp Dashboard. Sistema di gestione offerte energetiche.</p>
+            <div class="footer__links">
+                <span>Ultimo aggiornamento: <span id="last-update"></span></span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal for Edit Offer -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal__backdrop" onclick="closeEditModal()"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3>Modifica Offerta</h3>
+                <button class="modal__close" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal__body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Fornitore</label>
+                            <input type="text" id="edit-fornitore" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nome Offerta</label>
+                            <input type="text" id="edit-nome_offerta" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prezzo Luce (€/kWh)</label>
+                            <input type="number" id="edit-prezzo_luce" class="form-control" step="0.0001" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prezzo Gas (€/Smc)</label>
+                            <input type="number" id="edit-prezzo_gas" class="form-control" step="0.0001" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Commissioni (€)</label>
+                            <input type="number" id="edit-commissioni" class="form-control" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Scadenza</label>
+                            <input type="date" id="edit-scadenza" class="form-control" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button type="button" class="btn btn--outline" onclick="closeEditModal()">Annulla</button>
+                <button type="button" class="btn btn--primary" onclick="saveEditedOffer()">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
