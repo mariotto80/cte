@@ -1,8 +1,8 @@
 // supabase.js - Configurazione Supabase e funzioni CRUD
 
 // RICORDA: SOSTITUISCI questi valori con le tue credenziali
-const SUPABASE_URL = 'https://IL-TUO-PROJECT-ID.supabase.co'; // Inserisci il tuo project URL
-const SUPABASE_ANON_KEY = 'LA-TUA-ANON-KEY'; // Inserisci la tua anon key
+const SUPABASE_URL = 'https://ozmqftibxuspznnqaayh.supabase.co'; // Inserisci il tuo project URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk'; // Inserisci la tua anon key
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
