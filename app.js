@@ -1,1110 +1,1366 @@
-// Global variables
+// ===== GLOBAL VARIABLES =====
 let offers = [];
 let filteredOffers = [];
 let currentSort = { field: null, direction: 'asc' };
 let charts = {};
+let ocrWorker = null;
+let currentTheme = 'light';
+let currentUser = null;
 
-// Initialize app on DOM load
+// ===== ENHANCED OCR CONFIGURATION =====
+const OCR_CONFIG = {
+    lang: 'ita+eng',
+    oem: 1,
+    psm: 6,
+    tessedit_char_whitelist: '',
+    tessedit_pageseg_mode: 6
+};
+
+// Fornitori energetici italiani conosciuti
+const KNOWN_SUPPLIERS = [
+    'Enel Energia', 'Plenitude', 'Edison', 'A2A Energia', 'Sorgenia',
+    'E.ON Energia', 'Iren Mercato', 'Hera Comm', 'Wekiwi', 'Illumia',
+    'NeN', 'Pulsee', 'Engie Italia', 'Acea Energia', 'VIVI Energia',
+    'Optima Italia', 'Estra', 'Alperia', 'Iberdrola', 'Tate',
+    'ENI', 'Enel', 'Edison Energia', 'A2A', 'Iren'
+];
+
+// Enhanced Field Recognition Patterns
+const ENHANCED_PATTERNS = {
+    prezzo_luce: [
+        /(?:energia\s+elettrica|luce|elettrica)[\s\S]*?(€?\s*\d+[,\.]\d{3,4})\s*(?:€|euro)?[\s\/]*k?Wh/gim,
+        /(?:prezzo|costo|tariffa)[\s\S]*?(?:luce|elettrica)[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /(\d+[,\.]\d{3,4})\s*cent[\s\/]*k?Wh/gim,
+        /luce[\s\|]*(\d+[,\.]\d{3,4})/gim,
+        /(\d+[,\.]\d{3,4})\s*€\/kWh/gim,
+        /€\s*(\d+[,\.]\d{3,4})[\s\/]*kWh/gim
+    ],
+    prezzo_gas: [
+        /(?:gas|metano)[\s\S]*?(€?\s*\d+[,\.]\d{3,4})\s*(?:€|euro)?[\s\/]*(?:Smc|smc|m3|mc)/gim,
+        /(?:prezzo|costo|tariffa)[\s\S]*?gas[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /(\d+[,\.]\d{3,4})\s*cent[\s\/]*(?:Smc|smc)/gim,
+        /gas[\s\|]*(\d+[,\.]\d{3,4})/gim,
+        /(\d+[,\.]\d{3,4})\s*€\/Smc/gim,
+        /€\s*(\d+[,\.]\d{3,4})[\s\/]*Smc/gim
+    ],
+    quota_fissa_luce: [
+        /(?:quota\s+fissa|canone\s+mensile|contributo\s+fisso)[\s\S]*?(?:luce|elettrica)[\s\S]*?(€?\s*\d+[,\.]\d{1,2})\s*(?:€|euro)?[\s\/]*mes[ei]/gim,
+        /(\d+[,\.]\d{2})\s*€[\s\/]*mese[\s\S]*?luce/gim,
+        /luce[\s\S]*?(\d+[,\.]\d{2})\s*€[\s\/]*mese/gim,
+        /quota.*luce[\s\|]*(\d+[,\.]\d{2})/gim
+    ],
+    quota_fissa_gas: [
+        /(?:quota\s+fissa|canone\s+mensile|contributo\s+fisso)[\s\S]*?gas[\s\S]*?(€?\s*\d+[,\.]\d{1,2})\s*(?:€|euro)?[\s\/]*mes[ei]/gim,
+        /(\d+[,\.]\d{2})\s*€[\s\/]*mese[\s\S]*?gas/gim,
+        /gas[\s\S]*?(\d+[,\.]\d{2})\s*€[\s\/]*mese/gim,
+        /quota.*gas[\s\|]*(\d+[,\.]\d{2})/gim
+    ],
+    commissioni: [
+        /commissioni[\s\S]*?(€?\s*\d+[,\.]\d{1,2})/gim,
+        /oneri[\s\S]*?(€?\s*\d+[,\.]\d{1,2})/gim,
+        /(?:spese|costi)\s+(?:attivazione|aggiuntivi)[\s\S]*?(€?\s*\d+[,\.]\d{1,2})/gim,
+        /attivazione[\s\S]*?(€?\s*\d+[,\.]\d{1,2})/gim,
+        /(\d+[,\.]\d{2})\s*€.*(?:commissioni|oneri|spese)/gim
+    ],
+    spread_luce: [
+        /spread[\s\S]*?luce[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /maggiorazione[\s\S]*?luce[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /margine[\s\S]*?(?:luce|elettrica)[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /\+\s*(\d+[,\.]\d{3,4})[\s\S]*?luce/gim
+    ],
+    spread_gas: [
+        /spread[\s\S]*?gas[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /maggiorazione[\s\S]*?gas[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /margine[\s\S]*?gas[\s\S]*?(€?\s*\d+[,\.]\d{3,4})/gim,
+        /\+\s*(\d+[,\.]\d{3,4})[\s\S]*?gas/gim
+    ],
+    scadenza: [
+        /(?:valida|scad|valid)[\s\S]*?fino[\s\S]*?(\d{1,2}[\s\/\-\.]\d{1,2}[\s\/\-\.]\d{2,4})/gim,
+        /(\d{1,2}[\s\/\-\.]\d{1,2}[\s\/\-\.]\d{2,4})[\s\S]*?scadenza/gim,
+        /scadenza[\s\S]*?(\d{1,2}[\s\/\-\.]\d{1,2}[\s\/\-\.]\d{2,4})/gim,
+        /fino\s+al[\s\S]*?(\d{1,2}[\s\/\-\.]\d{1,2}[\s\/\-\.]\d{2,4})/gim
+    ],
+    fornitore: [
+        new RegExp(`(${KNOWN_SUPPLIERS.join('|')})`, 'gim')
+    ],
+    table_structure: [
+        /luce[\s\|]*gas[\s\|]*quota/gim,
+        /domestico[\s\|]*micro[\s\|]*pmi/gim,
+        /prezzo[\s\|]*quota[\s\|]*commissioni/gim,
+        /\|[\s]*\d+[,\.]\d+[\s]*\|/gim
+    ],
+    categoria: [
+        /domestico/gim,
+        /micro[\s]*impres[ae]/gim,
+        /pmi|piccol[ae]\s+medi[ae]\s+impres[ae]/gim,
+        /casa|famiglia|residenzial[ei]/gim
+    ]
+};
+
+// ===== IMAGE PREPROCESSING FUNCTIONS =====
+function enhanceImageForOCR(canvas) {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    enhanceContrast(imageData, 1.4);
+    sharpenImage(imageData);
+    convertToOptimalGrayscale(imageData);
+    adaptiveBinarization(imageData);
+    removeNoise(imageData);
+
+    ctx.putImageData(imageData, 0, 0);
+    return scaleToOptimalDPI(canvas);
+}
+
+function enhanceContrast(imageData, factor) {
+    const data = imageData.data;
+    const factor255 = (259 * (factor * 255 + 255)) / (255 * (259 - factor * 255));
+
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.max(0, Math.min(255, factor255 * (data[i] - 128) + 128));
+        data[i + 1] = Math.max(0, Math.min(255, factor255 * (data[i + 1] - 128) + 128));
+        data[i + 2] = Math.max(0, Math.min(255, factor255 * (data[i + 2] - 128) + 128));
+    }
+}
+
+function sharpenImage(imageData) {
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    const kernel = [-1, -1, -1, -1, 9, -1, -1, -1, -1];
+    const output = new Uint8ClampedArray(data);
+
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4;
+
+            for (let c = 0; c < 3; c++) {
+                let sum = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const kidx = ((y + ky) * width + (x + kx)) * 4 + c;
+                        sum += data[kidx] * kernel[(ky + 1) * 3 + (kx + 1)];
+                    }
+                }
+                output[idx + c] = Math.max(0, Math.min(255, sum));
+            }
+        }
+    }
+    data.set(output);
+}
+
+function convertToOptimalGrayscale(imageData) {
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+        data[i] = gray;
+        data[i + 1] = gray;
+        data[i + 2] = gray;
+    }
+}
+
+function adaptiveBinarization(imageData) {
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    const windowSize = 15;
+    const threshold = 0.15;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4;
+
+            let sum = 0;
+            let count = 0;
+
+            for (let wy = Math.max(0, y - windowSize); wy < Math.min(height, y + windowSize); wy++) {
+                for (let wx = Math.max(0, x - windowSize); wx < Math.min(width, x + windowSize); wx++) {
+                    const widx = (wy * width + wx) * 4;
+                    sum += data[widx];
+                    count++;
+                }
+            }
+
+            const localMean = sum / count;
+            const pixelValue = data[idx];
+
+            if (pixelValue < localMean * (1 - threshold)) {
+                data[idx] = data[idx + 1] = data[idx + 2] = 0;
+            } else {
+                data[idx] = data[idx + 1] = data[idx + 2] = 255;
+            }
+        }
+    }
+}
+
+function removeNoise(imageData) {
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    const output = new Uint8ClampedArray(data);
+
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4;
+            const neighbors = [];
+
+            for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++) {
+                    const kidx = ((y + ky) * width + (x + kx)) * 4;
+                    neighbors.push(data[kidx]);
+                }
+            }
+
+            neighbors.sort((a, b) => a - b);
+            const median = neighbors[Math.floor(neighbors.length / 2)];
+
+            output[idx] = output[idx + 1] = output[idx + 2] = median;
+        }
+    }
+
+    data.set(output);
+}
+
+function scaleToOptimalDPI(canvas) {
+    const optimalWidth = Math.min(canvas.width * 2, 2000);
+    const scaleFactor = optimalWidth / canvas.width;
+
+    const scaledCanvas = document.createElement('canvas');
+    const scaledCtx = scaledCanvas.getContext('2d');
+
+    scaledCanvas.width = optimalWidth;
+    scaledCanvas.height = canvas.height * scaleFactor;
+
+    scaledCtx.imageSmoothingEnabled = false;
+    scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+    return scaledCanvas;
+}
+
+// ===== DOCUMENT CLASSIFICATION =====
+function classifyDocument(text) {
+    const classification = {
+        supplier: null,
+        format: 'unknown',
+        confidence: 0,
+        category_hints: []
+    };
+
+    for (const supplier of KNOWN_SUPPLIERS) {
+        const regex = new RegExp(supplier.replace(/\s+/g, '\\s*'), 'gim');
+        if (regex.test(text)) {
+            classification.supplier = supplier;
+            classification.confidence += 0.3;
+            break;
+        }
+    }
+
+    if (ENHANCED_PATTERNS.table_structure.some(pattern => pattern.test(text))) {
+        classification.format = 'table';
+        classification.confidence += 0.2;
+    } else if (/contratto|offerta|proposta\s+commerciale/gim.test(text)) {
+        classification.format = 'contract';
+        classification.confidence += 0.15;
+    } else if (/listino|tariffario|scheda/gim.test(text)) {
+        classification.format = 'price_list';
+        classification.confidence += 0.1;
+    }
+
+    if (/domestico|casa|famiglia|residenzial[ei]/gim.test(text)) {
+        classification.category_hints.push('Domestico');
+    }
+    if (/micro|piccol[ae]\s*impres[ae]/gim.test(text)) {
+        classification.category_hints.push('Micro');
+    }
+    if (/pmi|piccol[ae]\s+medi[ae]\s+impres[ae]/gim.test(text)) {
+        classification.category_hints.push('PMI');
+    }
+
+    return classification;
+}
+
+// ===== ENHANCED OCR PROCESSING =====
+async function processFileWithAdvancedOCR(file) {
+    if (!file) return null;
+
+    try {
+        const progressBar = document.getElementById('ocr-progress');
+        const progressText = document.getElementById('progress-text');
+
+        if (progressBar) progressBar.style.display = 'block';
+
+        updateProgress(5, 'Inizializzazione OCR avanzato...');
+
+        if (!ocrWorker) {
+            ocrWorker = await Tesseract.createWorker();
+            await ocrWorker.loadLanguage(OCR_CONFIG.lang);
+            await ocrWorker.initialize(OCR_CONFIG.lang);
+            await ocrWorker.setParameters(OCR_CONFIG);
+        }
+
+        updateProgress(15, 'Pre-elaborazione documento...');
+
+        let imagesToProcess = [];
+        let rawText = '';
+
+        if (file.type === 'application/pdf') {
+            try {
+                rawText = await extractNativeTextFromPDF(file);
+                updateProgress(25, 'Testo nativo estratto...');
+            } catch (e) {
+                console.log('Native text extraction failed, using OCR...');
+            }
+
+            if (!rawText || rawText.length < 100) {
+                imagesToProcess = await convertPDFToEnhancedImages(file);
+            }
+        } else {
+            imagesToProcess = [file];
+        }
+
+        updateProgress(40, 'Classificazione documento...');
+
+        let allText = rawText;
+
+        if (imagesToProcess.length > 0) {
+            updateProgress(50, 'Riconoscimento OCR avanzato...');
+
+            for (let i = 0; i < imagesToProcess.length; i++) {
+                const progress = 50 + (35 * (i + 1) / imagesToProcess.length);
+                updateProgress(progress, `Elaborazione pagina ${i + 1}/${imagesToProcess.length}...`);
+
+                const enhancedImage = enhanceImageForOCR(imagesToProcess[i]);
+
+                const { data: { text: generalText } } = await ocrWorker.recognize(enhancedImage);
+
+                await ocrWorker.setParameters({
+                    tessedit_char_whitelist: '0123456789.,'
+                });
+                const { data: { text: numbersText } } = await ocrWorker.recognize(enhancedImage);
+
+                await ocrWorker.setParameters(OCR_CONFIG);
+
+                allText += generalText + '\n\n';
+            }
+        }
+
+        updateProgress(85, 'Classificazione e analisi...');
+
+        const classification = classifyDocument(allText);
+
+        updateProgress(90, 'Estrazione dati intelligente...');
+
+        let extractedData;
+        if (classification.format === 'table') {
+            extractedData = parseTableDocument(allText);
+        } else {
+            extractedData = extractFieldsWithAdvancedParsing(allText);
+        }
+
+        updateProgress(95, 'Validazione e correzione...');
+
+        const validatedData = validateAndCorrectOCR(extractedData, classification);
+        validatedData.pdf_filename = file.name;
+        validatedData.document_classification = classification;
+
+        updateProgress(100, 'Completato!');
+
+        setTimeout(() => {
+            if (progressBar) progressBar.style.display = 'none';
+        }, 1500);
+
+        return validatedData;
+
+    } catch (error) {
+        console.error('Advanced OCR Error:', error);
+        showNotification('Errore durante il riconoscimento OCR avanzato: ' + error.message, 'error');
+        return null;
+    }
+}
+
+async function extractNativeTextFromPDF(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n\n';
+    }
+
+    return fullText;
+}
+
+async function convertPDFToEnhancedImages(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    const images = [];
+
+    for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+        const page = await pdf.getPage(i);
+        const scale = 2.5;
+        const viewport = page.getViewport({ scale });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
+
+        images.push(canvas);
+    }
+
+    return images;
+}
+
+function parseTableDocument(text) {
+    const extracted = getDefaultExtractionObject();
+
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+    let currentSection = null;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (/domestico/gim.test(line)) currentSection = 'Domestico';
+        else if (/micro/gim.test(line)) currentSection = 'Micro';
+        else if (/pmi/gim.test(line)) currentSection = 'PMI';
+
+        const values = line.match(/\d+[,\.]\d+/g);
+        if (values && values.length >= 2) {
+            if (!extracted.prezzo_luce && values[0]) {
+                extracted.prezzo_luce = parseFloat(values[0].replace(',', '.'));
+            }
+            if (!extracted.prezzo_gas && values[1]) {
+                extracted.prezzo_gas = parseFloat(values[1].replace(',', '.'));
+            }
+        }
+    }
+
+    const standardExtraction = extractFieldsWithAdvancedParsing(text);
+
+    Object.keys(standardExtraction).forEach(key => {
+        if (!extracted[key] && standardExtraction[key]) {
+            extracted[key] = standardExtraction[key];
+        }
+    });
+
+    if (currentSection) {
+        extracted.categoria = currentSection;
+    }
+
+    return extracted;
+}
+
+function extractFieldsWithAdvancedParsing(text) {
+    const extracted = getDefaultExtractionObject();
+    let totalMatches = 0;
+
+    for (const [field, patterns] of Object.entries(ENHANCED_PATTERNS)) {
+        if (field === 'table_structure' || field === 'categoria') continue;
+
+        for (const pattern of patterns) {
+            const matches = text.match(pattern);
+            if (matches) {
+                let value = matches[1] || matches[0];
+
+                if (field === 'fornitore') {
+                    value = correctSupplierName(value);
+                    if (value) {
+                        extracted[field] = value;
+                        totalMatches++;
+                        break;
+                    }
+                } else if (field.includes('prezzo') || field.includes('quota') || field.includes('spread') || field === 'commissioni') {
+                    const numValue = cleanAndParseNumber(value);
+                    if (numValue !== null && isReasonableValue(field, numValue)) {
+                        extracted[field] = numValue;
+                        totalMatches++;
+                        break;
+                    }
+                } else if (field === 'scadenza') {
+                    const dateValue = parseAndValidateDate(value);
+                    if (dateValue) {
+                        extracted[field] = dateValue;
+                        totalMatches++;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!extracted.categoria) {
+        if (ENHANCED_PATTERNS.categoria[0].test(text)) extracted.categoria = 'Domestico';
+        else if (ENHANCED_PATTERNS.categoria[1].test(text)) extracted.categoria = 'Micro';
+        else if (ENHANCED_PATTERNS.categoria[2].test(text)) extracted.categoria = 'PMI';
+        else if (ENHANCED_PATTERNS.categoria[3].test(text)) extracted.categoria = 'Domestico';
+    }
+
+    if (!extracted.nome_offerta && extracted.fornitore) {
+        extracted.nome_offerta = `${extracted.fornitore} ${extracted.tipo_prezzo || 'Standard'} ${extracted.categoria || ''}`.trim();
+    }
+
+    extracted.confidence_score = Math.min(0.95, 0.4 + (totalMatches * 0.08));
+
+    return extracted;
+}
+
+function getDefaultExtractionObject() {
+    return {
+        fornitore: '',
+        nome_offerta: '',
+        categoria: 'Domestico',
+        tipo_prezzo: 'Fisso',
+        prezzo_luce: 0,
+        spread_luce: 0,
+        prezzo_gas: 0,
+        spread_gas: 0,
+        quota_fissa_luce: 0,
+        quota_fissa_gas: 0,
+        commissioni: 0,
+        scadenza: '',
+        durata_mesi: 12,
+        confidence_score: 0.5
+    };
+}
+
+function correctSupplierName(name) {
+    if (!name) return null;
+
+    const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    for (const supplier of KNOWN_SUPPLIERS) {
+        const supplierNormalized = supplier.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        if (normalized === supplierNormalized) return supplier;
+
+        if (levenshteinDistance(normalized, supplierNormalized) <= 2) {
+            return supplier;
+        }
+
+        if (normalized.length > 3 && (
+            supplierNormalized.includes(normalized) || 
+            normalized.includes(supplierNormalized)
+        )) {
+            return supplier;
+        }
+    }
+
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
+function levenshteinDistance(str1, str2) {
+    const matrix = [];
+
+    for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+
+    return matrix[str2.length][str1.length];
+}
+
+function cleanAndParseNumber(value) {
+    if (!value) return null;
+
+    let cleaned = value.toString().replace(/[^0-9,\.]/g, '');
+
+    if (cleaned.includes(',')) {
+        if (cleaned.includes('.') && cleaned.indexOf(',') > cleaned.indexOf('.')) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else {
+            cleaned = cleaned.replace(',', '.');
+        }
+    }
+
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
+}
+
+function isReasonableValue(field, value) {
+    const ranges = {
+        prezzo_luce: [0.01, 1.0],
+        prezzo_gas: [0.1, 2.0],
+        spread_luce: [0.0, 0.1],
+        spread_gas: [0.0, 0.3],
+        quota_fissa_luce: [0.0, 50.0],
+        quota_fissa_gas: [0.0, 50.0],
+        commissioni: [0.0, 200.0]
+    };
+
+    const range = ranges[field];
+    if (!range) return true;
+
+    return value >= range[0] && value <= range[1];
+}
+
+function parseAndValidateDate(dateStr) {
+    if (!dateStr) return null;
+
+    const datePatterns = [
+        /^(\d{1,2})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{2,4})$/,
+        /^(\d{2,4})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{1,2})$/
+    ];
+
+    for (const pattern of datePatterns) {
+        const match = dateStr.trim().match(pattern);
+        if (match) {
+            let day = parseInt(match[1]);
+            let month = parseInt(match[2]);
+            let year = parseInt(match[3]);
+
+            if (year < 100) year += 2000;
+            if (year < 2020) year += 2000;
+
+            if (day > 12) {
+                [day, month] = [month, day];
+            }
+
+            const date = new Date(year, month - 1, day);
+            if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+                return date.toISOString().split('T')[0];
+            }
+        }
+    }
+
+    return null;
+}
+
+function validateAndCorrectOCR(extractedData, classification) {
+    const corrected = { ...extractedData };
+    let confidence = extractedData.confidence_score || 0.5;
+
+    if (corrected.prezzo_luce > 0.8 || corrected.prezzo_luce < 0.02) {
+        corrected.prezzo_luce = null;
+        confidence *= 0.7;
+    }
+
+    if (corrected.prezzo_gas > 1.5 || corrected.prezzo_gas < 0.1) {
+        corrected.prezzo_gas = null;
+        confidence *= 0.7;
+    }
+
+    if (classification.supplier && !corrected.fornitore) {
+        corrected.fornitore = classification.supplier;
+        confidence += 0.1;
+    }
+
+    if (!corrected.categoria && classification.category_hints.length > 0) {
+        corrected.categoria = classification.category_hints[0];
+        confidence += 0.05;
+    }
+
+    if (!corrected.scadenza) {
+        const futureDate = new Date();
+        futureDate.setMonth(futureDate.getMonth() + (corrected.durata_mesi || 12));
+        corrected.scadenza = futureDate.toISOString().split('T')[0];
+    }
+
+    if (corrected.spread_luce > 0 && corrected.prezzo_luce > 0.15) {
+        corrected.spread_luce = 0;
+    }
+
+    corrected.confidence_score = Math.max(0.1, Math.min(0.99, confidence));
+
+    return corrected;
+}
+
+// ===== DATABASE OPERATIONS =====
+async function loadOffersFromDatabase() {
+    try {
+        showLoadingState(true);
+        const result = await loadOffers();
+
+        if (result.error) throw new Error(result.error.message);
+
+        offers = result.data || [];
+        filteredOffers = [...offers];
+
+        updateDashboard();
+        updateOffersTable();
+
+    } catch (error) {
+        console.error('Error loading offers:', error);
+        showNotification('Errore caricamento offerte: ' + error.message, 'error');
+    } finally {
+        showLoadingState(false);
+    }
+}
+
+async function saveOfferToDatabase(offerData) {
+    try {
+        showLoadingState(true);
+        const result = await saveOffer(offerData);
+
+        if (result.error) throw new Error(result.error.message);
+
+        showNotification('Offerta salvata con successo!', 'success');
+        await loadOffersFromDatabase();
+
+        return result.data;
+
+    } catch (error) {
+        console.error('Error saving offer:', error);
+        showNotification('Errore salvataggio: ' + error.message, 'error');
+        throw error;
+    } finally {
+        showLoadingState(false);
+    }
+}
+
+async function updateOfferInDatabase(offerId, updates) {
+    try {
+        showLoadingState(true);
+        const result = await updateOffer(offerId, updates);
+
+        if (result.error) throw new Error(result.error.message);
+
+        showNotification('Offerta aggiornata con successo!', 'success');
+        await loadOffersFromDatabase();
+
+        return result.data;
+
+    } catch (error) {
+        console.error('Error updating offer:', error);
+        showNotification('Errore aggiornamento: ' + error.message, 'error');
+        throw error;
+    } finally {
+        showLoadingState(false);
+    }
+}
+
+async function deleteOfferFromDatabase(offerId) {
+    try {
+        showLoadingState(true);
+        const result = await deleteOffer(offerId);
+
+        if (result.error) throw new Error(result.error.message);
+
+        showNotification('Offerta eliminata con successo!', 'success');
+        await loadOffersFromDatabase();
+
+    } catch (error) {
+        console.error('Error deleting offer:', error);
+        showNotification('Errore eliminazione: ' + error.message, 'error');
+        throw error;
+    } finally {
+        showLoadingState(false);
+    }
+}
+
+function setupRealtimeSubscription() {
+    if (!currentUser) return;
+
+    supabaseClient
+        .channel('offers-changes')
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'offerte_energia',
+            filter: `user_id=eq.${currentUser.id}`
+        }, (payload) => {
+            console.log('Real-time update:', payload);
+            loadOffersFromDatabase();
+        })
+        .subscribe();
+}
+
+// ===== AUTHENTICATION HANDLING =====
+let isSignupMode = false;
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
 
-// Initialize application
 async function initializeApp() {
     try {
-        // Load initial data
-        await loadInitialData();
-        
-        // Setup event listeners
+        currentUser = await getCurrentUser();
+
+        if (!currentUser) {
+            showLoginModal();
+            return;
+        }
+
+        await loadOffersFromDatabase();
         setupEventListeners();
-        
-        // Initialize dashboard
         initializeDashboard();
-        
-        // Update footer
         updateLastUpdate();
-        
-        // Show dashboard by default
         showSection('dashboard');
-        
+
+        setupRealtimeSubscription();
+
     } catch (error) {
         console.error('Error initializing app:', error);
-        showNotification('Errore nel caricamento dell\'applicazione', 'error');
+        showNotification('Errore caricamento applicazione: ' + error.message, 'error');
     }
 }
 
-// Load initial data from the provided JSON
-async function loadInitialData() {
-    const initialData = [
-        {
-            "id": "OFF_001",
-            "fornitore": "A2A Energia",
-            "nome_offerta": "A2A Energia Variabile Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1185,
-            "spread_luce": 0.0084,
-            "prezzo_gas": 0.3098,
-            "spread_gas": 0.054,
-            "quota_fissa_luce": 7.53,
-            "quota_fissa_gas": 6.02,
-            "commissioni": 15.13,
-            "scadenza": "2027-08-21",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_002",
-            "fornitore": "Wekiwi",
-            "nome_offerta": "Wekiwi Variabile Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.0879,
-            "spread_luce": 0.0141,
-            "prezzo_gas": 0.3152,
-            "spread_gas": 0.0841,
-            "quota_fissa_luce": 8.85,
-            "quota_fissa_gas": 7.3,
-            "commissioni": 20.8,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_003",
-            "fornitore": "Plenitude",
-            "nome_offerta": "Plenitude Fisso Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.0925,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.3781,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 7.92,
-            "quota_fissa_gas": 6.97,
-            "commissioni": 19.56,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_004",
-            "fornitore": "Tate",
-            "nome_offerta": "Tate Fisso Micro",
-            "categoria": "Micro",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1164,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.5342,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 11.36,
-            "quota_fissa_gas": 10.33,
-            "commissioni": 24.74,
-            "scadenza": "2027-08-21",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_005",
-            "fornitore": "Illumia",
-            "nome_offerta": "Illumia Fisso Micro",
-            "categoria": "Micro",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1188,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.4577,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 13.03,
-            "quota_fissa_gas": 12.48,
-            "commissioni": 0.94,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_006",
-            "fornitore": "Iren Mercato",
-            "nome_offerta": "Iren Mercato Fisso Micro",
-            "categoria": "Micro",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1568,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.5111,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 14.25,
-            "quota_fissa_gas": 13.37,
-            "commissioni": 5.98,
-            "scadenza": "2027-08-21",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_007",
-            "fornitore": "Tate",
-            "nome_offerta": "Tate Fisso PMI",
-            "categoria": "PMI",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1531,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.513,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 25.61,
-            "quota_fissa_gas": 20.41,
-            "commissioni": 9.43,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_008",
-            "fornitore": "Acea Energia",
-            "nome_offerta": "Acea Energia Variabile PMI",
-            "categoria": "PMI",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1126,
-            "spread_luce": 0.0112,
-            "prezzo_gas": 0.3445,
-            "spread_gas": 0.1018,
-            "quota_fissa_luce": 18.0,
-            "quota_fissa_gas": 31.34,
-            "commissioni": 3.11,
-            "scadenza": "2027-08-21",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_009",
-            "fornitore": "Illumia",
-            "nome_offerta": "Illumia Variabile PMI",
-            "categoria": "PMI",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1155,
-            "spread_luce": 0.0128,
-            "prezzo_gas": 0.3747,
-            "spread_gas": 0.0651,
-            "quota_fissa_luce": 26.64,
-            "quota_fissa_gas": 32.27,
-            "commissioni": 6.48,
-            "scadenza": "2028-08-15",
-            "durata_mesi": 36,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_010",
-            "fornitore": "Enel Energia",
-            "nome_offerta": "Enel Energia Fisso Domestico",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Fisso",
-            "prezzo_luce": 0.1245,
-            "spread_luce": 0.0,
-            "prezzo_gas": 0.4123,
-            "spread_gas": 0.0,
-            "quota_fissa_luce": 9.50,
-            "quota_fissa_gas": 8.75,
-            "commissioni": 12.50,
-            "scadenza": "2026-12-31",
-            "durata_mesi": 12,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_011",
-            "fornitore": "Edison",
-            "nome_offerta": "Edison Dynamic Luce e Gas",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1337,
-            "spread_luce": 0.0095,
-            "prezzo_gas": 0.4421,
-            "spread_gas": 0.075,
-            "quota_fissa_luce": 8.20,
-            "quota_fissa_gas": 7.85,
-            "commissioni": 18.25,
-            "scadenza": "2027-06-30",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        },
-        {
-            "id": "OFF_012",
-            "fornitore": "Sorgenia",
-            "nome_offerta": "Sorgenia Next Energy Sunlight",
-            "categoria": "Domestico",
-            "tipo_prezzo": "Variabile",
-            "prezzo_luce": 0.1208,
-            "spread_luce": 0.006,
-            "prezzo_gas": 0.4371,
-            "spread_gas": 0.080,
-            "quota_fissa_luce": 6.65,
-            "quota_fissa_gas": 6.65,
-            "commissioni": 0.0,
-            "scadenza": "2027-12-31",
-            "durata_mesi": 24,
-            "data_inserimento": "2025-08-31 10:38:15",
-            "attivo": true
-        }
-    ];
-    
-    offers = initialData.filter(offer => offer.attivo);
-    filteredOffers = [...offers];
+function showLoginModal() {
+    document.getElementById('login-modal').style.display = 'flex';
 }
 
-// Setup event listeners
+function hideLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+if (document.getElementById('auth-form')) {
+    document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+}
+
+if (document.getElementById('auth-switch')) {
+    document.getElementById('auth-switch').addEventListener('click', toggleAuthMode);
+}
+
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('auth-submit');
+    const originalText = submitBtn.textContent;
+
+    try {
+        submitBtn.textContent = 'Caricamento...';
+        submitBtn.disabled = true;
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        let result;
+
+        if (isSignupMode) {
+            const fullName = document.getElementById('full-name').value;
+            result = await signUp(email, password, fullName);
+
+            if (!result.error) {
+                showNotification('Registrazione completata! Controlla la tua email per confermare.', 'success');
+                toggleAuthMode({ preventDefault: () => {} });
+                return;
+            }
+        } else {
+            result = await signIn(email, password);
+
+            if (!result.error) {
+                hideLoginModal();
+                await initializeApp();
+                showNotification('Login effettuato con successo!', 'success');
+                return;
+            }
+        }
+
+        showNotification('Errore: ' + result.error.message, 'error');
+
+    } catch (error) {
+        showNotification('Errore: ' + error.message, 'error');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+function toggleAuthMode(e) {
+    e.preventDefault();
+    isSignupMode = !isSignupMode;
+
+    const title = document.getElementById('auth-title');
+    const submit = document.getElementById('auth-submit');
+    const signupFields = document.getElementById('signup-fields');
+    const switchText = document.getElementById('switch-text');
+    const switchLink = document.getElementById('auth-switch');
+
+    if (isSignupMode) {
+        title.textContent = 'Registrazione';
+        submit.textContent = 'Registrati';
+        signupFields.style.display = 'block';
+        switchText.textContent = 'Hai già un account?';
+        switchLink.textContent = 'Accedi';
+    } else {
+        title.textContent = 'Login';
+        submit.textContent = 'Accedi';
+        signupFields.style.display = 'none';
+        switchText.textContent = 'Non hai un account?';
+        switchLink.textContent = 'Registrati';
+    }
+}
+
+async function handleLogout() {
+    try {
+        await signOut();
+        location.reload();
+    } catch (error) {
+        showNotification('Errore durante logout: ' + error.message, 'error');
+    }
+}
+
+// ===== EVENT LISTENERS =====
 function setupEventListeners() {
-    // Navigation - Fixed implementation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const section = btn.getAttribute('data-section');
-            if (section) {
-                showSection(section);
-            }
+            const section = e.currentTarget.dataset.section;
+            showSection(section);
         });
     });
 
-    // Category tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const category = e.target.getAttribute('data-category');
-            if (category) {
-                showTopOffers(category);
-            }
-        });
-    });
-
-    // Upload area
-    setupUploadArea();
-
-    // Form submissions
-    const offerForm = document.getElementById('offer-form');
-    if (offerForm) {
-        offerForm.addEventListener('submit', saveNewOffer);
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
     }
-    
-    // Search functionality
+
+    const fileInput = document.getElementById('pdf-file');
+    const dropZone = document.getElementById('upload-area');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', handleAdvancedFileSelect);
+    }
+
+    if (dropZone) {
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', handleAdvancedFileDrop);
+        dropZone.addEventListener('click', () => fileInput?.click());
+    }
+
+    const ocrForm = document.getElementById('ocr-form');
+    if (ocrForm) {
+        ocrForm.addEventListener('submit', handleOCRFormSubmit);
+    }
+
+    document.querySelectorAll('.filter-control').forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+    });
+
     const searchInput = document.getElementById('search-offers');
     if (searchInput) {
-        searchInput.addEventListener('input', searchOffers);
+        searchInput.addEventListener('input', applyFilters);
     }
 
-    // Filters
-    document.getElementById('filter-categoria').addEventListener('change', applyFilters);
-    document.getElementById('filter-fornitore').addEventListener('change', applyFilters);
-    document.getElementById('filter-tipo').addEventListener('change', applyFilters);
-
-    // Scenario selector
-    const scenarioSelector = document.getElementById('scenario-selector');
-    if (scenarioSelector) {
-        scenarioSelector.addEventListener('change', updateScenarioAnalysis);
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
     }
 }
 
-// Navigation functions - Fixed implementation
+async function handleAdvancedFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        await processAndDisplayAdvancedFile(file);
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+}
+
+async function handleAdvancedFileDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        await processAndDisplayAdvancedFile(file);
+    }
+}
+
+async function processAndDisplayAdvancedFile(file) {
+    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+        showNotification('Formato file non supportato. Usa PDF o immagini.', 'error');
+        return;
+    }
+
+    showNotification('Avvio elaborazione OCR avanzata...', 'info');
+
+    const extractedData = await processFileWithAdvancedOCR(file);
+
+    if (extractedData) {
+        populateAdvancedOCRForm(extractedData);
+        showSection('upload');
+
+        const confidence = Math.round(extractedData.confidence_score * 100);
+        showNotification(
+            `Estrazione completata con ${confidence}% di confidenza. Verifica i dati estratti.`, 
+            confidence > 80 ? 'success' : 'info'
+        );
+    }
+}
+
+function populateAdvancedOCRForm(data) {
+    const form = document.getElementById('ocr-form');
+    if (!form) return;
+
+    Object.keys(data).forEach(key => {
+        if (key === 'document_classification') return;
+
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input && data[key] !== null && data[key] !== '') {
+            input.value = data[key];
+
+            const parent = input.closest('.form-group');
+            if (parent) {
+                let indicator = parent.querySelector('.confidence-indicator');
+                if (!indicator) {
+                    indicator = document.createElement('span');
+                    indicator.className = 'confidence-indicator';
+                    parent.appendChild(indicator);
+                }
+
+                const confidence = data.confidence_score || 0.8;
+                indicator.textContent = `${Math.round(confidence * 100)}%`;
+                indicator.className = `confidence-indicator ${
+                    confidence > 0.85 ? 'high' : confidence > 0.65 ? 'medium' : 'low'
+                }`;
+            }
+        }
+    });
+
+    if (data.document_classification) {
+        const classification = data.document_classification;
+        let infoText = '';
+
+        if (classification.supplier) {
+            infoText += `Fornitore: ${classification.supplier}. `;
+        }
+        if (classification.format !== 'unknown') {
+            infoText += `Formato: ${classification.format}. `;
+        }
+        if (classification.category_hints.length > 0) {
+            infoText += `Categoria rilevata: ${classification.category_hints.join(', ')}.`;
+        }
+
+        if (infoText) {
+            showNotification(infoText, 'info');
+        }
+    }
+}
+
+async function handleOCRFormSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const offerData = Object.fromEntries(formData.entries());
+
+    ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'commissioni'].forEach(field => {
+        if (offerData[field]) {
+            offerData[field] = parseFloat(offerData[field]);
+        }
+    });
+
+    if (offerData.durata_mesi) {
+        offerData.durata_mesi = parseInt(offerData.durata_mesi);
+    }
+
+    offerData.created_at = new Date().toISOString();
+    offerData.attivo = true;
+
+    try {
+        await saveOfferToDatabase(offerData);
+        e.target.reset();
+        showSection('dashboard');
+    } catch (error) {
+        // Error handled in saveOfferToDatabase
+    }
+}
+
+// ===== UI FUNCTIONS =====
 function showSection(sectionName) {
-    console.log('Navigating to section:', sectionName);
-    
-    // Update navigation buttons
+    document.querySelectorAll('.section').forEach(section => {
+        section.style.display = 'none';
+    });
+
+    const targetSection = document.getElementById(`${sectionName}-section`);
+    if (targetSection) {
+        targetSection.style.display = 'block';
+    }
+
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    
+
     const activeBtn = document.querySelector(`[data-section="${sectionName}"]`);
     if (activeBtn) {
         activeBtn.classList.add('active');
     }
 
-    // Update content sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    const targetSection = document.getElementById(`${sectionName}-section`);
-    if (targetSection) {
-        targetSection.classList.add('active');
+    if (sectionName === 'dashboard') {
+        updateDashboard();
+    } else if (sectionName === 'gestione') {
+        updateOffersTable();
+    } else if (sectionName === 'analisi') {
+        updateAnalytics();
     }
+}
 
-    // Initialize section-specific content
-    setTimeout(() => {
-        switch(sectionName) {
-            case 'dashboard':
-                initializeDashboard();
-                break;
-            case 'upload':
-                // Reset upload area when navigating to it
-                resetUpload();
-                break;
-            case 'gestione':
-                renderOffersTable();
-                break;
-            case 'analisi':
-                initializeAnalysis();
-                break;
+function updateDashboard() {
+    updateKPICards();
+    updateTopOffers();
+    updateCharts();
+}
+
+function updateKPICards() {
+    if (offers.length === 0) return;
+
+    const stats = {
+        total: offers.length,
+        domestico: offers.filter(o => o.categoria === 'Domestico').length,
+        micro: offers.filter(o => o.categoria === 'Micro').length,
+        pmi: offers.filter(o => o.categoria === 'PMI').length,
+        avgLuce: offers.reduce((sum, o) => sum + (o.prezzo_luce || 0), 0) / offers.length,
+        avgGas: offers.reduce((sum, o) => sum + (o.prezzo_gas || 0), 0) / offers.length
+    };
+
+    const kpiElements = {
+        'total-offers': stats.total,
+        'domestico-count': stats.domestico,
+        'micro-count': stats.micro,
+        'pmi-count': stats.pmi,
+        'avg-luce': stats.avgLuce.toFixed(4) + ' €/kWh',
+        'avg-gas': stats.avgGas.toFixed(4) + ' €/Smc'
+    };
+
+    Object.entries(kpiElements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
         }
-    }, 100);
+    });
 }
 
-// Dashboard functions
-function initializeDashboard() {
-    updateKPIs();
-    populateSupplierFilter();
-    showTopOffers('Domestico');
-    
-    // Delay chart creation to ensure DOM is ready
-    setTimeout(() => {
-        createPriceComparisonChart();
-    }, 200);
+function updateTopOffers() {
+    const categories = ['Domestico', 'Micro', 'PMI'];
+
+    categories.forEach(categoria => {
+        const categoryOffers = offers.filter(o => o.categoria === categoria);
+        if (categoryOffers.length === 0) return;
+
+        const sorted = categoryOffers.sort((a, b) => {
+            const totalA = (a.prezzo_luce || 0) + (a.prezzo_gas || 0) + (a.commissioni || 0);
+            const totalB = (b.prezzo_luce || 0) + (b.prezzo_gas || 0) + (b.commissioni || 0);
+            return totalA - totalB;
+        });
+
+        const topOffer = sorted[0];
+        const containerId = `top-${categoria.toLowerCase()}`;
+        const container = document.getElementById(containerId);
+
+        if (container && topOffer) {
+            container.innerHTML = `
+                <div class="top-offer-card">
+                    <h4>${topOffer.nome_offerta}</h4>
+                    <p><strong>${topOffer.fornitore}</strong></p>
+                    <div class="price-info">
+                        <span>Luce: ${topOffer.prezzo_luce}€/kWh</span>
+                        <span>Gas: ${topOffer.prezzo_gas}€/Smc</span>
+                    </div>
+                    <p class="savings">Commissioni: ${topOffer.commissioni}€</p>
+                </div>
+            `;
+        }
+    });
 }
 
-function updateKPIs() {
-    const totalOffers = offers.length;
-    const avgLuce = offers.reduce((sum, offer) => sum + offer.prezzo_luce, 0) / totalOffers;
-    const avgGas = offers.reduce((sum, offer) => sum + offer.prezzo_gas, 0) / totalOffers;
-    const avgSpread = offers.reduce((sum, offer) => sum + offer.spread_luce + offer.spread_gas, 0) / totalOffers / 2;
+function updateCharts() {
+    const ctx = document.getElementById('category-chart');
+    if (ctx && offers.length > 0) {
+        const categories = ['Domestico', 'Micro', 'PMI'];
+        const avgPrices = categories.map(cat => {
+            const catOffers = offers.filter(o => o.categoria === cat);
+            if (catOffers.length === 0) return 0;
+            return catOffers.reduce((sum, o) => sum + (o.prezzo_luce || 0), 0) / catOffers.length;
+        });
 
-    const totalOffersEl = document.getElementById('total-offers');
-    const avgLuceEl = document.getElementById('avg-luce');
-    const avgGasEl = document.getElementById('avg-gas');
-    const avgSpreadEl = document.getElementById('avg-spread');
+        if (charts.categoryChart) {
+            charts.categoryChart.destroy();
+        }
 
-    if (totalOffersEl) totalOffersEl.textContent = totalOffers;
-    if (avgLuceEl) avgLuceEl.textContent = `€${avgLuce.toFixed(4)}`;
-    if (avgGasEl) avgGasEl.textContent = `€${avgGas.toFixed(4)}`;
-    if (avgSpreadEl) avgSpreadEl.textContent = `${(avgSpread * 100).toFixed(2)}%`;
-}
-
-function populateSupplierFilter() {
-    const suppliers = [...new Set(offers.map(offer => offer.fornitore))].sort();
-    const supplierSelect = document.getElementById('filter-fornitore');
-    
-    if (supplierSelect) {
-        supplierSelect.innerHTML = '<option value="">Tutti</option>';
-        suppliers.forEach(supplier => {
-            const option = document.createElement('option');
-            option.value = supplier;
-            option.textContent = supplier;
-            supplierSelect.appendChild(option);
+        charts.categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: categories,
+                datasets: [{
+                    label: 'Prezzo Medio Luce (€/kWh)',
+                    data: avgPrices,
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(245, 159, 11, 0.8)',
+                        'rgba(34, 197, 94, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Prezzo Medio per Categoria'
+                    }
+                }
+            }
         });
     }
 }
 
-function showTopOffers(category) {
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    const activeTab = document.querySelector(`[data-category="${category}"]`);
-    if (activeTab) {
-        activeTab.classList.add('active');
-    }
-
-    // Get top 3 offers for category
-    const categoryOffers = offers.filter(offer => offer.categoria === category);
-    const sortedOffers = categoryOffers.sort((a, b) => 
-        (a.prezzo_luce + a.prezzo_gas + a.commissioni) - (b.prezzo_luce + b.prezzo_gas + b.commissioni)
-    ).slice(0, 3);
-
-    // Render offers
-    const container = document.getElementById('top-offers-container');
-    if (container) {
-        container.innerHTML = sortedOffers.map(offer => createOfferCard(offer)).join('');
-    }
-}
-
-function createOfferCard(offer) {
-    const totalCost = offer.prezzo_luce + offer.prezzo_gas + offer.commissioni;
-    return `
-        <div class="offer-card">
-            <div class="offer-card__header">
-                <div>
-                    <h4 class="offer-card__title">${offer.nome_offerta}</h4>
-                    <p class="offer-card__supplier">${offer.fornitore}</p>
-                </div>
-                <span class="offer-card__badge">${offer.tipo_prezzo}</span>
-            </div>
-            <div class="offer-card__details">
-                <div class="offer-detail">
-                    <div class="offer-detail__label">Luce</div>
-                    <div class="offer-detail__value">€${offer.prezzo_luce.toFixed(4)}</div>
-                </div>
-                <div class="offer-detail">
-                    <div class="offer-detail__label">Gas</div>
-                    <div class="offer-detail__value">€${offer.prezzo_gas.toFixed(4)}</div>
-                </div>
-                <div class="offer-detail">
-                    <div class="offer-detail__label">Commissioni</div>
-                    <div class="offer-detail__value">€${offer.commissioni.toFixed(2)}</div>
-                </div>
-                <div class="offer-detail">
-                    <div class="offer-detail__label">Scadenza</div>
-                    <div class="offer-detail__value">${formatDate(offer.scadenza)}</div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createPriceComparisonChart() {
-    const ctx = document.getElementById('price-comparison-chart');
-    if (!ctx) return;
-
-    const categories = ['Domestico', 'Micro', 'PMI'];
-    const luceData = categories.map(cat => {
-        const catOffers = offers.filter(o => o.categoria === cat);
-        return catOffers.length > 0 ? catOffers.reduce((sum, o) => sum + o.prezzo_luce, 0) / catOffers.length : 0;
-    });
-    const gasData = categories.map(cat => {
-        const catOffers = offers.filter(o => o.categoria === cat);
-        return catOffers.length > 0 ? catOffers.reduce((sum, o) => sum + o.prezzo_gas, 0) / catOffers.length : 0;
-    });
-
-    if (charts.priceComparison) {
-        charts.priceComparison.destroy();
-    }
-
-    charts.priceComparison = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: categories,
-            datasets: [
-                {
-                    label: 'Prezzo Medio Luce (€/kWh)',
-                    data: luceData,
-                    backgroundColor: '#1FB8CD',
-                    borderColor: '#1FB8CD',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Prezzo Medio Gas (€/Smc)',
-                    data: gasData,
-                    backgroundColor: '#FFC185',
-                    borderColor: '#FFC185',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Prezzo (€)'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            }
-        }
-    });
-}
-
-// Upload functionality
-function setupUploadArea() {
-    const uploadArea = document.getElementById('upload-area');
-    const fileInput = document.getElementById('pdf-file');
-
-    if (!uploadArea || !fileInput) return;
-
-    // Drag and drop
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
-    });
-
-    // File input change
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileUpload(e.target.files[0]);
-        }
-    });
-}
-
-function handleFileUpload(file) {
-    if (file.type !== 'application/pdf') {
-        showNotification('Seleziona un file PDF valido', 'error');
-        return;
-    }
-
-    // Hide upload area and show processing
-    const uploadArea = document.getElementById('upload-area');
-    const ocrProcessing = document.getElementById('ocr-processing');
-    
-    if (uploadArea) uploadArea.style.display = 'none';
-    if (ocrProcessing) ocrProcessing.classList.remove('hidden');
-
-    // Simulate OCR processing
-    simulateOCRProcessing();
-}
-
-function simulateOCRProcessing() {
-    const progressBar = document.getElementById('ocr-progress');
-    const statusText = document.getElementById('ocr-status');
-    const steps = [
-        'Scansione documento...',
-        'Riconoscimento testo...',
-        'Estrazione dati offerta...',
-        'Validazione informazioni...',
-        'Completamento...'
-    ];
-
-    let currentStep = 0;
-    let progress = 0;
-
-    const interval = setInterval(() => {
-        progress += Math.random() * 25;
-        
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(interval);
-            
-            setTimeout(() => {
-                const ocrProcessing = document.getElementById('ocr-processing');
-                const extractedForm = document.getElementById('extracted-data-form');
-                
-                if (ocrProcessing) ocrProcessing.classList.add('hidden');
-                if (extractedForm) extractedForm.classList.remove('hidden');
-                
-                populateExtractedData();
-            }, 500);
-        }
-
-        if (progressBar) progressBar.style.width = `${progress}%`;
-        
-        if (currentStep < steps.length - 1 && progress > (currentStep + 1) * 20) {
-            currentStep++;
-            if (statusText) statusText.textContent = steps[currentStep];
-        }
-    }, 200);
-}
-
-function populateExtractedData() {
-    // Simulate extracted data with some randomization
-    const suppliers = ['Edison', 'Enel Energia', 'Eni Plenitude', 'A2A'];
-    const randomSupplier = suppliers[Math.floor(Math.random() * suppliers.length)];
-    
-    const mockData = {
-        fornitore: randomSupplier,
-        nome_offerta: `${randomSupplier} Offerta Speciale`,
-        categoria: 'Domestico',
-        tipo_prezzo: Math.random() > 0.5 ? 'Fisso' : 'Variabile',
-        prezzo_luce: (Math.random() * 0.05 + 0.08).toFixed(4),
-        spread_luce: Math.random() > 0.5 ? (Math.random() * 0.02).toFixed(4) : '0',
-        prezzo_gas: (Math.random() * 0.1 + 0.3).toFixed(4),
-        spread_gas: Math.random() > 0.5 ? (Math.random() * 0.1).toFixed(4) : '0',
-        quota_fissa_luce: (Math.random() * 5 + 7).toFixed(2),
-        quota_fissa_gas: (Math.random() * 3 + 6).toFixed(2),
-        commissioni: (Math.random() * 20).toFixed(2),
-        scadenza: '2028-12-31'
-    };
-
-    // Populate form fields
-    Object.keys(mockData).forEach(key => {
-        const field = document.getElementById(key);
-        if (field) {
-            field.value = mockData[key];
-        }
-    });
-
-    showNotification('Dati estratti con successo! Verifica e correggi se necessario.', 'success');
-}
-
-function saveNewOffer(e) {
-    e.preventDefault();
-    
-    const newOffer = {
-        id: `OFF_${Date.now()}`,
-        fornitore: document.getElementById('fornitore').value,
-        nome_offerta: document.getElementById('nome_offerta').value,
-        categoria: document.getElementById('categoria').value,
-        tipo_prezzo: document.getElementById('tipo_prezzo').value,
-        prezzo_luce: parseFloat(document.getElementById('prezzo_luce').value),
-        spread_luce: parseFloat(document.getElementById('spread_luce').value) || 0,
-        prezzo_gas: parseFloat(document.getElementById('prezzo_gas').value),
-        spread_gas: parseFloat(document.getElementById('spread_gas').value) || 0,
-        quota_fissa_luce: parseFloat(document.getElementById('quota_fissa_luce').value),
-        quota_fissa_gas: parseFloat(document.getElementById('quota_fissa_gas').value),
-        commissioni: parseFloat(document.getElementById('commissioni').value) || 0,
-        scadenza: document.getElementById('scadenza').value,
-        durata_mesi: 24, // Default
-        data_inserimento: new Date().toISOString(),
-        attivo: true
-    };
-
-    offers.push(newOffer);
-    filteredOffers = [...offers];
-    
-    showNotification('Offerta salvata con successo!', 'success');
-    resetUpload();
-    initializeDashboard();
-}
-
-function resetUpload() {
-    const uploadArea = document.getElementById('upload-area');
-    const ocrProcessing = document.getElementById('ocr-processing');
-    const extractedForm = document.getElementById('extracted-data-form');
-    const offerForm = document.getElementById('offer-form');
-    const pdfFile = document.getElementById('pdf-file');
-
-    if (uploadArea) uploadArea.style.display = 'block';
-    if (ocrProcessing) ocrProcessing.classList.add('hidden');
-    if (extractedForm) extractedForm.classList.add('hidden');
-    if (offerForm) offerForm.reset();
-    if (pdfFile) pdfFile.value = '';
-}
-
-// Table management
-function renderOffersTable() {
-    const tbody = document.getElementById('offers-table-body');
+function updateOffersTable() {
+    const tbody = document.querySelector('#offers-table tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = filteredOffers.map(offer => `
-        <tr>
+    tbody.innerHTML = '';
+
+    filteredOffers.forEach(offer => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>${offer.fornitore}</td>
             <td>${offer.nome_offerta}</td>
-            <td><span class="status status--info">${offer.categoria}</span></td>
-            <td><span class="status ${offer.tipo_prezzo === 'Fisso' ? 'status--success' : 'status--warning'}">${offer.tipo_prezzo}</span></td>
-            <td>€${offer.prezzo_luce.toFixed(4)}</td>
-            <td>€${offer.prezzo_gas.toFixed(4)}</td>
-            <td>${formatDate(offer.scadenza)}</td>
+            <td><span class="category-badge ${offer.categoria.toLowerCase()}">${offer.categoria}</span></td>
+            <td>${offer.tipo_prezzo}</td>
+            <td>${offer.prezzo_luce}€/kWh</td>
+            <td>${offer.prezzo_gas}€/Smc</td>
+            <td>${offer.commissioni}€</td>
+            <td>${new Date(offer.scadenza).toLocaleDateString()}</td>
             <td>
-                <div class="table-actions">
-                    <button class="action-btn action-btn--edit" onclick="editOffer('${offer.id}')" title="Modifica">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn action-btn--delete" onclick="deleteOffer('${offer.id}')" title="Elimina">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <button class="btn-edit" onclick="editOffer(${offer.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-delete" onclick="confirmDeleteOffer(${offer.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
-        </tr>
-    `).join('');
-}
-
-function searchOffers() {
-    const searchInput = document.getElementById('search-offers');
-    if (!searchInput) return;
-    
-    const query = searchInput.value.toLowerCase();
-    filteredOffers = offers.filter(offer => 
-        offer.fornitore.toLowerCase().includes(query) ||
-        offer.nome_offerta.toLowerCase().includes(query) ||
-        offer.categoria.toLowerCase().includes(query)
-    );
-    renderOffersTable();
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 function applyFilters() {
-    const categoriaEl = document.getElementById('filter-categoria');
-    const fornitoreEl = document.getElementById('filter-fornitore');
-    const tipoEl = document.getElementById('filter-tipo');
-
-    const categoria = categoriaEl ? categoriaEl.value : '';
-    const fornitore = fornitoreEl ? fornitoreEl.value : '';
-    const tipo = tipoEl ? tipoEl.value : '';
+    const categoria = document.getElementById('filter-categoria')?.value || '';
+    const fornitore = document.getElementById('filter-fornitore')?.value || '';
+    const tipoPrezzo = document.getElementById('filter-tipo-prezzo')?.value || '';
+    const searchTerm = document.getElementById('search-offers')?.value.toLowerCase() || '';
 
     filteredOffers = offers.filter(offer => {
-        return (!categoria || offer.categoria === categoria) &&
-               (!fornitore || offer.fornitore === fornitore) &&
-               (!tipo || offer.tipo_prezzo === tipo);
+        const matchesCategoria = !categoria || offer.categoria === categoria;
+        const matchesFornitore = !fornitore || offer.fornitore === fornitore;
+        const matchesTipo = !tipoPrezzo || offer.tipo_prezzo === tipoPrezzo;
+        const matchesSearch = !searchTerm || 
+            offer.nome_offerta.toLowerCase().includes(searchTerm) ||
+            offer.fornitore.toLowerCase().includes(searchTerm);
+
+        return matchesCategoria && matchesFornitore && matchesTipo && matchesSearch;
     });
 
-    const gestioneSection = document.getElementById('gestione-section');
-    if (gestioneSection && gestioneSection.classList.contains('active')) {
-        renderOffersTable();
-    }
+    updateOffersTable();
 }
 
-function sortTable(field) {
-    if (currentSort.field === field) {
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        currentSort.field = field;
-        currentSort.direction = 'asc';
-    }
-
-    filteredOffers.sort((a, b) => {
-        let aVal = a[field];
-        let bVal = b[field];
-
-        if (typeof aVal === 'string') {
-            aVal = aVal.toLowerCase();
-            bVal = bVal.toLowerCase();
-        }
-
-        if (currentSort.direction === 'asc') {
-            return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-        } else {
-            return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-        }
-    });
-
-    renderOffersTable();
-}
-
-function editOffer(id) {
-    const offer = offers.find(o => o.id === id);
+async function editOffer(offerId) {
+    const offer = offers.find(o => o.id === offerId);
     if (!offer) return;
 
-    // Populate edit modal
-    const editId = document.getElementById('edit-id');
-    const editFornitore = document.getElementById('edit-fornitore');
-    const editNomeOfferta = document.getElementById('edit-nome_offerta');
-    const editPrezzoLuce = document.getElementById('edit-prezzo_luce');
-    const editPrezzoGas = document.getElementById('edit-prezzo_gas');
-    const editCommissioni = document.getElementById('edit-commissioni');
-    const editScadenza = document.getElementById('edit-scadenza');
-
-    if (editId) editId.value = offer.id;
-    if (editFornitore) editFornitore.value = offer.fornitore;
-    if (editNomeOfferta) editNomeOfferta.value = offer.nome_offerta;
-    if (editPrezzoLuce) editPrezzoLuce.value = offer.prezzo_luce;
-    if (editPrezzoGas) editPrezzoGas.value = offer.prezzo_gas;
-    if (editCommissioni) editCommissioni.value = offer.commissioni;
-    if (editScadenza) editScadenza.value = offer.scadenza;
-
-    // Show modal
-    const editModal = document.getElementById('edit-modal');
-    if (editModal) editModal.classList.remove('hidden');
+    showNotification('Funzione di modifica in sviluppo', 'info');
 }
 
-function closeEditModal() {
-    const editModal = document.getElementById('edit-modal');
-    if (editModal) editModal.classList.add('hidden');
-}
-
-function saveEditedOffer() {
-    const editId = document.getElementById('edit-id');
-    if (!editId) return;
-    
-    const id = editId.value;
-    const offerIndex = offers.findIndex(o => o.id === id);
-    
-    if (offerIndex === -1) return;
-
-    // Update offer
-    offers[offerIndex] = {
-        ...offers[offerIndex],
-        fornitore: document.getElementById('edit-fornitore').value,
-        nome_offerta: document.getElementById('edit-nome_offerta').value,
-        prezzo_luce: parseFloat(document.getElementById('edit-prezzo_luce').value),
-        prezzo_gas: parseFloat(document.getElementById('edit-prezzo_gas').value),
-        commissioni: parseFloat(document.getElementById('edit-commissioni').value),
-        scadenza: document.getElementById('edit-scadenza').value
-    };
-
-    filteredOffers = [...offers];
-    renderOffersTable();
-    closeEditModal();
-    showNotification('Offerta modificata con successo!', 'success');
-}
-
-function deleteOffer(id) {
+async function confirmDeleteOffer(offerId) {
     if (confirm('Sei sicuro di voler eliminare questa offerta?')) {
-        offers = offers.filter(o => o.id !== id);
-        filteredOffers = [...offers];
-        renderOffersTable();
-        showNotification('Offerta eliminata con successo!', 'success');
+        await deleteOfferFromDatabase(offerId);
     }
 }
 
-function exportToCSV() {
-    const headers = ['Fornitore', 'Offerta', 'Categoria', 'Tipo', 'Prezzo Luce', 'Prezzo Gas', 'Commissioni', 'Scadenza'];
-    const csvContent = [
-        headers.join(','),
-        ...filteredOffers.map(offer => [
-            offer.fornitore,
-            offer.nome_offerta,
-            offer.categoria,
-            offer.tipo_prezzo,
-            offer.prezzo_luce,
-            offer.prezzo_gas,
-            offer.commissioni,
-            offer.scadenza
-        ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `offerte_energia_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+function updateAnalytics() {
+    showNotification('Sezione analisi in sviluppo', 'info');
 }
 
-// Analysis functions
-function initializeAnalysis() {
-    setTimeout(() => {
-        createSupplierComparisonChart();
-        createSpreadAnalysisChart();
-        updateScenarioAnalysis();
-    }, 200);
+// ===== UTILITY FUNCTIONS =====
+function updateProgress(percentage, text) {
+    const progressBar = document.querySelector('.progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    if (progressBar) progressBar.style.width = percentage + '%';
+    if (progressText) progressText.textContent = text;
 }
 
-function createSupplierComparisonChart() {
-    const ctx = document.getElementById('supplier-comparison-chart');
-    if (!ctx) return;
-
-    const suppliers = [...new Set(offers.map(o => o.fornitore))];
-    const supplierData = suppliers.map(supplier => {
-        const supplierOffers = offers.filter(o => o.fornitore === supplier);
-        const avgLuce = supplierOffers.reduce((sum, o) => sum + o.prezzo_luce, 0) / supplierOffers.length;
-        const avgGas = supplierOffers.reduce((sum, o) => sum + o.prezzo_gas, 0) / supplierOffers.length;
-        return { supplier, avgLuce, avgGas };
-    });
-
-    if (charts.supplierComparison) {
-        charts.supplierComparison.destroy();
-    }
-
-    charts.supplierComparison = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: supplierData.map(d => d.supplier),
-            datasets: [
-                {
-                    label: 'Prezzo Medio Luce',
-                    data: supplierData.map(d => d.avgLuce),
-                    backgroundColor: '#B4413C',
-                    borderColor: '#B4413C',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Prezzo Medio Gas',
-                    data: supplierData.map(d => d.avgGas),
-                    backgroundColor: '#ECEBD5',
-                    borderColor: '#ECEBD5',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Prezzo (€)'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            }
-        }
-    });
-}
-
-function createSpreadAnalysisChart() {
-    const ctx = document.getElementById('spread-analysis-chart');
-    if (!ctx) return;
-
-    const data = offers.map(offer => ({
-        x: offer.spread_luce + offer.spread_gas,
-        y: offer.commissioni,
-        label: offer.fornitore
-    }));
-
-    if (charts.spreadAnalysis) {
-        charts.spreadAnalysis.destroy();
-    }
-
-    charts.spreadAnalysis = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Spread vs Commissioni',
-                data: data,
-                backgroundColor: '#5D878F',
-                borderColor: '#5D878F',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Spread Totale'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Commissioni (€)'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const point = context.parsed;
-                            return `${data[context.dataIndex].label}: Spread ${point.x.toFixed(4)}, Commissioni €${point.y.toFixed(2)}`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function updateScenarioAnalysis() {
-    const scenarioSelector = document.getElementById('scenario-selector');
-    const container = document.getElementById('scenario-results');
-    
-    if (!scenarioSelector || !container) return;
-    
-    const scenario = scenarioSelector.value;
-    let sortedOffers = [];
-    let title = '';
-    let valueFormatter = (value) => `€${value.toFixed(4)}`;
-
-    switch(scenario) {
-        case 'prezzo_totale':
-            title = 'Miglior Prezzo Totale';
-            sortedOffers = [...offers].sort((a, b) => 
-                (a.prezzo_luce + a.prezzo_gas + a.quota_fissa_luce + a.quota_fissa_gas + a.commissioni) - 
-                (b.prezzo_luce + b.prezzo_gas + b.quota_fissa_luce + b.quota_fissa_gas + b.commissioni)
-            ).slice(0, 5);
-            valueFormatter = (offer) => `€${(offer.prezzo_luce + offer.prezzo_gas + offer.quota_fissa_luce + offer.quota_fissa_gas + offer.commissioni).toFixed(2)}`;
-            break;
-        case 'prezzo_luce':
-            title = 'Miglior Prezzo Luce';
-            sortedOffers = [...offers].sort((a, b) => a.prezzo_luce - b.prezzo_luce).slice(0, 5);
-            valueFormatter = (offer) => `€${offer.prezzo_luce.toFixed(4)}/kWh`;
-            break;
-        case 'prezzo_gas':
-            title = 'Miglior Prezzo Gas';
-            sortedOffers = [...offers].sort((a, b) => a.prezzo_gas - b.prezzo_gas).slice(0, 5);
-            valueFormatter = (offer) => `€${offer.prezzo_gas.toFixed(4)}/Smc`;
-            break;
-        case 'commissioni':
-            title = 'Minori Commissioni';
-            sortedOffers = [...offers].sort((a, b) => a.commissioni - b.commissioni).slice(0, 5);
-            valueFormatter = (offer) => `€${offer.commissioni.toFixed(2)}`;
-            break;
-    }
-
-    container.innerHTML = sortedOffers.map((offer, index) => `
-        <div class="scenario-item">
-            <div class="scenario-item__header">
-                <span class="scenario-item__title">${index + 1}. ${offer.nome_offerta}</span>
-                <span class="scenario-item__value">${valueFormatter(offer)}</span>
-            </div>
-            <div class="scenario-item__details">
-                ${offer.fornitore} • ${offer.categoria} • ${offer.tipo_prezzo}
-            </div>
-        </div>
-    `).join('');
-}
-
-// Utility functions
-function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('it-IT');
-}
-
-function updateLastUpdate() {
-    const lastUpdateEl = document.getElementById('last-update');
-    if (lastUpdateEl) {
-        lastUpdateEl.textContent = new Date().toLocaleString('it-IT');
+function showLoadingState(show) {
+    const loader = document.getElementById('main-loader');
+    if (loader) {
+        loader.style.display = show ? 'flex' : 'none';
     }
 }
 
 function showNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification notification--${type}`;
+    notification.className = `notification notification-${type}`;
     notification.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-        ${message}
+        <div class="notification-content">
+            <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
     `;
 
-    // Add to page
     document.body.appendChild(notification);
 
-    // Auto remove after 3 seconds
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
+        notification.remove();
+    }, 5000);
+
+    notification.addEventListener('click', () => {
+        notification.remove();
+    });
 }
 
-// Add notification styles to head if not present
-if (!document.querySelector('#notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-out;
-        }
-        .notification--success { background: #43A047; }
-        .notification--error { background: #E53935; }
-        .notification--info { background: #1E88E5; }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
+function toggleTheme() {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    const themeIcon = document.querySelector('#theme-toggle i');
+    if (themeIcon) {
+        themeIcon.className = currentTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    localStorage.setItem('theme', currentTheme);
 }
 
-// Global functions for HTML onclick handlers
-window.editOffer = editOffer;
-window.deleteOffer = deleteOffer;
-window.closeEditModal = closeEditModal;
-window.saveEditedOffer = saveEditedOffer;
-window.exportToCSV = exportToCSV;
-window.sortTable = sortTable;
-window.applyFilters = applyFilters;
-window.resetUpload = resetUpload;
+function updateLastUpdate() {
+    const lastUpdateElement = document.getElementById('last-update');
+    if (lastUpdateElement) {
+        lastUpdateElement.textContent = new Date().toLocaleString('it-IT');
+    }
+}
+
+// ===== INITIALIZATION ON LOAD =====
+window.addEventListener('load', function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    currentTheme = savedTheme;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+});
+
+if (typeof window !== 'undefined') {
+    window.debugApp = {
+        offers,
+        loadOffersFromDatabase,
+        saveOfferToDatabase,
+        updateOfferInDatabase,
+        deleteOfferFromDatabase
+    };
+}
