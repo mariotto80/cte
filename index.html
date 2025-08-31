@@ -1,907 +1,364 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Premium - Gestione Offerte Energia con OCR</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EnergiaCorp Premium - Gestione Offerte Energia</title>
 
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Font e Font Awesome -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <style>
-        /* ===== LANDING PAGE STYLES ===== */
-        .landing-page {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
+<!-- CSS personalizzato -->
+<style>
+/* Reset base */
+* { margin:0; padding:0; box-sizing: border-box; }
 
-        .landing-page::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="1000" height="1000" fill="url(%23grain)"/></svg>');
-            pointer-events: none;
-        }
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-        .landing-container {
-            max-width: 1200px;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
+/* Landing page */
+#landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  transition: opacity 0.3s;
+}
+#landing-page h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+#landing-page p {
+  max-width: 600px;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+#landing-page button {
+  background: #fff;
+  color: #333;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s, color 0.3s;
+}
+#landing-page button:hover {
+  background: #f0f0f0;
+}
 
-        .landing-content {
-            color: white;
-        }
+/* Sezione app, nascosta di default */
+#app-container {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  background: #fff;
+  color: #333;
+}
 
-        .landing-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
+/* Header app */
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  color: #333;
+}
+#header h2 {
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #333;
+}
+#user-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-right: 1rem;
+  color: #666;
+}
+#logout-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #555;
+  transition: color 0.2s;
+}
+#logout-btn:hover {
+  color: #e33;
+}
 
-        .landing-logo .brand-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: white;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
+/* Sezione dashboard / gestione offerte */
+#content {
+  padding: 1.5rem 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
 
-        .landing-title {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-        }
+/* Tabella offerte */
+#offers-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+#offers-table th, #offers-table td {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+}
+#offers-table th {
+  background: #f8f8f8;
+  font-weight: 600;
+}
+#offers-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
 
-        .landing-subtitle {
-            font-size: 1.25rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
+/* Pulsanti */
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5580ee 0%, #6f4aa2 100%);
+}
+.btn-secondary {
+  background: #ccc;
+  color: #333;
+}
+.btn-secondary:hover {
+  background: #bbb;
+}
 
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 2rem 0;
-        }
+/* Notifiche */
+#notifications {
+  position: fixed;
+  top: 10px; right: 10px;
+  z-index: 10000;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.notification {
+  background: #333;
+  color: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  opacity: 0.9;
+  max-width: 350px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-size: 0.9rem;
+  animation: fadeInOut 3s forwards;
+}
+.notification.success { background: #4CAF50; }
+.notification.error { background: #E53935; }
 
-        .features-list li {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-        }
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10%, 90% { opacity: 0.9; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
 
-        .features-list li i {
-            width: 24px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            backdrop-filter: blur(10px);
-        }
+/* Modal login */
+#login-modal {
+  position: fixed;
+  top:0; left:0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1500;
+}
+#login-modal .modal-content {
+  background: #fff;
+  padding: 3rem 2rem;
+  border-radius: 15px;
+  max-width: 470px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  color: #333;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+}
+#login-modal h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: #222;
+}
+#auth-form {
+  display: flex;
+  flex-direction: column;
+}
+#auth-form .form-group {
+  margin-bottom: 1rem;
+}
+#auth-form label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+#auth-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#auth-form input:focus {
+  border-color: #667eea;
+}
+#auth-form button {
+  margin-top: 1.2rem;
+  padding: 14px;
+  width: 100%;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+#auth-form button:hover {
+  background: linear-gradient(135deg, #5580ee 0%, #6f4aa2 100%);
+}
+#auth-switch {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #555;
+  cursor: pointer;
+  text-decoration: underline;
+}
+#auth-switch:hover {
+  color: #333;
+}
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 3rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .login-header h2 {
-            color: #333;
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .login-header p {
-            color: #666;
-            font-size: 0.95rem;
-        }
-
-        .auth-tabs {
-            display: flex;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 2rem;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 12px 16px;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #666;
-        }
-
-        .auth-tab.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 16px 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 16px;
-            background: white;
-            color: #333;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .auth-footer {
-            text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        /* App Container - Initially Hidden */
-        .app-container {
-            display: none;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .landing-container {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-                text-align: center;
-            }
-
-            .landing-title {
-                font-size: 2.5rem;
-            }
-
-            .login-card {
-                padding: 2rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .landing-title {
-                font-size: 2rem;
-            }
-
-            .landing-container {
-                padding: 1rem;
-            }
-
-            .login-card {
-                padding: 1.5rem;
-            }
-        }
-
-        /* Loading Animation */
-        .loading-dots {
-            display: inline-block;
-        }
-
-        .loading-dots::after {
-            content: '';
-            animation: dots 2s infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
-        }
-    </style>
+/* Loader overlay */
+#main-loader {
+  position: fixed;
+  top: 0; left:0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000;
+}
+#main-loader .loader {
+  text-align: center;
+  color: #fff;
+}
+#main-loader .loader-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
 </head>
 <body>
-    <!-- Landing Page -->
-    <div id="landing-page" class="landing-page">
-        <div class="landing-container">
-            <!-- Left: Content -->
-            <div class="landing-content">
-                <div class="landing-logo">
-                    <div class="brand-icon">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div>
-                        <h1 class="landing-title">EnergiaCorp</h1>
-                        <p class="landing-subtitle">Premium</p>
-                    </div>
-                </div>
 
-                <h2 class="landing-title">Gestione Intelligente Offerte Energia</h2>
-                <p class="landing-subtitle">
-                    La piattaforma più avanzata per analizzare e confrontare offerte di luce e gas 
-                    con tecnologia OCR e intelligenza artificiale
-                </p>
-
-                <ul class="features-list">
-                    <li>
-                        <i class="fas fa-robot"></i>
-                        <span><strong>OCR Avanzato:</strong> Estrai automaticamente dati da PDF e contratti</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-chart-line"></i>
-                        <span><strong>Analytics:</strong> Dashboard con grafici e statistiche in tempo reale</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-shield-alt"></i>
-                        <span><strong>Sicurezza:</strong> I tuoi dati sono protetti e privati</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-lightning-bolt"></i>
-                        <span><strong>Velocità:</strong> Analizza centinaia di offerte in pochi secondi</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-mobile-alt"></i>
-                        <span><strong>Multi-device:</strong> Accedi da qualsiasi dispositivo</span>
-                    </li>
-                </ul>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">25+</div>
-                        <div class="stat-label">Fornitori<br>Supportati</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">95%</div>
-                        <div class="stat-label">Precisione<br>OCR</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">3s</div>
-                        <div class="stat-label">Tempo Medio<br>Elaborazione</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right: Login Form -->
-            <div class="login-card">
-                <div class="login-header">
-                    <h2 id="auth-title">Accedi alla Piattaforma</h2>
-                    <p>Inizia subito a gestire le tue offerte energia</p>
-                </div>
-
-                <div class="auth-tabs">
-                    <button id="login-tab" class="auth-tab active">Accedi</button>
-                    <button id="signup-tab" class="auth-tab">Registrati</button>
-                </div>
-
-                <form id="auth-form">
-                    <div id="signup-fields" style="display: none;">
-                        <div class="form-group">
-                            <label for="full-name">Nome Completo</label>
-                            <input type="text" id="full-name" placeholder="Mario Rossi" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Indirizzo Email</label>
-                        <input type="email" id="email" placeholder="mario.rossi@email.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Inserisci una password sicura" required>
-                    </div>
-
-                    <button type="submit" id="auth-submit" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span id="auth-submit-text">Accedi alla Dashboard</span>
-                    </button>
-                </form>
-
-                <div class="auth-footer">
-                    <p id="auth-footer-text">
-                        Accedendo accetti i nostri termini di servizio e la privacy policy
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Application (Hidden Initially) -->
-    <div id="app-container" class="app-container">
-        <!-- Main Loader -->
-        <div id="main-loader" class="loader-overlay" style="display: none;">
-            <div class="loader">
-                <div class="loader-spinner"></div>
-                <p>Caricamento<span class="loading-dots"></span></p>
-            </div>
-        </div>
-
-        <!-- Theme Toggle -->
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
-            <i class="fas fa-moon"></i>
-            <i class="fas fa-sun"></i>
-        </button>
-
-        <!-- Header -->
-        <header class="header">
-            <div class="header__container">
-                <div class="header__brand">
-                    <div class="brand-icon">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div class="brand-text">
-                        <h1>EnergiaCorp</h1>
-                        <span>Premium Dashboard</span>
-                    </div>
-                </div>
-
-                <nav class="header__nav">
-                    <button class="nav-btn active" data-section="dashboard">
-                        <i class="fas fa-chart-dashboard"></i>
-                        <span>Dashboard</span>
-                    </button>
-                    <button class="nav-btn" data-section="upload">
-                        <i class="fas fa-file-upload"></i>
-                        <span>Upload OCR</span>
-                    </button>
-                    <button class="nav-btn" data-section="gestione">
-                        <i class="fas fa-table"></i>
-                        <span>Gestione</span>
-                    </button>
-                    <button class="nav-btn" data-section="analisi">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analisi</span>
-                    </button>
-                </nav>
-
-                <div class="header__actions">
-                    <span id="user-name" style="margin-right: 1rem; color: var(--color-text);"></span>
-                    <button id="logout-btn" class="btn-secondary">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Section -->
-            <section id="dashboard-section" class="section">
-                <div class="section-header">
-                    <h2>Dashboard Offerte Energia</h2>
-                    <p>Panoramica completa delle tue offerte luce e gas</p>
-                </div>
-
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="total-offers">0</h3>
-                            <p>Offerte Totali</p>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-home"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="domestico-count">0</h3>
-                            <p>Domestico</p>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="micro-count">0</h3>
-                            <p>Micro</p>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-industry"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="pmi-count">0</h3>
-                            <p>PMI</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts and Top Offers -->
-                <div class="dashboard-grid">
-                    <div class="chart-container">
-                        <h3>Prezzi Medi per Categoria</h3>
-                        <canvas id="category-chart"></canvas>
-                    </div>
-
-                    <div class="top-offers">
-                        <h3>Migliori Offerte</h3>
-                        <div class="top-offer-section">
-                            <h4>Domestico</h4>
-                            <div id="top-domestico"></div>
-                        </div>
-                        <div class="top-offer-section">
-                            <h4>Micro</h4>
-                            <div id="top-micro"></div>
-                        </div>
-                        <div class="top-offer-section">
-                            <h4>PMI</h4>
-                            <div id="top-pmi"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Upload OCR Section -->
-            <section id="upload-section" class="section" style="display: none;">
-                <div class="section-header">
-                    <h2>Upload PDF con OCR Avanzato</h2>
-                    <p>Carica un PDF di offerta energia per estrazione automatica dei dati</p>
-                </div>
-
-                <!-- Upload Area -->
-                <div class="upload-container">
-                    <div id="upload-area" class="upload-area">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <h3>Trascina qui il tuo PDF o clicca per selezionare</h3>
-                        <p>Supportati: PDF, immagini (JPG, PNG). Max 5 pagine.</p>
-                        <input type="file" id="pdf-file" accept=".pdf,image/*" style="display: none;">
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div id="ocr-progress" class="progress-container" style="display: none;">
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar"></div>
-                        </div>
-                        <p id="progress-text">Inizializzazione OCR avanzato<span class="loading-dots"></span></p>
-                    </div>
-                </div>
-
-                <!-- OCR Form -->
-                <div class="ocr-form-container">
-                    <form id="ocr-form" class="ocr-form">
-                        <h3>Dati Estratti - Verifica e Correggi</h3>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="fornitore">Fornitore</label>
-                                <input type="text" name="fornitore" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="nome_offerta">Nome Offerta</label>
-                                <input type="text" name="nome_offerta" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="categoria">Categoria</label>
-                                <select name="categoria" required>
-                                    <option value="Domestico">Domestico</option>
-                                    <option value="Micro">Micro</option>
-                                    <option value="PMI">PMI</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="tipo_prezzo">Tipo Prezzo</label>
-                                <select name="tipo_prezzo" required>
-                                    <option value="Fisso">Fisso</option>
-                                    <option value="Variabile">Variabile</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="prezzo_luce">Prezzo Luce (€/kWh)</label>
-                                <input type="number" name="prezzo_luce" step="0.0001" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="spread_luce">Spread Luce (€/kWh)</label>
-                                <input type="number" name="spread_luce" step="0.0001" value="0">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="prezzo_gas">Prezzo Gas (€/Smc)</label>
-                                <input type="number" name="prezzo_gas" step="0.0001" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="spread_gas">Spread Gas (€/Smc)</label>
-                                <input type="number" name="spread_gas" step="0.0001" value="0">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="quota_fissa_luce">Quota Fissa Luce (€/mese)</label>
-                                <input type="number" name="quota_fissa_luce" step="0.01" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="quota_fissa_gas">Quota Fissa Gas (€/mese)</label>
-                                <input type="number" name="quota_fissa_gas" step="0.01" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="commissioni">Commissioni (€)</label>
-                                <input type="number" name="commissioni" step="0.01" value="0">
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="scadenza">Scadenza</label>
-                                <input type="date" name="scadenza" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="durata_mesi">Durata (mesi)</label>
-                                <select name="durata_mesi" required>
-                                    <option value="12">12 mesi</option>
-                                    <option value="24">24 mesi</option>
-                                    <option value="36">36 mesi</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-save"></i>
-                                <span>Salva Offerta nel Database</span>
-                            </button>
-                            <button type="reset" class="btn-secondary">
-                                <i class="fas fa-undo"></i>
-                                <span>Reset Form</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Gestione Offerte Section -->
-            <section id="gestione-section" class="section" style="display: none;">
-                <div class="section-header">
-                    <h2>Gestione Offerte</h2>
-                    <p>Visualizza, modifica ed elimina le tue offerte salvate</p>
-                </div>
-
-                <!-- Filters -->
-                <div class="filters-container">
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label for="filter-categoria">Categoria</label>
-                            <select id="filter-categoria" class="filter-control">
-                                <option value="">Tutte le categorie</option>
-                                <option value="Domestico">Domestico</option>
-                                <option value="Micro">Micro</option>
-                                <option value="PMI">PMI</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="filter-fornitore">Fornitore</label>
-                            <select id="filter-fornitore" class="filter-control">
-                                <option value="">Tutti i fornitori</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="filter-tipo-prezzo">Tipo Prezzo</label>
-                            <select id="filter-tipo-prezzo" class="filter-control">
-                                <option value="">Tutti i tipi</option>
-                                <option value="Fisso">Fisso</option>
-                                <option value="Variabile">Variabile</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="search-offers">Ricerca</label>
-                            <input type="text" id="search-offers" class="filter-control" placeholder="Cerca per nome o fornitore...">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Offers Table -->
-                <div class="table-container">
-                    <table id="offers-table" class="offers-table">
-                        <thead>
-                            <tr>
-                                <th>Fornitore</th>
-                                <th>Nome Offerta</th>
-                                <th>Categoria</th>
-                                <th>Tipo</th>
-                                <th>Prezzo Luce</th>
-                                <th>Prezzo Gas</th>
-                                <th>Commissioni</th>
-                                <th>Scadenza</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Analisi Section -->
-            <section id="analisi-section" class="section" style="display: none;">
-                <div class="section-header">
-                    <h2>Analisi Avanzata</h2>
-                    <p>Statistiche dettagliate e confronti delle tue offerte</p>
-                </div>
-
-                <div class="analytics-container">
-                    <div class="analytics-placeholder">
-                        <div class="analytics-icon">
-                            <i class="fas fa-chart-bar"></i>
-                        </div>
-                        <h3>Sezione Analytics in Sviluppo</h3>
-                        <p>Stiamo preparando grafici avanzati, confronti automatici e analytics predittive per ottimizzare la tua gestione delle offerte energia.</p>
-                        <div class="coming-features">
-                            <div class="feature-item">
-                                <i class="fas fa-chart-pie"></i>
-                                <span>Grafici comparativi per categoria</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-trend-up"></i>
-                                <span>Trend dei prezzi energia</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-calculator"></i>
-                                <span>Calcolatore risparmi automatico</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <p>&copy; 2025 EnergiaCorp Premium. Ultimo aggiornamento: <span id="last-update"></span></p>
-                <p>Piattaforma intelligente per la gestione delle offerte energetiche</p>
-            </div>
-        </footer>
-    </div>
-
-    <!-- JavaScript Libraries - ALLA FINE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
-
-    <!-- App Scripts -->
-    <script src="supabase.js"></script>
-    <script src="app.js"></script>
-
-    <!-- PDF.js Worker Setup -->
-    <script>
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-
-        // Landing Page Logic
-        document.addEventListener('DOMContentLoaded', function() {
-            let isSignupMode = false;
-
-            const loginTab = document.getElementById('login-tab');
-            const signupTab = document.getElementById('signup-tab');
-            const signupFields = document.getElementById('signup-fields');
-            const authTitle = document.getElementById('auth-title');
-            const authSubmitText = document.getElementById('auth-submit-text');
-            const authFooterText = document.getElementById('auth-footer-text');
-
-            // Tab switching
-            loginTab.addEventListener('click', () => switchToLogin());
-            signupTab.addEventListener('click', () => switchToSignup());
-
-            function switchToLogin() {
-                isSignupMode = false;
-                loginTab.classList.add('active');
-                signupTab.classList.remove('active');
-                signupFields.style.display = 'none';
-                authTitle.textContent = 'Accedi alla Piattaforma';
-                authSubmitText.textContent = 'Accedi alla Dashboard';
-                authFooterText.textContent = 'Accedendo accetti i nostri termini di servizio e la privacy policy';
-            }
-
-            function switchToSignup() {
-                isSignupMode = true;
-                signupTab.classList.add('active');
-                loginTab.classList.remove('active');
-                signupFields.style.display = 'block';
-                authTitle.textContent = 'Crea il Tuo Account';
-                authSubmitText.textContent = 'Crea Account e Accedi';
-                authFooterText.textContent = 'Registrandoti accetti i nostri termini di servizio e la privacy policy';
-            }
-
-            // Custom auth handling that shows/hides landing page
-            const authForm = document.getElementById('auth-form');
-            authForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const submitBtn = document.getElementById('auth-submit');
-                const originalText = authSubmitText.textContent;
-
-                try {
-                    submitBtn.disabled = true;
-                    authSubmitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Caricamento...</span>';
-
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-
-                    let result;
-
-                    if (isSignupMode) {
-                        const fullName = document.getElementById('full-name').value;
-                        result = await signUp(email, password, fullName);
-
-                        if (!result.error) {
-                            alert('Registrazione completata! Controlla la tua email per confermare, poi fai login.');
-                            switchToLogin();
-                            return;
-                        }
-                    } else {
-                        result = await signIn(email, password);
-
-                        if (!result.error) {
-                            // Success - Hide landing page and show app
-                            document.getElementById('landing-page').style.display = 'none';
-                            document.getElementById('app-container').style.display = 'block';
-
-                            // Show user name in header
-                            const userName = document.getElementById('user-name');
-                            if (userName && result.data.user.user_metadata?.full_name) {
-                                userName.textContent = 'Ciao, ' + result.data.user.user_metadata.full_name;
-                            }
-
-                            // Initialize the main app
-                            if (typeof initializeApp === 'function') {
-                                await initializeApp();
-                            }
-                            return;
-                        }
-                    }
-
-                    alert('Errore: ' + result.error.message);
-
-                } catch (error) {
-                    alert('Errore: ' + error.message);
-                } finally {
-                    submitBtn.disabled = false;
-                    authSubmitText.textContent = originalText;
-                }
-            });
-        });
-    </script>
+<!-- Landing Page -->
+<div id="landing-page">
+<h1>EnergiaCorp Premium</h1>
+<p>Gestisci facilmente le offerte di luce e gas con OCR intelligente, dashboard avanzate e sicurezza di livello enterprise. Registrati subito e inizia a risparmiare!</p>
+<button id="start-btn"><i class="fas fa-rocket"></i> Inizia ora</button>
+</div>
+
+<!-- App principale -->
+<div id="app-container" style="display: none; flex-direction: column; flex: 1;">
+<!-- Header -->
+<div id="header">
+<h2>🌀 EnergiaCorp</h2>
+<div style="display:flex; align-items:center;">
+<span id="user-name">Ciao, utente</span>
+<button id="logout-btn" title="Esci dal sistema"><i class="fas fa-sign-out-alt"></i></button>
+</div>
+</div>
+
+<!-- Contenuto -->
+<div id="content">
+
+<!-- Sezione dashboard -->
+<div id="dashboard-section" style="display:block;">
+<h2>Benvenuto!</h2>
+<p>Seleziona le funzionalità dal menu.</p>
+<!-- Potresti mettere qui le statistiche e grafici -->
+</div>
+
+</div>
+</div>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal-overlay" style="display: none;">
+<div class="modal-content">
+<h2 id="auth-title">Accedi a EnergiaCorp</h2>
+<form id="auth-form">
+<div id="signup-fields" style="display: none;">
+<label for="full-name">Nome Completo</label>
+<input type="text" id="full-name" placeholder="Inserisci il nome completo" required />
+</div>
+<div class="form-group">
+<label for="email">Email</label>
+<input type="email" id="email" placeholder="Inserisci la tua email" required />
+</div>
+<div class="form-group">
+<label for="password">Password</label>
+<input type="password" id="password" placeholder="Inserisci la password" required />
+</div>
+<button type="submit" id="auth-submit">Accedi</button>
+</form>
+<div class="auth-switch" style="text-align: center; margin-top:1.2rem;">
+<span id="switch-text">Non hai un account?</span>
+<a href="#" id="auth-switch-link">Registrati</a>
+</div>
+</div>
+</div>
+
+<!-- Loader di caricamento -->
+<div id="main-loader" style="display:none;">
+<div class="loader">
+<div class="loader-spinner"></div>
+<p>Caricamento...</p>
+</div>
+</div>
+
+<!-- Script librerie e funzioni -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Inserisci qui il tuo supabase.js (da copiare in file separato) -->
+<script src="supabase.js"></script><script src="app.js"></script>
+<!-- Il file app.js contiene la tua logica, puoi sostituirlo con quello che ti fornirò se vuoi -->
 </body>
 </html>
+
