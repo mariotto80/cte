@@ -26,6 +26,66 @@ function showNotification(message, type = 'success') {
 
 // OCR Configuration
 const OCR_CONFIG = { lang: 'ita+eng', oem: 1, psm: 6 };
+// Gestione autenticazione
+let isSignup = false
+
+document.getElementById('auth-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  
+  const email = document.getElementById('email').value
+  const password = document.getElementById('password').value
+  
+  if (isSignup) {
+    const fullName = document.getElementById('full-name').value
+    const result = await signUp(email, password, fullName)
+    
+    if (result.success) {
+      showNotification('Registrazione completata! Controlla la tua email.', 'success')
+    } else {
+      showNotification('Errore registrazione: ' + result.error, 'error')
+    }
+  } else {
+    const result = await signIn(email, password)
+    
+    if (result.success) {
+      document.getElementById('login-modal').style.display = 'none'
+      await initializeApp()
+    } else {
+      showNotification('Errore login: ' + result.error, 'error')
+    }
+  }
+})
+
+// Switch tra login e signup
+document.getElementById('auth-switch').addEventListener('click', (e) => {
+  e.preventDefault()
+  isSignup = !isSignup
+  
+  if (isSignup) {
+    document.getElementById('auth-title').textContent = 'Registrazione'
+    document.getElementById('signup-fields').style.display = 'block'
+    document.getElementById('auth-submit').textContent = 'Registrati'
+    document.getElementById('auth-switch-text').textContent = 'Hai già un account?'
+    document.getElementById('auth-switch').textContent = 'Login'
+  } else {
+    document.getElementById('auth-title').textContent = 'Login'
+    document.getElementById('signup-fields').style.display = 'none'
+    document.getElementById('auth-submit').textContent = 'Login'
+    document.getElementById('auth-switch-text').textContent = 'Non hai un account?'
+    document.getElementById('auth-switch').textContent = 'Registrati'
+  }
+})
+
+// Controlla se l'utente è già loggato
+async function checkAuthState() {
+  const user = await getCurrentUser()
+  if (user) {
+    return true
+  } else {
+    document.getElementById('login-modal').style.display = 'block'
+    return false
+  }
+}
 
 // Field Recognition Patterns (restano identici)
 const FIELD_PATTERNS = {
