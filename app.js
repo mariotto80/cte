@@ -889,15 +889,10 @@ const OCR_CONFIG = {
     apiKey: 'AIzaSyCtiM1gEiDUaQo-8xXYHia7oOJcx1JArI4',
     endpoint: 'https://vision.googleapis.com/v1/images:annotate'
   },
-  azureVision: {
-    apiKey: '', // opzionale (lascia vuoto se non la usi)
-    endpoint: 'https://YOUR_REGION.api.cognitive.microsoft.com/vision/v3.2/ocr'
-  },
   ocrSpace: {
     apiKey: 'K85701396588957',
     endpoint: 'https://api.ocr.space/parse/image'
-  }
-};
+  };
 
 const ENERGIA_PATTERNS = {
   fornitori: {
