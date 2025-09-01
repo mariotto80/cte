@@ -189,14 +189,17 @@
 }
 
 @media (min-width: 600px) {
-    #user-name {
-        display: block;
-        max-width:80px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+  #user-name {
+    display: block;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    order: -1;        /* aggiunta */
+    margin-right: 12px; /* aggiunta */
+  }
 }
+.header__actions { display: flex; gap: 10px; }  /* opzionale ma consigliato */
 
 /* ===== THEME TOGGLE PICCOLO VICINO LOGOUT ===== */
 .theme-toggle {
