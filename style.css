@@ -433,3 +433,4 @@ body{background:#f8fafc;color:#1e293b;font-family:Inter,system-ui,Segoe UI,Robot
 /* Tabelle/forme minime, adatta ai tuoi stili esistenti */
 .form-group{margin-bottom:12px}
 .form-group input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+ .chart-container { display: none !important; }
