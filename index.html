@@ -12,14 +12,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <!-- JavaScript Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
-
-    <!-- Supabase Configuration -->
-    <script src="supabase.js"></script>
+    <!-- PDF.js Worker Setup -->
+    <script>
+        if (typeof window !== 'undefined') {
+            window.pdfjsWorkerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
 </head>
 <body>
     <!-- Login Modal -->
@@ -200,7 +198,7 @@
         <!-- Upload OCR Section -->
         <section id="upload-section" class="section" style="display: none;">
             <div class="section-header">
-                <h2>Upload PDF con OCR</h2>
+                <h2>Upload PDF con OCR Avanzato</h2>
                 <p>Carica un PDF di offerta energia per estrazione automatica dei dati</p>
             </div>
 
@@ -413,7 +411,21 @@
         </div>
     </footer>
 
-    <!-- Main App Script -->
+    <!-- JavaScript Libraries - SOLO ALLA FINE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="supabase.js"></script>
     <script src="app.js"></script>
+
+    <!-- PDF.js Worker Setup -->
+    <script>
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
 </body>
 </html>
