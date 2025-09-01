@@ -89,7 +89,7 @@
 
 .header__nav {
     display: flex;
-    gap: 16px;
+    gap: 20px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -191,7 +191,7 @@
 @media (min-width: 600px) {
     #user-name {
         display: block;
-        max-width: 120px;
+        max-width: 100px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
