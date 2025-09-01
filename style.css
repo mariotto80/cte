@@ -89,7 +89,7 @@
 
 .header__nav {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -102,7 +102,7 @@
 }
 
 @media (min-width: 768px) {
-    .header__nav { gap: 20px; };
+    .header__nav { gap: 24px; };
         overflow: visible;
     }
 }
