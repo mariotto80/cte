@@ -1339,3 +1339,485 @@ function ensureOCRListeners() {
 
 // Call after DOM ready or after login init
 document.addEventListener('DOMContentLoaded', ensureOCRListeners);
+/* ===== OCR MODULE: COMPLETE REWRITE (Plug & Play) =====
+   Requisiti minimi nel DOM:
+   - #upload-area (div area drag&drop)
+   - #pdf-file (input type="file")
+   - #file-preview-container (div anteprima; se assente lo crea)
+   - #ocr-form (form con campi name: fornitore, nome_offerta, prezzo_luce, prezzo_gas, quota_fissa_luce, quota_fissa_gas, commissioni, scadenza, durata_mesi)
+   - Funzioni opzionali UI (se non esistono, il modulo usa fallback interni):
+     showNotification(type,msg), updateProcessingStatus(state,msg), showOCRSummary(data), populateOCRForm(data)
+*/
+
+(function () {
+  'use strict';
+
+  // ====== CONFIG ======
+  const OCR_CONFIG = {
+    googleVision: {
+      apiKey: 'AIzaSyCtiM1gEiDUaQo-8xXYHia7oOJcx1JArI4',
+      endpoint: 'https://vision.googleapis.com/v1/images:annotate',
+      enabled: true
+    },
+    ocrSpace: {
+      apiKey: 'K85701396588957',
+      endpoint: 'https://api.ocr.space/parse/image',
+      enabled: true
+    },
+    tesseract: { enabled: true, lang: 'ita+eng' },
+    timeouts: { perEngineMs: 30000 }
+  };
+
+  // ====== UTIL UI (safe no-op se mancano implementazioni esterne) ======
+  const ui = {
+    notify(type, msg) {
+      try { window.showNotification?.(msg, type); }
+      catch (_) { console.log(`[${type}] ${msg}`); }
+    },
+    status(state, msg) {
+      try { window.updateProcessingStatus?.(state, msg); }
+      catch (_) { console.log(`[${state}] ${msg}`); }
+    },
+    ensurePreviewContainer() {
+      let c = document.getElementById('file-preview-container');
+      if (!c) {
+        c = document.createElement('div');
+        c.id = 'file-preview-container';
+        c.className = 'file-preview-container';
+        const up = document.querySelector('.upload-container') || document.getElementById('upload-area')?.parentNode || document.body;
+        up.appendChild(c);
+      }
+      return c;
+    },
+    showPreview(file) {
+      const cont = ui.ensurePreviewContainer();
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      const isImg = (file.type || '').includes('image');
+      const isPdf = (file.type || '').includes('pdf');
+      let thumb = '';
+      if (isImg) {
+        const url = URL.createObjectURL(file);
+        thumb = `<div class="file-thumbnail image-thumb"><img src="${url}" alt="preview" style="width:100%;height:100%;object-fit:cover;"></div>`;
+      } else if (isPdf) {
+        thumb = `<div class="file-thumbnail pdf-thumb"><i style="font-size:28px;color:#fff">PDF</i></div>`;
+      } else {
+        thumb = `<div class="file-thumbnail unknown-thumb"><i>FILE</i></div>`;
+      }
+      cont.innerHTML = `
+        <div class="preview-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(135deg,#3b82f6,#0ea5e9);color:#fff">
+          <strong>Anteprima file</strong>
+          <button id="btn-remove-file" style="background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer">Rimuovi</button>
+        </div>
+        <div class="preview-body" style="display:grid;grid-template-columns:auto 1fr;gap:12px;padding:12px;background:#fff;border:1px solid #e2e8f0">
+          ${thumb}
+          <div class="file-details">
+            <div style="margin-bottom:8px">
+              <div style="font-weight:600">${file.name}</div>
+              <div style="color:#64748b;font-size:12px">${file.type || 'n/d'} • ${sizeMB} MB • ${new Date().toLocaleString('it-IT')}</div>
+            </div>
+            <div class="processing-status" style="border:1px solid #cbd5e1;border-radius:8px;padding:10px;background:#f8fafc;color:#1e293b">
+              <span>In attesa…</span>
+            </div>
+          </div>
+        </div>
+      `;
+      cont.style.display = 'block';
+      cont.querySelector('#btn-remove-file')?.addEventListener('click', () => {
+        cont.innerHTML = '';
+        cont.style.display = 'none';
+        const input = document.getElementById('pdf-file');
+        if (input) input.value = '';
+      });
+      cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    showSummary(data) {
+      try { window.showOCRSummary?.(data); }
+      catch (_) {
+        const cont = ui.ensurePreviewContainer();
+        const existing = cont.querySelector('.ocr-summary');
+        const html = `
+          <div class="ocr-summary" style="border-top:1px solid #e2e8f0;padding:12px;background:#f8fafc;margin-top:8px">
+            <strong>Riassunto OCR</strong>
+            <div style="margin-top:8px;font-size:14px;color:#334155;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>Fornitore: <b>${data.fornitore || '—'}</b></div>
+              <div>Offerta: <b>${data.nome_offerta || '—'}</b></div>
+              <div>Luce €/kWh: <b>${data.prezzo_luce ?? '—'}</b></div>
+              <div>Gas €/Smc: <b>${data.prezzo_gas ?? '—'}</b></div>
+              <div>Quota luce: <b>${data.quota_fissa_luce ?? '—'}</b></div>
+              <div>Quota gas: <b>${data.quota_fissa_gas ?? '—'}</b></div>
+              <div>Commissioni: <b>${data.commissioni ?? '—'}</b></div>
+              <div>Scadenza: <b>${data.scadenza || '—'}</b></div>
+              <div>Durata mesi: <b>${data.durata_mesi ?? '—'}</b></div>
+            </div>
+          </div>
+        `;
+        if (existing) existing.outerHTML = html;
+        else cont.insertAdjacentHTML('beforeend', html);
+      }
+    },
+    fillForm(data) {
+      try { window.populateOCRForm?.(data); }
+      catch (_) {
+        const form = document.getElementById('ocr-form');
+        if (!form) return;
+        const set = (n, v) => { const el = form.querySelector(`[name="${n}"]`); if (el) el.value = v ?? ''; };
+        set('fornitore', data.fornitore);
+        set('nome_offerta', data.nome_offerta);
+        set('prezzo_luce', data.prezzo_luce);
+        set('prezzo_gas', data.prezzo_gas);
+        set('quota_fissa_luce', data.quota_fissa_luce);
+        set('quota_fissa_gas', data.quota_fissa_gas);
+        set('commissioni', data.commissioni);
+        set('scadenza', data.scadenza);
+        set('durata_mesi', data.durata_mesi);
+      }
+    },
+    setProcessingMessage(text) {
+      const box = document.querySelector('#file-preview-container .processing-status');
+      if (box) box.innerHTML = `<span>${text}</span>`;
+    }
+  };
+
+  // ====== PREVIEW + EVENTS ======
+  function bindUploadEvents() {
+    const input = document.getElementById('pdf-file');
+    const zone = document.getElementById('upload-area');
+
+    async function handle(file) {
+      ui.showPreview(file);
+      ui.status('processing', 'Preprocessing…');
+      ui.setProcessingMessage('Preprocessing…');
+      try {
+        const result = await runEnterpriseOCR(file);
+        ui.status('success', `OCR completato (confidence ${result.confidence}%)`);
+        ui.setProcessingMessage(`OCR completato (confidence ${result.confidence}%)`);
+        ui.showSummary(result.data);
+        ui.fillForm(result.data);
+        ui.notify('success', `OCR OK • Confidence ${result.confidence}%`);
+      } catch (err) {
+        console.error('OCR error:', err);
+        ui.status('error', 'Errore OCR. Avvio fallback semplice…');
+        ui.setProcessingMessage('Errore OCR. Fallback…');
+        const fb = simpleFallbackFromFileName(file);
+        ui.showSummary(fb);
+        ui.fillForm(fb);
+        ui.notify('error', 'Errore OCR: usato fallback semplice');
+      }
+    }
+
+    input?.addEventListener('change', async (e) => {
+      const f = e.target.files?.[0];
+      if (f) await handle(f);
+    });
+
+    if (zone) {
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const f = e.dataTransfer.files?.[0];
+        if (f) {
+          const dt = new DataTransfer(); dt.items.add(f);
+          if (input) input.files = dt.files;
+          await handle(f);
+        }
+      });
+      zone.addEventListener('click', () => input?.click());
+    }
+  }
+
+  // ====== PREPROCESSING ======
+  function preprocessToPNGBlob(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 3000;
+        const ratio = Math.min(maxW / img.width, 2);
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d');
+        cx.filter = 'contrast(1.15) brightness(1.05) grayscale(0.8)';
+        cx.drawImage(img, 0, 0, w, h);
+        cv.toBlob((b) => resolve(b), 'image/png', 0.95);
+      };
+      // se PDF, comunque caricherà “broken”; in tal caso il preprocessing non serve
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  // ====== OCR ENGINES ======
+  async function ocrGoogleVision(imageOrFile) {
+    if (!OCR_CONFIG.googleVision.enabled || !OCR_CONFIG.googleVision.apiKey) throw new Error('Vision disabilitato');
+    const base64 = await toBase64(imageOrFile);
+    const body = {
+      requests: [{
+        image: { content: String(base64).split(',')[1] },
+        features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
+        imageContext: { languageHints: ['it', 'en'] }
+      }]
+    };
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), OCR_CONFIG.timeouts.perEngineMs);
+    const res = await fetch(`${OCR_CONFIG.googleVision.endpoint}?key=${OCR_CONFIG.googleVision.apiKey}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal
+    });
+    clearTimeout(t);
+    const json = await res.json();
+    const err = json?.responses?.[0]?.error;
+    if (err) throw new Error(`Vision: ${err.message || 'errore'}`);
+    const text = json?.responses?.[0]?.fullTextAnnotation?.text || '';
+    const conf = estimateConfidenceByLength(text);
+    return { source: 'google', text, confidence: conf };
+  }
+
+  async function ocrSpace(imageOrFile) {
+    if (!OCR_CONFIG.ocrSpace.enabled || !OCR_CONFIG.ocrSpace.apiKey) throw new Error('OCR.space disabilitato');
+    const fd = new FormData();
+    // se già blob PNG, ottimo; se è file pdf, lo manda così
+    const name = (imageOrFile?.name) ? imageOrFile.name : 'doc.png';
+    fd.append('file', imageOrFile, name);
+    fd.append('language', 'ita');
+    fd.append('isOverlayRequired', 'false');
+    fd.append('detectOrientation', 'true');
+    fd.append('scale', 'true');
+    fd.append('OCREngine', '2');
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), OCR_CONFIG.timeouts.perEngineMs);
+    const res = await fetch(OCR_CONFIG.ocrSpace.endpoint, {
+      method: 'POST',
+      headers: { apikey: OCR_CONFIG.ocrSpace.apiKey },
+      body: fd,
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    const json = await res.json();
+    const parsed = Array.isArray(json?.ParsedResults) ? json.ParsedResults[0] : null;
+    const text = parsed?.ParsedText || '';
+    if (!text) throw new Error(json?.ErrorMessage || 'OCR.space: nessun testo');
+    const conf = 80;
+    return { source: 'ocrspace', text, confidence: conf };
+  }
+
+  async function ocrTesseract(imageOrFile) {
+    if (!OCR_CONFIG.tesseract.enabled) throw new Error('Tesseract disabilitato');
+    if (typeof Tesseract === 'undefined') throw new Error('Tesseract non caricato');
+    const { data } = await Tesseract.recognize(imageOrFile, OCR_CONFIG.tesseract.lang, {
+      workerBlobURL: false,
+      logger: m => (m?.status === 'recognizing text') && ui.setProcessingMessage(`Tesseract ${Math.round((m.progress || 0) * 100)}%`)
+    });
+    const text = data?.text || '';
+    const conf = Math.round(data?.confidence || 70);
+    if (!text) throw new Error('Tesseract: nessun testo');
+    return { source: 'tesseract', text, confidence: conf };
+  }
+
+  // ====== PIPELINE ======
+  async function runEnterpriseOCR(file) {
+    ui.setProcessingMessage('Preparo immagine…');
+    let preBlob = null;
+    try { preBlob = await preprocessToPNGBlob(file); }
+    catch { /* se fallisce preprocessing, si userà direttamente il file */ }
+
+    const targetForImageEngines = preBlob || (file.type.includes('image') ? file : null);
+    const engines = [];
+
+    // per PDF: Vision/OCR.space lavorano anche con PDF; Tesseract meglio su immagine
+    if (OCR_CONFIG.googleVision.enabled) engines.push(() => ocrGoogleVision(targetForImageEngines || file));
+    if (OCR_CONFIG.ocrSpace.enabled) engines.push(() => ocrSpace(targetForImageEngines || file));
+    if (OCR_CONFIG.tesseract.enabled && (targetForImageEngines)) engines.push(() => ocrTesseract(targetForImageEngines));
+
+    ui.setProcessingMessage('Eseguo OCR (multi-engine)…');
+    const settled = await Promise.allSettled(engines.map(fn => fn()));
+    const ok = settled
+      .filter(s => s.status === 'fulfilled' && s.value?.text)
+      .map(s => s.value);
+
+    if (!ok.length) throw new Error('Nessun engine ha prodotto testo');
+
+    // Ordina per conf
+    ok.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    const best = ok[0];
+
+    // Se conf molto alta, usa; altrimenti merge semplice
+    const text = (best.confidence >= 90) ? best.text : mergeTexts(ok);
+    const data = extractEnergyData(text, file.name);
+
+    const avgConf = Math.min(95, Math.round(ok.reduce((s, r) => s + (r.confidence || 0), 0) / ok.length) + Math.min(text.length / 100, 10));
+    return { data, confidence: avgConf, engines: ok.map(e => e.source) };
+  }
+
+  // ====== HELPERS ======
+  function toBase64(fileOrBlob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(fileOrBlob);
+    });
+  }
+
+  function estimateConfidenceByLength(text) {
+    const len = (text || '').length;
+    if (len > 4000) return 94;
+    if (len > 2000) return 92;
+    if (len > 800) return 90;
+    if (len > 300) return 88;
+    return 85;
+  }
+
+  function mergeTexts(list) {
+    const seen = new Set();
+    const out = [];
+    for (const r of list) {
+      const chunks = String(r.text).split(/\n+/);
+      for (const c of chunks) {
+        const k = c.trim();
+        if (k && !seen.has(k)) { seen.add(k); out.push(k); }
+      }
+    }
+    return out.join('\n');
+  }
+
+  function cleanOfferName(n) {
+    return String(n || '')
+      .replace(/[^a-zA-Z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function titleCase(s) {
+    return String(s || '').split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
+  }
+
+  function parseItDate(s) {
+    const m = String(s || '').match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (!m) return null;
+    const d = parseInt(m[1], 10), mo = parseInt(m[2], 10) - 1, y = parseInt(m[3], 10);
+    const dt = new Date(y, mo, d);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+
+  function clamp(v, min, max) {
+    if (v == null || Number.isNaN(v)) return null;
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function extractEnergyData(text, fileName) {
+    const low = String(text || '').toLowerCase();
+
+    // Fornitore da testo o da file name
+    const providers = {
+      enel: ['enel', 'enel energia'],
+      eni: ['eni', 'plenitude'],
+      edison: ['edison'],
+      a2a: ['a2a'],
+      acea: ['acea'],
+      hera: ['hera'],
+      iren: ['iren'],
+      engie: ['engie'],
+      sorgenia: ['sorgenia'],
+      illumia: ['illumia'],
+      pulsee: ['pulsee', 'axpo'],
+      octopus: ['octopus energy'],
+      wekiwi: ['wekiwi']
+    };
+    let fornitore = null;
+    for (const [name, pats] of Object.entries(providers)) {
+      if (pats.some(p => low.includes(p))) { fornitore = name; break; }
+    }
+    if (!fornitore) {
+      const fl = String(fileName || '').toLowerCase();
+      for (const [name, pats] of Object.entries(providers)) {
+        if (pats.some(p => fl.includes(p))) { fornitore = name; break; }
+      }
+    }
+    const mapCap = { enel: 'ENEL Energia', eni: 'ENI Plenitude', edison: 'Edison Energia', a2a: 'A2A Energia', acea: 'ACEA Energia', hera: 'HERA Comm', iren: 'IREN Mercato', engie: 'ENGIE Italia' };
+    const fornDisplay = mapCap[fornitore] || (fornitore ? titleCase(fornitore) : 'Fornitore da Identificare');
+
+    // Nome offerta da testo o dal file
+    const offerMatch = low.match(/offerta[:\s]+([^\n\r]{5,60})/i) || low.match(/prodotto[:\s]+([^\n\r]{5,60})/i) || low.match(/piano[:\s]+([^\n\r]{5,60})/i);
+    let nome_offerta = offerMatch?.[1] ? titleCase(cleanOfferName(offerMatch[1])) : titleCase(cleanOfferName(String(fileName || '').replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ')));
+
+    // Prezzi e quote
+    const num = (rgx) => {
+      const m = low.match(rgx);
+      if (!m?.[1]) return null;
+      const v = parseFloat(m[1].replace(',', '.'));
+      return Number.isNaN(v) ? null : v;
+    };
+    const prezzo_luce = num(/(prezzo.*luce|energia.*elettrica|componente.*energia|pe).*?[€]?\s*(\d+[,.]?\d*)\s*[€]?[^a-z0-9]*kwh/i) ||
+                         num(/(\d+[,.]?\d*)\s*[€]?[^a-z0-9]*kwh/i);
+    const prezzo_gas = num(/(prezzo.*gas|gas.*naturale|componente.*gas|cmem).*?[€]?\s*(\d+[,.]?\d*)\s*[€]?[^a-z0-9]*smc/i) ||
+                       num(/(\d+[,.]?\d*)\s*[€]?[^a-z0-9]*smc/i);
+
+    const quota_fissa_luce = num(/(quota|spesa).*fissa.*luce.*?[€]?\s*(\d+[,.]?\d*)/i);
+    const quota_fissa_gas  = num(/(quota|spesa).*fissa.*gas.*?[€]?\s*(\d+[,.]?\d*)/i);
+
+    // Commissioni
+    const commissioni = num(/(commissioni|attivazione|spese).*?[€]?\s*(\d+[,.]?\d*)/i) ?? 0;
+
+    // Categoria e tipo prezzo
+    const categoria = /domestico|residenziale|casa|famiglia/i.test(low) ? 'Domestico'
+                    : /micro|piccol[aie].*impres[aie]/i.test(low) ? 'Micro'
+                    : /pmi|business|medi[aie].*impres[aie]/i.test(low) ? 'PMI'
+                    : 'Domestico';
+    const tipo_prezzo = /variabile|indicizzato|fluttuante/i.test(low) ? 'Variabile' : 'Fisso';
+
+    // Scadenza, Durata
+    const d = parseItDate(low);
+    const scadenza = (d && d > new Date()) ? d.toISOString().split('T')[0] : (() => { const t = new Date(); t.setFullYear(t.getFullYear() + 1); return t.toISOString().split('T')[0]; })();
+    const durata_mesi = (() => {
+      const m = low.match(/(durata|validit[aà]).*?(\d{1,2}).*?mes/i) || low.match(/(\d{1,2}).*?mes/i);
+      const v = m?.[2] || m?.[1];
+      const n = parseInt(v, 10);
+      return (n && n > 0 && n <= 60) ? n : 12;
+    })();
+
+    // Clamp e arrotondamenti
+    const pl = clamp(prezzo_luce, 0.05, 1.5);
+    const pg = clamp(prezzo_gas, 0.2, 4);
+    const ql = clamp(quota_fissa_luce, 0, 50);
+    const qg = clamp(quota_fissa_gas, 0, 50);
+
+    return {
+      fornitore: fornDisplay,
+      nome_offerta,
+      categoria,
+      tipo_prezzo,
+      prezzo_luce: pl != null ? Math.round(pl * 10000) / 10000 : null,
+      prezzo_gas: pg != null ? Math.round(pg * 10000) / 10000 : null,
+      quota_fissa_luce: ql != null ? Math.round(ql * 100) / 100 : null,
+      quota_fissa_gas: qg != null ? Math.round(qg * 100) / 100 : null,
+      commissioni: Math.round((commissioni || 0) * 100) / 100,
+      scadenza,
+      durata_mesi
+    };
+  }
+
+  function simpleFallbackFromFileName(file) {
+    const base = String(file.name || '').replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const nome_offerta = titleCase(base || 'Offerta Energia');
+    const forn = (base.split(' ')[0] || 'Fornitore') + ' Energia';
+    const t = new Date(); t.setFullYear(t.getFullYear() + 1);
+    return {
+      fornitore: forn,
+      nome_offerta,
+      categoria: 'Domestico',
+      tipo_prezzo: 'Fisso',
+      prezzo_luce: 0.22,
+      prezzo_gas: 0.95,
+      quota_fissa_luce: 12,
+      quota_fissa_gas: 10,
+      commissioni: 0,
+      scadenza: t.toISOString().split('T')[0],
+      durata_mesi: 12
+    };
+  }
+
+  // ====== BOOTSTRAP ======
+  document.addEventListener('DOMContentLoaded', bindUploadEvents);
+})();
