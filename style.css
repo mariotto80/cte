@@ -23,13 +23,13 @@
     justify-content: space-between;
     align-items: center;
     padding: 0 var(--space-md);
-    gap: var(--space-md);
+    gap: 12px;
 }
 
 .header__brand {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 16px;
     flex-shrink: 0;
 }
 
