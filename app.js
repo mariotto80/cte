@@ -1,46 +1,45 @@
-// app.js - Applicazione Completa EnergiaCorp Premium
+// app.js - EnergiaCorp Premium Fixed per Landing Page
 // ===== VARIABILI GLOBALI =====
 let offers = [];
 let filteredOffers = [];
 let currentSort = { field: null, direction: 'asc' };
 let charts = {};
-let ocrWorker = null;
 let currentTheme = 'light';
 let currentUser = null;
 
 // ===== INIZIALIZZAZIONE APPLICAZIONE =====
 async function initializeApp() {
     try {
-        console.log('🚀 Inizializzazione app...');
+        console.log('🚀 Inizializzazione app dashboard...');
 
         // Verifica utente corrente
         currentUser = await getCurrentUser();
 
         if (!currentUser) {
             console.error('❌ Nessun utente loggato');
-            showNotification('Devi essere loggato per usare l\'app', 'error');
+            showNotification('Errore: utente non loggato', 'error');
             return;
         }
 
         console.log('✅ Utente loggato:', currentUser.email);
 
-        // Carica dati
-        await loadOffersFromDatabase();
-
         // Setup interfaccia
         setupEventListeners();
         initializeDashboard();
         updateLastUpdate();
-        showSection('dashboard');
+
+        // Carica dati
+        await loadOffersFromDatabase();
 
         // Setup real-time
         setupRealtimeSubscription();
 
-        console.log('🎉 App inizializzata con successo!');
+        console.log('🎉 App dashboard inizializzata con successo!');
+        showNotification('✅ Dashboard caricata correttamente', 'success');
 
     } catch (error) {
         console.error('❌ Errore inizializzazione app:', error);
-        showNotification('Errore caricamento applicazione: ' + error.message, 'error');
+        showNotification('Errore caricamento: ' + error.message, 'error');
     }
 }
 
@@ -63,10 +62,15 @@ async function loadOffersFromDatabase() {
 
         updateDashboard();
         updateOffersTable();
+        updateFilters();
 
     } catch (error) {
         console.error('❌ Errore caricamento offerte:', error);
         showNotification('Errore caricamento offerte: ' + error.message, 'error');
+        offers = [];
+        filteredOffers = [];
+        updateDashboard();
+        updateOffersTable();
     } finally {
         showLoadingState(false);
     }
@@ -152,16 +156,22 @@ function showSection(sectionName) {
         targetSection.style.display = 'block';
     } else {
         console.error('❌ Sezione non trovata:', sectionName);
+        return;
     }
 
     // Aggiorna navigazione
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
+        // Reset style
+        btn.style.background = 'transparent';
+        btn.style.color = '#6b7280';
     });
 
     const activeBtn = document.querySelector(`[data-section="${sectionName}"]`);
     if (activeBtn) {
         activeBtn.classList.add('active');
+        activeBtn.style.background = '#667eea';
+        activeBtn.style.color = 'white';
     }
 
     // Aggiorna contenuto sezione
@@ -171,50 +181,42 @@ function showSection(sectionName) {
             break;
         case 'gestione':
             updateOffersTable();
+            applyFilters();
             break;
         case 'analisi':
             updateAnalytics();
             break;
         case 'upload':
-            // Upload section doesn't need special updates
+            // Upload section non richiede aggiornamenti
             break;
     }
 }
 
+function initializeDashboard() {
+    console.log('🏠 Dashboard pronta per caricamento dati...');
+    // Inizializzazione base - i dati vengono caricati in loadOffersFromDatabase
+}
+
 function updateDashboard() {
-    console.log('📊 Aggiornamento dashboard...');
+    console.log('📊 Aggiornamento dashboard con', offers.length, 'offerte...');
     updateKPICards();
     updateTopOffers();
     updateCharts();
 }
 
-function initializeDashboard() {
-    console.log('🏠 Inizializzazione dashboard...');
-    // Dashboard viene aggiornata in loadOffersFromDatabase
-}
-
 function updateKPICards() {
-    if (offers.length === 0) {
-        console.log('📊 Nessuna offerta per KPI');
-        return;
-    }
-
     const stats = {
         total: offers.length,
         domestico: offers.filter(o => o.categoria === 'Domestico').length,
         micro: offers.filter(o => o.categoria === 'Micro').length,
-        pmi: offers.filter(o => o.categoria === 'PMI').length,
-        avgLuce: offers.reduce((sum, o) => sum + (parseFloat(o.prezzo_luce) || 0), 0) / offers.length,
-        avgGas: offers.reduce((sum, o) => sum + (parseFloat(o.prezzo_gas) || 0), 0) / offers.length
+        pmi: offers.filter(o => o.categoria === 'PMI').length
     };
 
     const kpiElements = {
         'total-offers': stats.total,
         'domestico-count': stats.domestico,
         'micro-count': stats.micro,
-        'pmi-count': stats.pmi,
-        'avg-luce': stats.avgLuce.toFixed(4) + ' €/kWh',
-        'avg-gas': stats.avgGas.toFixed(4) + ' €/Smc'
+        'pmi-count': stats.pmi
     };
 
     Object.entries(kpiElements).forEach(([id, value]) => {
@@ -228,12 +230,21 @@ function updateKPICards() {
 }
 
 function updateTopOffers() {
-    const categories = ['Domestico', 'Micro', 'PMI'];
+    const categories = ['domestico', 'micro', 'pmi'];
 
     categories.forEach(categoria => {
-        const categoryOffers = offers.filter(o => o.categoria === categoria);
-        if (categoryOffers.length === 0) return;
+        const categoryName = categoria.charAt(0).toUpperCase() + categoria.slice(1);
+        const categoryOffers = offers.filter(o => o.categoria === categoryName);
+        const container = document.getElementById(`top-${categoria}`);
 
+        if (!container) return;
+
+        if (categoryOffers.length === 0) {
+            container.innerHTML = '<p style="color: #9ca3af; font-style: italic;">Nessuna offerta disponibile</p>';
+            return;
+        }
+
+        // Ordina per prezzo totale più basso
         const sorted = categoryOffers.sort((a, b) => {
             const totalA = (parseFloat(a.prezzo_luce) || 0) + (parseFloat(a.prezzo_gas) || 0) + (parseFloat(a.commissioni) || 0);
             const totalB = (parseFloat(b.prezzo_luce) || 0) + (parseFloat(b.prezzo_gas) || 0) + (parseFloat(b.commissioni) || 0);
@@ -241,37 +252,46 @@ function updateTopOffers() {
         });
 
         const topOffer = sorted[0];
-        const containerId = `top-${categoria.toLowerCase()}`;
-        const container = document.getElementById(containerId);
 
-        if (container && topOffer) {
-            container.innerHTML = `
-                <div class="top-offer-card">
-                    <h4>${topOffer.nome_offerta || 'Offerta ' + categoria}</h4>
-                    <p><strong>${topOffer.fornitore}</strong></p>
-                    <div class="price-info">
-                        <span>Luce: ${(parseFloat(topOffer.prezzo_luce) || 0).toFixed(4)}€/kWh</span>
-                        <span>Gas: ${(parseFloat(topOffer.prezzo_gas) || 0).toFixed(4)}€/Smc</span>
-                    </div>
-                    <p class="savings">Commissioni: ${(parseFloat(topOffer.commissioni) || 0).toFixed(2)}€</p>
+        container.innerHTML = `
+            <div class="top-offer-card">
+                <h4>${topOffer.nome_offerta || 'Offerta ' + categoryName}</h4>
+                <p><strong>${topOffer.fornitore || 'Fornitore N/D'}</strong></p>
+                <div class="price-info">
+                    <span>⚡ ${(parseFloat(topOffer.prezzo_luce) || 0).toFixed(4)}€/kWh</span>
+                    <span>🔥 ${(parseFloat(topOffer.prezzo_gas) || 0).toFixed(4)}€/Smc</span>
                 </div>
-            `;
-        }
+                <p class="savings">💰 Commissioni: ${(parseFloat(topOffer.commissioni) || 0).toFixed(2)}€</p>
+            </div>
+        `;
     });
 }
 
 function updateCharts() {
-    console.log('📈 Aggiornamento grafici...');
+    console.log('📈 Tentativo aggiornamento grafici...');
 
     // Controlla se Chart.js è disponibile
     if (typeof Chart === 'undefined') {
         console.warn('⚠️ Chart.js non disponibile, salto grafici');
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<p style="text-align: center; color: #9ca3af;">📊 Grafici non disponibili - Chart.js non caricato</p>';
+        }
         return;
     }
 
     const ctx = document.getElementById('category-chart');
-    if (!ctx || offers.length === 0) {
-        console.log('📈 Nessun canvas o dati per grafico');
+    if (!ctx) {
+        console.log('📈 Canvas chart non trovato');
+        return;
+    }
+
+    if (offers.length === 0) {
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer.querySelector('canvas')) {
+            chartContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>Nessun dato per grafici</div>';
+        }
         return;
     }
 
@@ -305,15 +325,21 @@ function updateCharts() {
                         'rgba(245, 159, 11, 1)',
                         'rgba(34, 197, 94, 1)'
                     ],
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Prezzo Medio per Categoria'
+                        text: 'Prezzo Medio per Categoria',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        display: false
                     }
                 },
                 scales: {
@@ -321,8 +347,22 @@ function updateCharts() {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: '€/kWh'
+                            text: '€/kWh',
+                            font: { weight: 'bold' }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
                         }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                elements: {
+                    bar: {
+                        borderRadius: 4
                     }
                 }
             }
@@ -332,11 +372,15 @@ function updateCharts() {
 
     } catch (error) {
         console.error('❌ Errore creazione grafico:', error);
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<p style="text-align: center; color: #ef4444;">❌ Errore caricamento grafico</p>';
+        }
     }
 }
 
 function updateOffersTable() {
-    console.log('🗂️ Aggiornamento tabella offerte...');
+    console.log('🗂️ Aggiornamento tabella con', filteredOffers.length, 'offerte...');
 
     const tbody = document.querySelector('#offers-table tbody');
     if (!tbody) {
@@ -349,9 +393,14 @@ function updateOffersTable() {
     if (filteredOffers.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" style="text-align: center; padding: 2rem; color: #666;">
-                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                    Nessuna offerta trovata
+                <td colspan="9" style="text-align: center; padding: 3rem; color: #9ca3af;">
+                    <div>
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
+                        <strong>Nessuna offerta trovata</strong>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                            ${offers.length === 0 ? 'Carica la prima offerta usando la sezione Upload OCR' : 'Prova a modificare i filtri di ricerca'}
+                        </p>
+                    </div>
                 </td>
             </tr>
         `;
@@ -360,37 +409,82 @@ function updateOffersTable() {
 
     filteredOffers.forEach((offer, index) => {
         const row = document.createElement('tr');
+        row.style.transition = 'background-color 0.2s ease';
+
         row.innerHTML = `
-            <td>${offer.fornitore || '-'}</td>
-            <td>${offer.nome_offerta || '-'}</td>
-            <td><span class="category-badge ${(offer.categoria || '').toLowerCase()}">${offer.categoria || '-'}</span></td>
-            <td>${offer.tipo_prezzo || '-'}</td>
-            <td>${(parseFloat(offer.prezzo_luce) || 0).toFixed(4)}€/kWh</td>
-            <td>${(parseFloat(offer.prezzo_gas) || 0).toFixed(4)}€/Smc</td>
-            <td>${(parseFloat(offer.commissioni) || 0).toFixed(2)}€</td>
-            <td>${offer.scadenza ? new Date(offer.scadenza).toLocaleDateString('it-IT') : '-'}</td>
+            <td style="font-weight: 600;">${offer.fornitore || 'N/D'}</td>
+            <td>${offer.nome_offerta || 'Offerta ' + (index + 1)}</td>
             <td>
-                <button class="btn-edit" onclick="editOffer(${offer.id})" title="Modifica">
+                <span class="category-badge ${(offer.categoria || 'domestico').toLowerCase()}">${offer.categoria || 'Domestico'}</span>
+            </td>
+            <td>
+                <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: ${offer.tipo_prezzo === 'Fisso' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)'}; color: ${offer.tipo_prezzo === 'Fisso' ? '#059669' : '#d97706'};">
+                    ${offer.tipo_prezzo || 'Fisso'}
+                </span>
+            </td>
+            <td style="font-family: monospace; font-weight: 600;">${(parseFloat(offer.prezzo_luce) || 0).toFixed(4)} €/kWh</td>
+            <td style="font-family: monospace; font-weight: 600;">${(parseFloat(offer.prezzo_gas) || 0).toFixed(4)} €/Smc</td>
+            <td style="font-family: monospace; font-weight: 600; color: ${(parseFloat(offer.commissioni) || 0) === 0 ? '#059669' : '#d97706'};">
+                ${(parseFloat(offer.commissioni) || 0).toFixed(2)} €
+            </td>
+            <td style="font-size: 0.9rem;">${offer.scadenza ? new Date(offer.scadenza).toLocaleDateString('it-IT') : 'N/D'}</td>
+            <td style="white-space: nowrap;">
+                <button class="btn-edit" onclick="editOffer(${offer.id})" title="Modifica offerta" style="padding: 0.5rem; margin: 0 0.25rem; border: none; border-radius: 6px; cursor: pointer; background: rgba(59, 130, 246, 0.1); color: #3b82f6; transition: all 0.2s;">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-delete" onclick="confirmDeleteOffer(${offer.id})" title="Elimina">
+                <button class="btn-delete" onclick="confirmDeleteOffer(${offer.id})" title="Elimina offerta" style="padding: 0.5rem; margin: 0 0.25rem; border: none; border-radius: 6px; cursor: pointer; background: rgba(239, 68, 68, 0.1); color: #ef4444; transition: all 0.2s;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
         `;
+
         tbody.appendChild(row);
     });
 
-    console.log(`✅ Tabella aggiornata con ${filteredOffers.length} offerte`);
+    // Aggiungi hover effects
+    tbody.querySelectorAll('tr').forEach(row => {
+        row.addEventListener('mouseenter', () => {
+            row.style.backgroundColor = '#f8fafc';
+        });
+        row.addEventListener('mouseleave', () => {
+            row.style.backgroundColor = '';
+        });
+    });
+
+    console.log(`✅ Tabella aggiornata con ${filteredOffers.length} righe`);
+}
+
+function updateFilters() {
+    // Aggiorna dropdown fornitori
+    const fornitoreFilter = document.getElementById('filter-fornitore');
+    if (fornitoreFilter && offers.length > 0) {
+        const fornitori = [...new Set(offers.map(o => o.fornitore).filter(f => f))];
+
+        // Mantieni il valore corrente
+        const currentValue = fornitoreFilter.value;
+
+        fornitoreFilter.innerHTML = '<option value="">Tutti i fornitori</option>';
+        fornitori.forEach(fornitore => {
+            const option = document.createElement('option');
+            option.value = fornitore;
+            option.textContent = fornitore;
+            if (fornitore === currentValue) option.selected = true;
+            fornitoreFilter.appendChild(option);
+        });
+    }
 }
 
 function applyFilters() {
-    console.log('🔍 Applicazione filtri...');
+    if (offers.length === 0) {
+        filteredOffers = [];
+        updateOffersTable();
+        return;
+    }
 
     const categoria = document.getElementById('filter-categoria')?.value || '';
     const fornitore = document.getElementById('filter-fornitore')?.value || '';
     const tipoPrezzo = document.getElementById('filter-tipo-prezzo')?.value || '';
-    const searchTerm = document.getElementById('search-offers')?.value.toLowerCase() || '';
+    const searchTerm = document.getElementById('search-offers')?.value?.toLowerCase() || '';
 
     filteredOffers = offers.filter(offer => {
         const matchesCategoria = !categoria || offer.categoria === categoria;
@@ -403,7 +497,7 @@ function applyFilters() {
         return matchesCategoria && matchesFornitore && matchesTipo && matchesSearch;
     });
 
-    console.log(`🔍 Filtrate ${filteredOffers.length} offerte di ${offers.length}`);
+    console.log(`🔍 Filtrate ${filteredOffers.length} offerte su ${offers.length} totali`);
     updateOffersTable();
 }
 
@@ -426,7 +520,15 @@ async function confirmDeleteOffer(offerId) {
         return;
     }
 
-    if (confirm(`Sei sicuro di voler eliminare l'offerta "${offer.nome_offerta || 'Senza nome'}" di ${offer.fornitore}?`)) {
+    const confirmed = confirm(
+        `Sei sicuro di voler eliminare questa offerta?\n\n` +
+        `• Fornitore: ${offer.fornitore}\n` +
+        `• Nome: ${offer.nome_offerta}\n` +
+        `• Categoria: ${offer.categoria}\n\n` +
+        `Questa azione non può essere annullata.`
+    );
+
+    if (confirmed) {
         await deleteOfferFromDatabase(offerId);
     }
 }
@@ -438,13 +540,15 @@ function updateAnalytics() {
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
-    console.log('🎛️ Setup event listeners...');
+    console.log('🎛️ Setup event listeners dashboard...');
 
     // Navigazione
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const section = e.currentTarget.dataset.section;
-            showSection(section);
+            if (section) {
+                showSection(section);
+            }
         });
     });
 
@@ -458,14 +562,23 @@ function setupEventListeners() {
     const fileInput = document.getElementById('pdf-file');
     const dropZone = document.getElementById('upload-area');
 
-    if (fileInput) {
+    if (fileInput && dropZone) {
         fileInput.addEventListener('change', handleFileSelect);
-    }
 
-    if (dropZone) {
-        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#667eea';
+            dropZone.style.background = '#f0f4ff';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#d1d5db';
+            dropZone.style.background = '#f9fafb';
+        });
+
         dropZone.addEventListener('drop', handleFileDrop);
-        dropZone.addEventListener('click', () => fileInput?.click());
+        dropZone.addEventListener('click', () => fileInput.click());
     }
 
     // OCR Form
@@ -475,9 +588,12 @@ function setupEventListeners() {
     }
 
     // Filtri
-    document.querySelectorAll('.filter-control').forEach(filter => {
-        filter.addEventListener('change', applyFilters);
-        filter.addEventListener('input', applyFilters);
+    ['filter-categoria', 'filter-fornitore', 'filter-tipo-prezzo', 'search-offers'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', applyFilters);
+            element.addEventListener('input', applyFilters);
+        }
     });
 
     // Logout
@@ -497,14 +613,11 @@ async function handleFileSelect(e) {
     }
 }
 
-function handleDragOver(e) {
-    e.preventDefault();
-    e.currentTarget.classList.add('dragover');
-}
-
 async function handleFileDrop(e) {
     e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
+    const dropZone = e.currentTarget;
+    dropZone.style.borderColor = '#d1d5db';
+    dropZone.style.background = '#f9fafb';
 
     const file = e.dataTransfer.files[0];
     if (file) {
@@ -514,31 +627,34 @@ async function handleFileDrop(e) {
 
 async function processFileWithOCR(file) {
     if (!file.type.includes('pdf') && !file.type.includes('image')) {
-        showNotification('❌ Formato file non supportato. Usa PDF o immagini.', 'error');
+        showNotification('❌ Formato non supportato. Usa PDF o immagini (JPG, PNG).', 'error');
         return;
     }
 
     console.log('🔍 Inizio OCR per:', file.name);
-    showNotification('🚀 Avvio elaborazione OCR...', 'info');
+    showNotification(`🚀 Elaborazione OCR di "${file.name}"...`, 'info');
 
-    // Placeholder per ora - OCR complesso implementato separatamente
+    // Simula elaborazione OCR (implementazione completa separata)
     const mockData = {
-        fornitore: 'Estratto da ' + file.name.split('.')[0],
+        fornitore: file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, ' ').trim() || 'Fornitore Estratto',
         nome_offerta: 'Offerta Standard',
         categoria: 'Domestico',
         tipo_prezzo: 'Fisso',
-        prezzo_luce: 0.25,
-        prezzo_gas: 1.20,
-        quota_fissa_luce: 15.00,
-        quota_fissa_gas: 12.00,
+        prezzo_luce: Math.round((Math.random() * 0.1 + 0.15) * 10000) / 10000,
+        prezzo_gas: Math.round((Math.random() * 0.5 + 0.8) * 10000) / 10000,
+        quota_fissa_luce: Math.round((Math.random() * 10 + 10) * 100) / 100,
+        quota_fissa_gas: Math.round((Math.random() * 8 + 8) * 100) / 100,
         commissioni: 0.00,
         scadenza: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
         durata_mesi: 12
     };
 
+    // Simula tempo di elaborazione
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     populateOCRForm(mockData);
     showSection('upload');
-    showNotification('✅ OCR completato! Verifica i dati estratti.', 'success');
+    showNotification('✅ OCR completato! Verifica i dati estratti prima di salvare.', 'success');
 }
 
 function populateOCRForm(data) {
@@ -549,8 +665,15 @@ function populateOCRForm(data) {
         const input = form.querySelector(`[name="${key}"]`);
         if (input && data[key] !== null && data[key] !== '') {
             input.value = data[key];
+
+            // Evidenzia i campi pre-compilati
+            input.style.backgroundColor = '#f0f9ff';
+            input.style.borderColor = '#0284c7';
         }
     });
+
+    // Scroll al form
+    form.scrollIntoView({ behavior: 'smooth' });
 }
 
 async function handleOCRFormSubmit(e) {
@@ -560,6 +683,12 @@ async function handleOCRFormSubmit(e) {
 
     const formData = new FormData(e.target);
     const offerData = Object.fromEntries(formData.entries());
+
+    // Validazione base
+    if (!offerData.fornitore || !offerData.nome_offerta) {
+        showNotification('❌ Fornitore e Nome offerta sono obbligatori', 'error');
+        return;
+    }
 
     // Conversioni numeriche
     ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'commissioni'].forEach(field => {
@@ -600,31 +729,57 @@ function showNotification(message, type = 'info') {
 
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        min-width: 300px;
+        max-width: 500px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+    `;
 
-    const iconMap = {
-        error: 'exclamation-circle',
-        success: 'check-circle', 
-        info: 'info-circle',
-        warning: 'exclamation-triangle'
+    const colors = {
+        success: { bg: 'rgba(16, 185, 129, 0.9)', border: '#10b981', icon: 'check-circle' },
+        error: { bg: 'rgba(239, 68, 68, 0.9)', border: '#ef4444', icon: 'times-circle' },
+        info: { bg: 'rgba(59, 130, 246, 0.9)', border: '#3b82f6', icon: 'info-circle' },
+        warning: { bg: 'rgba(245, 158, 11, 0.9)', border: '#f59e0b', icon: 'exclamation-triangle' }
     };
 
+    const color = colors[type] || colors.info;
+    notification.style.background = color.bg;
+    notification.style.borderLeft = `4px solid ${color.border}`;
+    notification.style.color = 'white';
+
     notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
+        <i class="fas fa-${color.icon}" style="font-size: 1.25rem;"></i>
+        <span>${message}</span>
+        <i class="fas fa-times" style="margin-left: auto; opacity: 0.7; cursor: pointer;" onclick="this.parentElement.remove()"></i>
     `;
 
     document.body.appendChild(notification);
 
     // Auto-rimozione dopo 5 secondi
     setTimeout(() => {
-        notification.remove();
+        if (notification.parentElement) {
+            notification.remove();
+        }
     }, 5000);
 
     // Rimozione al click
-    notification.addEventListener('click', () => {
-        notification.remove();
+    notification.addEventListener('click', (e) => {
+        if (e.target.classList.contains('fa-times')) {
+            notification.remove();
+        }
     });
 }
 
@@ -638,7 +793,7 @@ function toggleTheme() {
     }
 
     localStorage.setItem('theme', currentTheme);
-    showNotification(`🎨 Tema cambiato in ${currentTheme}`, 'info');
+    showNotification(`🎨 Tema cambiato: ${currentTheme}`, 'info');
 }
 
 function updateLastUpdate() {
@@ -649,6 +804,10 @@ function updateLastUpdate() {
 }
 
 async function handleLogout() {
+    if (!confirm('Sei sicuro di voler uscire?')) {
+        return;
+    }
+
     try {
         console.log('👋 Logout utente...');
         await signOut();
@@ -679,12 +838,14 @@ function setupRealtimeSubscription() {
                     filter: `user_id=eq.${currentUser.id}`
                 }, (payload) => {
                     console.log('🔄 Real-time update:', payload);
-                    loadOffersFromDatabase();
+                    setTimeout(() => loadOffersFromDatabase(), 1000);
                 })
                 .subscribe();
+
+            console.log('✅ Real-time subscription attiva');
         }
     } catch (error) {
-        console.warn('⚠️ Real-time subscription non disponibile:', error.message);
+        console.warn('⚠️ Real-time non disponibile:', error.message);
     }
 }
 
@@ -700,28 +861,25 @@ function initializeTheme() {
     }
 }
 
-// ===== INIZIALIZZAZIONE GLOBALE =====
-window.addEventListener('load', function() {
-    console.log('🌟 App caricata, inizializzazione tema...');
+// ===== AUTO-INIZIALIZZAZIONE =====
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 App.js DOM loaded');
     initializeTheme();
-
-    // Setup PDF.js se disponibile
-    if (typeof pdfjsLib !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
 });
 
-// ===== DEBUG UTILITY =====
+// ===== DEBUG E UTILITY GLOBALI =====
 if (typeof window !== 'undefined') {
     window.debugApp = {
-        offers,
-        loadOffersFromDatabase,
-        saveOfferToDatabase,
-        updateOfferInDatabase,
-        deleteOfferFromDatabase,
-        currentUser,
-        charts
+        offers: () => offers,
+        filteredOffers: () => filteredOffers,
+        currentUser: () => currentUser,
+        charts: () => charts,
+        reloadOffers: loadOffersFromDatabase,
+        showNotification: showNotification,
+        showSection: showSection
     };
+
+    console.log('🐛 Debug utilities disponibili in window.debugApp');
 }
 
-console.log('📱 App.js caricato completamente!');
+console.log('✅ App.js caricato completamente - versione landing page');
