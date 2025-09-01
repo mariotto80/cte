@@ -102,8 +102,7 @@
 }
 
 @media (min-width: 768px) {
-    .header__nav {
-        gap: var(--space-sm);
+    .header__nav { gap: 16px; };
         overflow: visible;
     }
 }
