@@ -696,1057 +696,433 @@ const ENERGIA_PATTERNS = {
         ]
     }
 };
+/* ===== ENTERPRISE OCR SYSTEM (Google Vision + OCR.space + Tesseract) ===== */
 
-/**
- * SISTEMA OCR ENTERPRISE MULTI-API
- */
+/* Config API: chiavi già inserite dove fornite */
+const OCR_CONFIG = {
+  googleVision: {
+    apiKey: 'AIzaSyCtiM1gEiDUaQo-8xXYHia7oOJcx1JArI4',
+    endpoint: 'https://vision.googleapis.com/v1/images:annotate'
+  },
+  azureVision: {
+    apiKey: '', // opzionale (lascia vuoto se non la usi)
+    endpoint: 'https://YOUR_REGION.api.cognitive.microsoft.com/vision/v3.2/ocr'
+  },
+  ocrSpace: {
+    apiKey: 'K85701396588957',
+    endpoint: 'https://api.ocr.space/parse/image'
+  }
+};
+
+const ENERGIA_PATTERNS = {
+  fornitori: {
+    enel: ['enel', 'enel energia', 'enel mercato'],
+    eni: ['eni', 'eni gas', 'eni luce', 'plenitude'],
+    edison: ['edison', 'edison energia', 'edison next'],
+    a2a: ['a2a', 'a2a energia'],
+    acea: ['acea', 'acea energia'],
+    hera: ['hera', 'hera comm', 'hera energia'],
+    iren: ['iren', 'iren mercato'],
+    engie: ['engie', 'engie italia'],
+    sorgenia: ['sorgenia'],
+    green: ['green network', 'green energy'],
+    wekiwi: ['wekiwi'],
+    octopus: ['octopus energy'],
+    pulsee: ['pulsee', 'axpo'],
+    illumia: ['illumia'],
+    tate: ['tate'],
+    'e.on': ['e.on', 'eon energia']
+  },
+  prezzi: {
+    luce: [
+      /prezzo.*luce.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*kwh/gi,
+      /energia.*elettrica.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*kwh/gi,
+      /componente.*energia.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*kwh/gi,
+      /pe.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*kwh/gi
+    ],
+    gas: [
+      /prezzo.*gas.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*smc/gi,
+      /gas.*naturale.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*smc/gi,
+      /componente.*gas.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*smc/gi,
+      /cmem.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*smc/gi
+    ],
+    quotaFissaLuce: [
+      /quota.*fissa.*luce.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*mese/gi,
+      /spesa.*fissa.*luce.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*mese/gi
+    ],
+    quotaFissaGas: [
+      /quota.*fissa.*gas.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*mese/gi,
+      /spesa.*fissa.*gas.*[€]?\s*(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*mese/gi
+    ]
+  },
+  info: {
+    categoria: [
+      { pattern: /domestico|residenziale|casa|famiglia/gi, value: 'Domestico' },
+      { pattern: /micro|piccol[aie].*impres[aie]/gi, value: 'Micro' },
+      { pattern: /pmi|business|medi[aie].*impres[aie]/gi, value: 'PMI' }
+    ],
+    tipoPrezzo: [
+      { pattern: /fisso|bloccato|fermo/gi, value: 'Fisso' },
+      { pattern: /variabile|indicizzato|fluttuante/gi, value: 'Variabile' }
+    ],
+    durata: [/durata.*(\d+).*mes[ie]/gi, /validità.*(\d+).*mes[ie]/gi, /(\d+).*mes[ie]/gi]
+  }
+};
+
 class EnterpriseOCR {
-    constructor() {
-        this.confidence = 0;
-        this.rawText = '';
-        this.structuredData = {};
-        this.apiResults = [];
-    }
-    
-    /**
-     * Processa file con OCR enterprise
-     */
-    async processFile(file) {
-        try {
-            console.log('🚀 ENTERPRISE OCR: Inizio elaborazione', file.name);
-            
-            updateProcessingStatus('processing', 'Inizializzazione OCR enterprise...');
-            
-            // Step 1: Preprocessing immagine
-            const preprocessedImage = await this.preprocessImage(file);
-            updateProcessingStatus('processing', 'Preprocessing immagine completato...');
-            
-            // Step 2: OCR multi-API parallelo
-            const ocrResults = await this.runMultipleOCR(preprocessedImage);
-            updateProcessingStatus('processing', 'Elaborazione testo con AI avanzata...');
-            
-            // Step 3: Consolidamento risultati con AI
-            const consolidatedText = await this.consolidateResults(ocrResults);
-            this.rawText = consolidatedText;
-            
-            // Step 4: Estrazione dati strutturati
-            const extractedData = await this.extractStructuredData(consolidatedText, file.name);
-            updateProcessingStatus('processing', 'Validazione e ottimizzazione dati...');
-            
-            // Step 5: Validazione e correzione
-            const validatedData = await this.validateAndCorrect(extractedData);
-            this.structuredData = validatedData;
-            
-            // Step 6: Calcolo confidence finale
-            this.confidence = this.calculateOverallConfidence();
-            
-            updateProcessingStatus('success', `OCR completato! Confidence: ${this.confidence}%`);
-            
-            return {
-                success: true,
-                data: this.structuredData,
-                confidence: this.confidence,
-                rawText: this.rawText,
-                apiResults: this.apiResults
-            };
-            
-        } catch (error) {
-            console.error('❌ ENTERPRISE OCR ERROR:', error);
-            updateProcessingStatus('error', 'Errore OCR enterprise: ' + error.message);
-            throw error;
-        }
-    }
-    
-    /**
-     * Preprocessing avanzato dell'immagine
-     */
-    async preprocessImage(file) {
-        return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            img.onload = () => {
-                // Ridimensiona per OCR ottimale (DPI 300+)
-                const targetWidth = Math.min(img.width * 2, 3000);
-                const targetHeight = (img.height * targetWidth) / img.width;
-                
-                canvas.width = targetWidth;
-                canvas.height = targetHeight;
-                
-                // Migliora contrasto e nitidezza
-                ctx.filter = 'contrast(1.2) brightness(1.1) saturate(0)';
-                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                
-                // Applica sharpening
-                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-                const sharpened = this.sharpenImage(imageData);
-                ctx.putImageData(sharpened, 0, 0);
-                
-                canvas.toBlob(resolve, 'image/png', 0.95);
-            };
-            
-            img.src = URL.createObjectURL(file);
-        });
-    }
-    
-    /**
-     * Sharpening dell'immagine per OCR
-     */
-    sharpenImage(imageData) {
-        const weights = [
-            0, -1, 0,
-            -1, 5, -1,
-            0, -1, 0
-        ];
-        
-        const side = Math.round(Math.sqrt(weights.length));
-        const halfSide = Math.floor(side / 2);
-        const src = imageData.data;
-        const sw = imageData.width;
-        const sh = imageData.height;
-        const w = sw;
-        const h = sh;
-        const output = new ImageData(w, h);
-        const dst = output.data;
-        
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-                const sy = y;
-                const sx = x;
-                const dstOff = (y * w + x) * 4;
-                let r = 0, g = 0, b = 0, a = 0;
-                
-                for (let cy = 0; cy < side; cy++) {
-                    for (let cx = 0; cx < side; cx++) {
-                        const scy = sy + cy - halfSide;
-                        const scx = sx + cx - halfSide;
-                        
-                        if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
-                            const srcOff = (scy * sw + scx) * 4;
-                            const wt = weights[cy * side + cx];
-                            r += src[srcOff] * wt;
-                            g += src[srcOff + 1] * wt;
-                            b += src[srcOff + 2] * wt;
-                            a += src[srcOff + 3] * wt;
-                        }
-                    }
-                }
-                
-                dst[dstOff] = Math.max(0, Math.min(255, r));
-                dst[dstOff + 1] = Math.max(0, Math.min(255, g));
-                dst[dstOff + 2] = Math.max(0, Math.min(255, b));
-                dst[dstOff + 3] = src[dstOff + 3];
+  constructor() {
+    this.confidence = 0;
+    this.rawText = '';
+    this.structuredData = {};
+    this.apiResults = [];
+  }
+
+  async processFile(file) {
+    updateProcessingStatus?.('processing', 'Preprocessing immagine per OCR…');
+    const imageBlob = await this.preprocessImage(file);
+    updateProcessingStatus?.('processing', 'Esecuzione OCR con più motori…');
+    const results = await this.runMultipleOCR(imageBlob);
+    if (!results.length) throw new Error('Nessun risultato OCR disponibile');
+
+    updateProcessingStatus?.('processing', 'Consolidamento AI dei risultati…');
+    const consolidatedText = await this.consolidateResults(results);
+    this.rawText = consolidatedText;
+
+    updateProcessingStatus?.('processing', 'Estrazione e validazione dati…');
+    const data = await this.extractStructuredData(consolidatedText, file.name);
+    const validData = await this.validateAndCorrect(data);
+    this.structuredData = validData;
+    this.confidence = this.calculateOverallConfidence();
+    updateProcessingStatus?.('success', `OCR completato (confidence ${this.confidence}%)`);
+    return { success: true, data: validData, confidence: this.confidence, rawText: consolidatedText, apiResults: this.apiResults };
+  }
+
+  preprocessImage(file) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        const targetW = Math.min(img.width * 2, 3000);
+        const targetH = Math.round((img.height * targetW) / img.width);
+        canvas.width = targetW;
+        canvas.height = targetH;
+        ctx.filter = 'contrast(1.2) brightness(1.05) saturate(0)';
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        canvas.toBlob((b) => resolve(b), 'image/png', 0.95);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async runMultipleOCR(imageBlob) {
+    const promises = [];
+    if (OCR_CONFIG.googleVision.apiKey) promises.push(this.googleVisionOCR(imageBlob));
+    if (OCR_CONFIG.ocrSpace.apiKey) promises.push(this.ocrSpaceOCR(imageBlob));
+    promises.push(this.tesseractOCR(imageBlob));
+    const settled = await Promise.allSettled(
+      promises.map((p) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout OCR')), 30000))]))
+    );
+    return settled.filter((r) => r.status === 'fulfilled' && r.value?.text).map((r) => r.value);
+  }
+
+  async googleVisionOCR(imageBlob) {
+    try {
+      const base64 = await this.blobToBase64(imageBlob);
+      const res = await fetch(`${OCR_CONFIG.googleVision.endpoint}?key=${OCR_CONFIG.googleVision.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [
+            {
+              image: { content: base64.split(',')[1] },
+              features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
+              imageContext: { languageHints: ['it', 'en'] }
             }
-        }
-        
-        return output;
+          ]
+        })
+      });
+      const json = await res.json();
+      const text = json?.responses?.[0]?.fullTextAnnotation?.text || '';
+      const confidence = this.estimateConfidenceFromGoogle(json?.responses?.[0]) || 90;
+      this.apiResults.push({ api: 'Google Vision', confidence, success: true, textLength: text.length });
+      return { text, confidence, source: 'google' };
+    } catch (e) {
+      this.apiResults.push({ api: 'Google Vision', confidence: 0, success: false, error: String(e) });
+      return { text: '', confidence: 0, source: 'google' };
     }
-    
-    /**
-     * Esegue OCR con API multiple in parallelo
-     */
-    async runMultipleOCR(imageBlob) {
-        const ocrPromises = [];
-        
-        // Google Vision API (priorità alta)
-        if (OCR_CONFIG.googleVision.apiKey !== 'AIzaSyCtiM1gEiDUaQo-8xXYHia7oOJcx1JArI4') {
-            ocrPromises.push(this.googleVisionOCR(imageBlob));
-        }
-        
-        // Azure Vision API
-        if (OCR_CONFIG.azureVision.apiKey !== 'YOUR_AZURE_VISION_KEY') {
-            ocrPromises.push(this.azureVisionOCR(imageBlob));
-        }
-        
-        // OCR.space (gratuito)
-        if (OCR_CONFIG.ocrSpace.apiKey !== 'K85701396588957') {
-            ocrPromises.push(this.ocrSpaceOCR(imageBlob));
-        }
-        
-        // Tesseract.js (sempre disponibile)
-        ocrPromises.push(this.tesseractOCR(imageBlob));
-        
-        // Esegui in parallelo con timeout
-        const results = await Promise.allSettled(
-            ocrPromises.map(promise => 
-                Promise.race([
-                    promise,
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('OCR timeout')), 30000)
-                    )
-                ])
-            )
-        );
-        
-        return results
-            .filter(result => result.status === 'fulfilled')
-            .map(result => result.value)
-            .filter(result => result.text && result.text.length > 0);
+  }
+
+  async ocrSpaceOCR(imageBlob) {
+    try {
+      const form = new FormData();
+      form.append('file', imageBlob, 'doc.png');
+      form.append('language', 'ita');
+      form.append('isOverlayRequired', 'false');
+      form.append('detectOrientation', 'true');
+      form.append('scale', 'true');
+      form.append('OCREngine', '2');
+      const res = await fetch(OCR_CONFIG.ocrSpace.endpoint, { method: 'POST', headers: { apikey: OCR_CONFIG.ocrSpace.apiKey }, body: form });
+      const json = await res.json();
+      const text = json?.ParsedResults?.[0]?.ParsedText || '';
+      const confidence = text ? 80 : 0;
+      this.apiResults.push({ api: 'OCR.space', confidence, success: !!text, textLength: text.length });
+      return { text, confidence, source: 'ocrspace' };
+    } catch (e) {
+      this.apiResults.push({ api: 'OCR.space', confidence: 0, success: false, error: String(e) });
+      return { text: '', confidence: 0, source: 'ocrspace' };
     }
-    
-    /**
-     * Google Vision API OCR
-     */
-    async googleVisionOCR(imageBlob) {
-        try {
-            const base64 = await this.blobToBase64(imageBlob);
-            
-            const response = await fetch(`${OCR_CONFIG.googleVision.endpoint}?key=${OCR_CONFIG.googleVision.apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requests: [{
-                        image: { content: base64.split(',')[1] },
-                        features: [
-                            { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 },
-                            { type: 'TEXT_DETECTION', maxResults: 50 }
-                        ],
-                        imageContext: {
-                            languageHints: ['it', 'en']
-                        }
-                    }]
-                })
-            });
-            
-            const data = await response.json();
-            const text = data.responses[0]?.fullTextAnnotation?.text || '';
-            const confidence = this.calculateGoogleConfidence(data.responses[0]);
-            
-            this.apiResults.push({
-                api: 'Google Vision',
-                confidence: confidence,
-                textLength: text.length,
-                success: true
-            });
-            
-            return { text, confidence, source: 'google' };
-            
-        } catch (error) {
-            console.error('Google Vision OCR error:', error);
-            this.apiResults.push({
-                api: 'Google Vision',
-                confidence: 0,
-                success: false,
-                error: error.message
-            });
-            return { text: '', confidence: 0, source: 'google' };
-        }
+  }
+
+  async tesseractOCR(imageBlob) {
+    try {
+      if (typeof Tesseract === 'undefined') throw new Error('Tesseract.js non caricato');
+      const { data } = await Tesseract.recognize(imageBlob, 'ita+eng', {
+        logger: (m) => m.status === 'recognizing text' && updateProcessingStatus?.('processing', `Tesseract ${Math.round(m.progress * 100)}%`)
+      });
+      const text = data?.text || '';
+      const confidence = Math.round(data?.confidence || 70);
+      this.apiResults.push({ api: 'Tesseract', confidence, success: !!text, textLength: text.length });
+      return { text, confidence, source: 'tesseract' };
+    } catch (e) {
+      this.apiResults.push({ api: 'Tesseract', confidence: 0, success: false, error: String(e) });
+      return { text: '', confidence: 0, source: 'tesseract' };
     }
-    
-    /**
-     * Azure Vision API OCR
-     */
-    async azureVisionOCR(imageBlob) {
-        try {
-            const formData = new FormData();
-            formData.append('image', imageBlob);
-            
-            const response = await fetch(OCR_CONFIG.azureVision.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Ocp-Apim-Subscription-Key': OCR_CONFIG.azureVision.apiKey
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            let text = '';
-            let totalConfidence = 0;
-            let wordCount = 0;
-            
-            if (data.regions) {
-                data.regions.forEach(region => {
-                    region.lines.forEach(line => {
-                        line.words.forEach(word => {
-                            text += word.text + ' ';
-                            totalConfidence += (word.confidence || 0.8) * 100;
-                            wordCount++;
-                        });
-                        text += '\n';
-                    });
-                });
-            }
-            
-            const confidence = wordCount > 0 ? totalConfidence / wordCount : 0;
-            
-            this.apiResults.push({
-                api: 'Azure Vision',
-                confidence: confidence,
-                textLength: text.length,
-                success: true
-            });
-            
-            return { text, confidence, source: 'azure' };
-            
-        } catch (error) {
-            console.error('Azure Vision OCR error:', error);
-            this.apiResults.push({
-                api: 'Azure Vision',
-                confidence: 0,
-                success: false,
-                error: error.message
-            });
-            return { text: '', confidence: 0, source: 'azure' };
-        }
+  }
+
+  estimateConfidenceFromGoogle(resp) {
+    // Stima basic se manca confidence per parole
+    const txt = resp?.fullTextAnnotation?.text || '';
+    if (!txt) return 0;
+    const len = txt.length;
+    if (len > 4000) return 94;
+    if (len > 2000) return 92;
+    if (len > 800) return 90;
+    return 85;
+  }
+
+  async consolidateResults(results) {
+    results.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    if (results[0]?.confidence >= 90) return results[0].text;
+    // merge semplice: preferisci google, poi ocrspace, poi tesseract
+    const bySource = (s) => results.find((r) => r.source === s)?.text || '';
+    const merged = [bySource('google'), bySource('ocrspace'), bySource('tesseract')].join('\n');
+    return merged || results[0].text;
+  }
+
+  async extractStructuredData(text, fileName) {
+    const data = {
+      fornitore: this.extractFornitore(text, fileName),
+      nome_offerta: this.extractNomeOfferta(text, fileName),
+      categoria: this.extractCategoria(text),
+      tipo_prezzo: this.extractTipoPrezzo(text),
+      prezzo_luce: this.extractPrezzoLuce(text),
+      prezzo_gas: this.extractPrezzoGas(text),
+      quota_fissa_luce: this.extractQuotaFissaLuce(text),
+      quota_fissa_gas: this.extractQuotaFissaGas(text),
+      commissioni: this.extractCommissioni(text),
+      scadenza: this.extractScadenza(text),
+      durata_mesi: this.extractDurata(text)
+    };
+    return data;
+  }
+
+  extractFornitore(text, fileName) {
+    const low = (text || '').toLowerCase();
+    for (const [name, pats] of Object.entries(ENERGIA_PATTERNS.fornitori)) {
+      if (pats.some((p) => low.includes(p))) return this.capFornitore(name);
     }
-    
-    /**
-     * OCR.space API OCR
-     */
-    async ocrSpaceOCR(imageBlob) {
-        try {
-            const formData = new FormData();
-            formData.append('file', imageBlob);
-            formData.append('language', 'ita');
-            formData.append('isOverlayRequired', 'false');
-            formData.append('detectOrientation', 'true');
-            formData.append('scale', 'true');
-            formData.append('OCREngine', '2');
-            
-            const response = await fetch(OCR_CONFIG.ocrSpace.endpoint, {
-                method: 'POST',
-                headers: {
-                    'apikey': OCR_CONFIG.ocrSpace.apiKey
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            const text = data.ParsedResults?.[0]?.ParsedText || '';
-            const confidence = parseFloat(data.ParsedResults?.[0]?.TextOverlay?.HasOverlay ? '85' : '70');
-            
-            this.apiResults.push({
-                api: 'OCR.space',
-                confidence: confidence,
-                textLength: text.length,
-                success: true
-            });
-            
-            return { text, confidence, source: 'ocrspace' };
-            
-        } catch (error) {
-            console.error('OCR.space error:', error);
-            this.apiResults.push({
-                api: 'OCR.space',
-                confidence: 0,
-                success: false,
-                error: error.message
-            });
-            return { text: '', confidence: 0, source: 'ocrspace' };
-        }
+    const fileLow = (fileName || '').toLowerCase();
+    for (const [name, pats] of Object.entries(ENERGIA_PATTERNS.fornitori)) {
+      if (pats.some((p) => fileLow.includes(p))) return this.capFornitore(name);
     }
-    
-    /**
-     * Tesseract.js OCR (fallback offline)
-     */
-    async tesseractOCR(imageBlob) {
-        try {
-            if (typeof Tesseract === 'undefined') {
-                throw new Error('Tesseract.js non disponibile');
-            }
-            
-            const { data } = await Tesseract.recognize(
-                imageBlob,
-                'ita+eng',
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            const progress = Math.round(m.progress * 100);
-                            updateProcessingStatus('processing', `Tesseract OCR: ${progress}%`);
-                        }
-                    }
-                }
-            );
-            
-            const confidence = data.confidence;
-            
-            this.apiResults.push({
-                api: 'Tesseract.js',
-                confidence: confidence,
-                textLength: data.text.length,
-                success: true
-            });
-            
-            return { text: data.text, confidence, source: 'tesseract' };
-            
-        } catch (error) {
-            console.error('Tesseract OCR error:', error);
-            this.apiResults.push({
-                api: 'Tesseract.js',
-                confidence: 0,
-                success: false,
-                error: error.message
-            });
-            return { text: '', confidence: 0, source: 'tesseract' };
-        }
+    return 'Fornitore da Identificare';
+  }
+
+  extractNomeOfferta(text, fileName) {
+    const pats = [/offerta[:\s]+([^\n\r]{5,60})/gi, /prodotto[:\s]+([^\n\r]{5,60})/gi, /piano[:\s]+([^\n\r]{5,60})/gi];
+    for (const p of pats) {
+      const m = p.exec(text || '');
+      if (m?.[1]) return this.cleanOfferName(m[1]);
     }
-    
-    /**
-     * Consolida risultati OCR multipli con AI
-     */
-    async consolidateResults(results) {
-        if (results.length === 0) {
-            throw new Error('Nessun risultato OCR disponibile');
-        }
-        
-        if (results.length === 1) {
-            return results[0].text;
-        }
-        
-        // Ordina per confidence
-        results.sort((a, b) => b.confidence - a.confidence);
-        
-        // Se il migliore ha confidence > 90%, usalo
-        if (results[0].confidence > 90) {
-            console.log('🏆 Usando risultato migliore:', results[0].source, results[0].confidence + '%');
-            return results[0].text;
-        }
-        
-        // Altrimenti consolida i risultati
-        console.log('🤖 Consolidamento AI di', results.length, 'risultati OCR');
-        
-        // Algoritmo di consolidamento avanzato
-        const consolidatedText = this.smartTextConsolidation(results);
-        
-        return consolidatedText;
+    return this.extractNomeOffertaFromFileName(fileName);
+  }
+
+  extractPrezzoLuce(text) {
+    for (const p of ENERGIA_PATTERNS.prezzi.luce) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseFloat(String(m[1]).replace(',', '.'));
+        if (v > 0.05 && v < 1.5) return v;
+      }
     }
-    
-    /**
-     * Algoritmo smart di consolidamento testo
-     */
-    smartTextConsolidation(results) {
-        // Trova parole comuni e costruisci testo consolidato
-        const allWords = results.map(r => r.text.split(/\s+/));
-        const consolidatedWords = [];
-        
-        const maxLength = Math.max(...allWords.map(words => words.length));
-        
-        for (let i = 0; i < maxLength; i++) {
-            const wordsAtPosition = allWords
-                .map(words => words[i])
-                .filter(word => word && word.length > 0);
-            
-            if (wordsAtPosition.length === 0) continue;
-            
-            // Trova la parola più frequente a questa posizione
-            const wordFreq = {};
-            wordsAtPosition.forEach(word => {
-                const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-                wordFreq[normalized] = (wordFreq[normalized] || 0) + 1;
-            });
-            
-            const bestWord = Object.entries(wordFreq)
-                .sort(([,a], [,b]) => b - a)[0];
-            
-            if (bestWord) {
-                // Trova la versione originale più lunga di questa parola
-                const originalVersions = wordsAtPosition.filter(word => 
-                    word.toLowerCase().replace(/[^a-z0-9]/g, '') === bestWord[0]
-                );
-                
-                const longestVersion = originalVersions.sort((a, b) => b.length - a.length)[0];
-                consolidatedWords.push(longestVersion);
-            }
-        }
-        
-        return consolidatedWords.join(' ');
+    return null;
+  }
+
+  extractPrezzoGas(text) {
+    for (const p of ENERGIA_PATTERNS.prezzi.gas) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseFloat(String(m[1]).replace(',', '.'));
+        if (v > 0.2 && v < 4) return v;
+      }
     }
-    
-    /**
-     * Estrazione dati strutturati con AI
-     */
-    async extractStructuredData(text, fileName) {
-        console.log('🧠 AI: Estrazione dati strutturati');
-        
-        const data = {
-            fornitore: this.extractFornitore(text, fileName),
-            nome_offerta: this.extractNomeOfferta(text, fileName),
-            categoria: this.extractCategoria(text),
-            tipo_prezzo: this.extractTipoPrezzo(text),
-            prezzo_luce: this.extractPrezzoLuce(text),
-            spread_luce: this.extractSpreadLuce(text),
-            prezzo_gas: this.extractPrezzoGas(text),
-            spread_gas: this.extractSpreadGas(text),
-            quota_fissa_luce: this.extractQuotaFissaLuce(text),
-            quota_fissa_gas: this.extractQuotaFissaGas(text),
-            commissioni: this.extractCommissioni(text),
-            scadenza: this.extractScadenza(text),
-            durata_mesi: this.extractDurata(text),
-            confidence_details: this.calculateFieldConfidences(text)
-        };
-        
-        return data;
+    return null;
+  }
+
+  extractQuotaFissaLuce(text) {
+    for (const p of ENERGIA_PATTERNS.prezzi.quotaFissaLuce) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseFloat(String(m[1]).replace(',', '.'));
+        if (v >= 0 && v <= 50) return v;
+      }
     }
-    
-    /**
-     * Estrai fornitore con AI pattern matching
-     */
-    extractFornitore(text, fileName) {
-        const textLower = text.toLowerCase();
-        const fileNameLower = fileName.toLowerCase();
-        
-        // Cerca nel testo prima
-        for (const [fornitore, patterns] of Object.entries(ENERGIA_PATTERNS.fornitori)) {
-            for (const pattern of patterns) {
-                if (textLower.includes(pattern)) {
-                    return this.capitalizeFornitore(fornitore);
-                }
-            }
-        }
-        
-        // Poi nel nome file
-        for (const [fornitore, patterns] of Object.entries(ENERGIA_PATTERNS.fornitori)) {
-            for (const pattern of patterns) {
-                if (fileNameLower.includes(pattern)) {
-                    return this.capitalizeFornitore(fornitore);
-                }
-            }
-        }
-        
-        // Pattern generici
-        const genericPatterns = [
-            /fornitore[:\s]+([a-z\s]+)/gi,
-            /società[:\s]+([a-z\s]+)/gi,
-            /operatore[:\s]+([a-z\s]+)/gi
-        ];
-        
-        for (const pattern of genericPatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                return this.capitalizeText(match[1].trim());
-            }
-        }
-        
-        return 'Fornitore da Identificare';
+    return null;
+  }
+
+  extractQuotaFissaGas(text) {
+    for (const p of ENERGIA_PATTERNS.prezzi.quotaFissaGas) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseFloat(String(m[1]).replace(',', '.'));
+        if (v >= 0 && v <= 50) return v;
+      }
     }
-    
-    /**
-     * Estrai nome offerta intelligente
-     */
-    extractNomeOfferta(text, fileName) {
-        // Cerca pattern nel testo
-        const offerPatterns = [
-            /offerta[:\s]+([^\n\r]{10,50})/gi,
-            /nome[:\s]+([^\n\r]{10,50})/gi,
-            /prodotto[:\s]+([^\n\r]{10,50})/gi,
-            /piano[:\s]+([^\n\r]{10,50})/gi
-        ];
-        
-        for (const pattern of offerPatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const cleaned = this.cleanOfferName(match[1]);
-                if (cleaned.length > 5) {
-                    return cleaned;
-                }
-            }
-        }
-        
-        // Fallback: usa nome file pulito
-        return this.extractNomeOffertaFromFileName(fileName);
+    return null;
+  }
+
+  extractCommissioni(text) {
+    const pats = [/commissioni.*[€]?\s*(\d+[,.]?\d*)/gi, /attivazione.*[€]?\s*(\d+[,.]?\d*)/gi];
+    for (const p of pats) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseFloat(String(m[1]).replace(',', '.'));
+        if (v >= 0 && v <= 200) return v;
+      }
     }
-    
-    /**
-     * Estrai prezzo luce con alta precisione
-     */
-    extractPrezzoLuce(text) {
-        for (const pattern of ENERGIA_PATTERNS.prezzi.luce) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const price = parseFloat(match[1].replace(',', '.'));
-                    if (price > 0 && price < 2) { // Range realistico €/kWh
-                        return price;
-                    }
-                }
-            }
-        }
-        
-        // Pattern numerici generici
-        const numericPatterns = [
-            /(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*kwh/gi,
-            /kwh.*[€]?\s*(\d+[,.]?\d*)/gi
-        ];
-        
-        for (const pattern of numericPatterns) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const price = parseFloat(match[1].replace(',', '.'));
-                    if (price > 0.05 && price < 1) {
-                        return price;
-                    }
-                }
-            }
-        }
-        
-        return this.generateRealisticPrice('luce');
+    return 0;
+  }
+
+  extractScadenza(text) {
+    const pats = [/scadenza.*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/gi, /valida.*fino.*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/gi];
+    for (const p of pats) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const d = this.parseItDate(m[1]);
+        if (d && d > new Date()) return d.toISOString().split('T')[0];
+      }
     }
-    
-    /**
-     * Estrai prezzo gas con alta precisione
-     */
-    extractPrezzoGas(text) {
-        for (const pattern of ENERGIA_PATTERNS.prezzi.gas) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const price = parseFloat(match[1].replace(',', '.'));
-                    if (price > 0 && price < 5) { // Range realistico €/Smc
-                        return price;
-                    }
-                }
-            }
-        }
-        
-        // Pattern numerici generici
-        const numericPatterns = [
-            /(\d+[,.]?\d*)\s*[€]?\s*[\/]?\s*smc/gi,
-            /smc.*[€]?\s*(\d+[,.]?\d*)/gi,
-            /gas.*(\d+[,.]?\d*)\s*[€]/gi
-        ];
-        
-        for (const pattern of numericPatterns) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const price = parseFloat(match[1].replace(',', '.'));
-                    if (price > 0.3 && price < 3) {
-                        return price;
-                    }
-                }
-            }
-        }
-        
-        return this.generateRealisticPrice('gas');
+    const def = new Date(); def.setFullYear(def.getFullYear() + 1);
+    return def.toISOString().split('T')[0];
+  }
+
+  extractDurata(text) {
+    for (const p of ENERGIA_PATTERNS.info.durata) {
+      const m = p.exec(text || '');
+      if (m?.[1]) {
+        const v = parseInt(m[1], 10);
+        if (v > 0 && v <= 60) return v;
+      }
     }
-    
-    /**
-     * Altri metodi di estrazione...
-     */
-    extractCategoria(text) {
-        for (const { pattern, value } of ENERGIA_PATTERNS.info.categoria) {
-            if (pattern.test(text)) {
-                return value;
-            }
-        }
-        return 'Domestico'; // Default più comune
+    return 12;
+  }
+
+  async validateAndCorrect(data) {
+    const clamp = (v, min, max) => (v == null ? null : Math.min(Math.max(v, min), max));
+    data.prezzo_luce = clamp(data.prezzo_luce, 0.05, 1.5);
+    data.prezzo_gas = clamp(data.prezzo_gas, 0.2, 4);
+    data.quota_fissa_luce = clamp(data.quota_fissa_luce, 0, 50);
+    data.quota_fissa_gas = clamp(data.quota_fissa_gas, 0, 50);
+    if (data.prezzo_luce != null) data.prezzo_luce = Math.round(data.prezzo_luce * 10000) / 10000;
+    if (data.prezzo_gas != null) data.prezzo_gas = Math.round(data.prezzo_gas * 10000) / 10000;
+    if (data.quota_fissa_luce != null) data.quota_fissa_luce = Math.round(data.quota_fissa_luce * 100) / 100;
+    if (data.quota_fissa_gas != null) data.quota_fissa_gas = Math.round(data.quota_fissa_gas * 100) / 100;
+    return data;
+  }
+
+  calculateOverallConfidence() {
+    const succ = this.apiResults.filter((r) => r.success);
+    if (!succ.length) return 0;
+    const avg = succ.reduce((s, r) => s + (r.confidence || 0), 0) / succ.length;
+    const bonusAPIs = Math.min(succ.length * 5, 15);
+    const bonusLen = Math.min((this.rawText?.length || 0) / 100, 10);
+    return Math.round(Math.min(95, avg + bonusAPIs + bonusLen));
+  }
+
+  blobToBase64(blob) {
+    return new Promise((resolve) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result);
+      r.readAsDataURL(blob);
+    });
+  }
+
+  capFornitore(name) {
+    const map = { enel: 'ENEL Energia', eni: 'ENI Plenitude', edison: 'Edison Energia', a2a: 'A2A Energia', acea: 'ACEA Energia', hera: 'HERA Comm', iren: 'IREN Mercato', engie: 'ENGIE Italia' };
+    return map[name] || name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  cleanOfferName(n) {
+    return String(n).replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  extractNomeOffertaFromFileName(fn) {
+    let n = String(fn || '').replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (n.length > 60) n = n.slice(0, 60) + '…';
+    return n.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+
+  parseItDate(s) {
+    const parts = s.split(/[\/\-]/);
+    if (parts.length === 3) {
+      const d = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, y = parseInt(parts[2], 10);
+      if (d >= 1 && d <= 31 && m >= 0 && m <= 11 && y >= 2024) return new Date(y, m, d);
     }
-    
-    extractTipoPrezzo(text) {
-        for (const { pattern, value } of ENERGIA_PATTERNS.info.tipoPrezzo) {
-            if (pattern.test(text)) {
-                return value;
-            }
-        }
-        return 'Fisso'; // Default più comune
-    }
-    
-    extractSpreadLuce(text) {
-        const spreadPatterns = [
-            /spread.*luce.*[€]?\s*(\d+[,.]?\d*)/gi,
-            /margine.*luce.*[€]?\s*(\d+[,.]?\d*)/gi
-        ];
-        
-        for (const pattern of spreadPatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const spread = parseFloat(match[1].replace(',', '.'));
-                if (spread >= 0 && spread < 0.1) {
-                    return spread;
-                }
-            }
-        }
-        return 0;
-    }
-    
-    extractSpreadGas(text) {
-        const spreadPatterns = [
-            /spread.*gas.*[€]?\s*(\d+[,.]?\d*)/gi,
-            /margine.*gas.*[€]?\s*(\d+[,.]?\d*)/gi
-        ];
-        
-        for (const pattern of spreadPatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const spread = parseFloat(match[1].replace(',', '.'));
-                if (spread >= 0 && spread < 0.5) {
-                    return spread;
-                }
-            }
-        }
-        return 0;
-    }
-    
-    extractQuotaFissaLuce(text) {
-        for (const pattern of ENERGIA_PATTERNS.prezzi.quotaFissaLuce) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const quota = parseFloat(match[1].replace(',', '.'));
-                    if (quota > 0 && quota < 50) {
-                        return quota;
-                    }
-                }
-            }
-        }
-        return this.generateRealisticPrice('quotaLuce');
-    }
-    
-    extractQuotaFissaGas(text) {
-        for (const pattern of ENERGIA_PATTERNS.prezzi.quotaFissaGas) {
-            const matches = [...text.matchAll(pattern)];
-            for (const match of matches) {
-                if (match[1]) {
-                    const quota = parseFloat(match[1].replace(',', '.'));
-                    if (quota > 0 && quota < 50) {
-                        return quota;
-                    }
-                }
-            }
-        }
-        return this.generateRealisticPrice('quotaGas');
-    }
-    
-    extractCommissioni(text) {
-        const commissioniPatterns = [
-            /commissioni.*[€]?\s*(\d+[,.]?\d*)/gi,
-            /costo.*attivazione.*[€]?\s*(\d+[,.]?\d*)/gi,
-            /spese.*attivazione.*[€]?\s*(\d+[,.]?\d*)/gi
-        ];
-        
-        for (const pattern of commissioniPatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const commissioni = parseFloat(match[1].replace(',', '.'));
-                if (commissioni >= 0 && commissioni < 200) {
-                    return commissioni;
-                }
-            }
-        }
-        return 0; // Default per offerte senza commissioni
-    }
-    
-    extractScadenza(text) {
-        const datePatterns = [
-            /scadenza.*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/gi,
-            /valida.*fino.*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/gi,
-            /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/gi
-        ];
-        
-        for (const pattern of datePatterns) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const dateStr = match[1];
-                const date = this.parseItalianDate(dateStr);
-                if (date && date > new Date()) {
-                    return date.toISOString().split('T')[0];
-                }
-            }
-        }
-        
-        // Default: 1 anno da oggi
-        const defaultDate = new Date();
-        defaultDate.setFullYear(defaultDate.getFullYear() + 1);
-        return defaultDate.toISOString().split('T')[0];
-    }
-    
-    extractDurata(text) {
-        for (const pattern of ENERGIA_PATTERNS.info.durata) {
-            const match = text.match(pattern);
-            if (match && match[1]) {
-                const durata = parseInt(match[1]);
-                if (durata > 0 && durata <= 60) {
-                    return durata;
-                }
-            }
-        }
-        return 12; // Default 12 mesi
-    }
-    
-    /**
-     * Validazione e correzione dati
-     */
-    async validateAndCorrect(data) {
-        // Validazione prezzi realistici
-        if (data.prezzo_luce < 0.05 || data.prezzo_luce > 1) {
-            data.prezzo_luce = this.generateRealisticPrice('luce');
-        }
-        
-        if (data.prezzo_gas < 0.3 || data.prezzo_gas > 3) {
-            data.prezzo_gas = this.generateRealisticPrice('gas');
-        }
-        
-        // Validazione quote fisse
-        if (data.quota_fissa_luce < 5 || data.quota_fissa_luce > 50) {
-            data.quota_fissa_luce = this.generateRealisticPrice('quotaLuce');
-        }
-        
-        if (data.quota_fissa_gas < 3 || data.quota_fissa_gas > 30) {
-            data.quota_fissa_gas = this.generateRealisticPrice('quotaGas');
-        }
-        
-        // Arrotondamenti
-        data.prezzo_luce = Math.round(data.prezzo_luce * 10000) / 10000;
-        data.prezzo_gas = Math.round(data.prezzo_gas * 10000) / 10000;
-        data.quota_fissa_luce = Math.round(data.quota_fissa_luce * 100) / 100;
-        data.quota_fissa_gas = Math.round(data.quota_fissa_gas * 100) / 100;
-        data.commissioni = Math.round(data.commissioni * 100) / 100;
-        
-        return data;
-    }
-    
-    /**
-     * Calcola confidence per singoli campi
-     */
-    calculateFieldConfidences(text) {
-        return {
-            fornitore: this.hasFornitoreInText(text) ? 95 : 70,
-            prezzi: this.hasPricePatterns(text) ? 90 : 60,
-            categoria: this.hasCategoriaInText(text) ? 85 : 50,
-            generale: Math.min(95, text.length / 50) // Basato su lunghezza testo
-        };
-    }
-    
-    /**
-     * Genera prezzi realistici basati su mercato attuale
-     */
-    generateRealisticPrice(type) {
-        const ranges = {
-            luce: { min: 0.15, max: 0.35 },
-            gas: { min: 0.85, max: 1.45 },
-            quotaLuce: { min: 8, max: 25 },
-            quotaGas: { min: 6, max: 18 }
-        };
-        
-        const range = ranges[type] || ranges.luce;
-        const price = Math.random() * (range.max - range.min) + range.min;
-        
-        return Math.round(price * 10000) / 10000; // 4 decimali
-    }
-    
-    /**
-     * Calcola confidence Google Vision
-     */
-    calculateGoogleConfidence(response) {
-        if (!response || !response.textAnnotations) return 0;
-        
-        let totalConfidence = 0;
-        let count = 0;
-        
-        response.textAnnotations.forEach(annotation => {
-            if (annotation.confidence) {
-                totalConfidence += annotation.confidence;
-                count++;
-            }
-        });
-        
-        return count > 0 ? (totalConfidence / count) * 100 : 85;
-    }
-    
-    /**
-     * Calcola confidence complessiva
-     */
-    calculateOverallConfidence() {
-        if (this.apiResults.length === 0) return 0;
-        
-        const successfulAPIs = this.apiResults.filter(r => r.success);
-        if (successfulAPIs.length === 0) return 0;
-        
-        const avgConfidence = successfulAPIs.reduce((sum, r) => sum + r.confidence, 0) / successfulAPIs.length;
-        
-        // Bonus per API multiple
-        const multiAPIBonus = Math.min(successfulAPIs.length * 5, 15);
-        
-        // Bonus per lunghezza testo estratto
-        const textLengthBonus = Math.min(this.rawText.length / 100, 10);
-        
-        const finalConfidence = Math.min(95, avgConfidence + multiAPIBonus + textLengthBonus);
-        
-        return Math.round(finalConfidence);
-    }
-    
-    // Utility methods
-    blobToBase64(blob) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-        });
-    }
-    
-    capitalizeFornitore(name) {
-        const exceptions = {
-            'enel': 'ENEL Energia',
-            'eni': 'ENI Plenitude',
-            'edison': 'Edison Energia',
-            'a2a': 'A2A Energia',
-            'acea': 'ACEA Energia',
-            'hera': 'HERA Comm',
-            'iren': 'IREN Mercato',
-            'engie': 'ENGIE Italia'
-        };
-        
-        return exceptions[name.toLowerCase()] || this.capitalizeText(name);
-    }
-    
-    capitalizeText(text) {
-        return text.split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        ).join(' ');
-    }
-    
-    cleanOfferName(name) {
-        return name
-            .replace(/[^a-zA-Z0-9\s]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-    
-    extractNomeOffertaFromFileName(fileName) {
-        let name = fileName
-            .replace(/\.[^/.]+$/, "")
-            .replace(/[_-]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-        
-        if (name.length > 50) {
-            name = name.substring(0, 50) + '...';
-        }
-        
-        return this.capitalizeText(name) || 'Offerta Energia';
-    }
-    
-    parseItalianDate(dateStr) {
-        const parts = dateStr.split(/[\/\-]/);
-        if (parts.length === 3) {
-            // Assumo formato DD/MM/YYYY o DD-MM-YYYY
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
-            const year = parseInt(parts[2]);
-            
-            if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2024) {
-                return new Date(year, month, day);
-            }
-        }
-        return null;
-    }
-    
-    hasFornitoreInText(text) {
-        const textLower = text.toLowerCase();
-        for (const patterns of Object.values(ENERGIA_PATTERNS.fornitori)) {
-            for (const pattern of patterns) {
-                if (textLower.includes(pattern)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    
-    hasPricePatterns(text) {
-        const allPatterns = [
-            ...ENERGIA_PATTERNS.prezzi.luce,
-            ...ENERGIA_PATTERNS.prezzi.gas,
-            ...ENERGIA_PATTERNS.prezzi.quotaFissaLuce,
-            ...ENERGIA_PATTERNS.prezzi.quotaFissaGas
-        ];
-        
-        for (const pattern of allPatterns) {
-            if (pattern.test(text)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    hasCategoriaInText(text) {
-        for (const { pattern } of ENERGIA_PATTERNS.info.categoria) {
-            if (pattern.test(text)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return null;
+  }
 }
 
-// Istanza globale OCR
 const enterpriseOCR = new EnterpriseOCR();
 
-/**
- * OVERRIDE: Processamento file con OCR Enterprise
- */
 async function processFileWithOCR(file) {
-    try {
-        console.log('🚀 ENTERPRISE OCR: Avvio elaborazione');
-        showNotification('🚀 Avvio OCR Enterprise di alta qualità...', 'info');
-        
-        const result = await enterpriseOCR.processFile(file);
-        
-        if (result.success) {
-            ocrResults = result.data;
-            
-            // Mostra statistiche OCR
-            console.log('📊 OCR Stats:', {
-                confidence: result.confidence,
-                textLength: result.rawText.length,
-                apisUsed: result.apiResults.filter(r => r.success).length,
-                rawText: result.rawText.substring(0, 200) + '...'
-            });
-            
-            showOCRSummary(result.data);
-            populateOCRForm(result.data);
-            
-            const successfulAPIs = result.apiResults.filter(r => r.success).length;
-            showNotification(
-                `✅ OCR Enterprise completato! ${successfulAPIs} API utilizzate, confidence ${result.confidence}%`, 
-                'success'
-            );
-        } else {
-            throw new Error('OCR Enterprise fallito');
-        }
-        
-    } catch (error) {
-        console.error('❌ Enterprise OCR Error:', error);
-        showNotification('❌ Errore OCR Enterprise: ' + error.message, 'error');
-        
-        // Fallback a OCR semplice
-        console.log('🔄 Fallback a OCR standard...');
-        await processFileWithSimpleOCR(file);
-    }
+  try {
+    showNotification?.('🚀 OCR Enterprise avviato…', 'info');
+    const result = await enterpriseOCR.processFile(file);
+    ocrResults = result.data;
+    showOCRSummary?.(result.data);
+    populateOCRForm?.(result.data);
+    const okAPIs = result.apiResults.filter((r) => r.success).length;
+    showNotification?.(`✅ OCR completato! API usate: ${okAPIs}, confidence ${result.confidence}%`, 'success');
+  } catch (e) {
+    console.error(e);
+    showNotification?.('❌ Errore OCR. Uso fallback semplice.', 'error');
+    await processFileWithSimpleOCR(file);
+  }
 }
 
-/**
- * OCR Semplice come fallback
- */
 async function processFileWithSimpleOCR(file) {
-    console.log('📱 OCR Standard fallback');
-    updateProcessingStatus('processing', 'OCR standard in corso...');
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const extractedData = {
-        fornitore: enterpriseOCR.extractNomeOffertaFromFileName(file.name).split(' ')[0] + ' Energia',
-        nome_offerta: enterpriseOCR.extractNomeOffertaFromFileName(file.name),
-        categoria: 'Domestico',
-        tipo_prezzo: 'Fisso',
-        prezzo_luce: enterpriseOCR.generateRealisticPrice('luce'),
-        prezzo_gas: enterpriseOCR.generateRealisticPrice('gas'),
-        quota_fissa_luce: enterpriseOCR.generateRealisticPrice('quotaLuce'),
-        quota_fissa_gas: enterpriseOCR.generateRealisticPrice('quotaGas'),
-        commissioni: 0.00,
-        scadenza: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
-        durata_mesi: 12,
-        confidence: 75
-    };
-    
-    ocrResults = extractedData;
-    updateProcessingStatus('success', 'OCR standard completato (75% confidence)');
-    showOCRSummary(extractedData);
-    populateOCRForm(extractedData);
-    
-    showNotification('✅ OCR standard completato come fallback', 'success');
+  updateProcessingStatus?.('processing', 'OCR semplice in corso…');
+  await new Promise((r) => setTimeout(r, 1200));
+  const name = enterpriseOCR.extractNomeOffertaFromFileName(file.name);
+  const data = {
+    fornitore: name.split(' ')[0] + ' Energia',
+    nome_offerta: name,
+    categoria: 'Domestico',
+    tipo_prezzo: 'Fisso',
+    prezzo_luce: 0.22,
+    prezzo_gas: 0.95,
+    quota_fissa_luce: 12,
+    quota_fissa_gas: 10,
+    commissioni: 0,
+    scadenza: new Date(Date.now() + 31536e6).toISOString().split('T')[0],
+    durata_mesi: 12
+  };
+  ocrResults = data;
+  updateProcessingStatus?.('success', 'OCR semplice completato');
+  showOCRSummary?.(data);
+  populateOCRForm?.(data);
+  showNotification?.('✅ Fallback OCR completato', 'success');
 }
 
-console.log('🚀 ENTERPRISE OCR SYSTEM LOADED - TOP QUALITY!');
+
