@@ -22,8 +22,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 var(--space-md);
-    gap: 12px;
+    padding: 10px 14px;
+    gap: 16px;
 }
 
 .header__brand {
