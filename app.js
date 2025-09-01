@@ -1123,6 +1123,42 @@ async function processFileWithSimpleOCR(file) {
   showOCRSummary?.(data);
   populateOCRForm?.(data);
   showNotification?.('✅ Fallback OCR completato', 'success');
+    // ===== BRIDGE UPLOAD + ANTEPRIMA + OCR =====
+function ensureOCRListeners() {
+  const fileInput = document.getElementById('pdf-file');
+  const dropZone = document.getElementById('upload-area');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      await showFilePreview(f);
+      await processFileWithOCR(f);
+    });
+  }
+
+  if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const f = e.dataTransfer.files?.[0];
+      if (!f) return;
+      const fileInput = document.getElementById('pdf-file');
+      if (fileInput) {
+        const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      }
+      await showFilePreview(f);
+      await processFileWithOCR(f);
+    });
+    dropZone.addEventListener('click', () => document.getElementById('pdf-file')?.click());
+  }
+}
+
+// Call after DOM ready or after login init
+document.addEventListener('DOMContentLoaded', ensureOCRListeners);
+
 }
 
 
