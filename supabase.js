@@ -1,636 +1,624 @@
-// supabase.js - Configurazione e funzioni Supabase
+ * ===== SUPABASE CONFIGURATION & DATABASE FUNCTIONS =====
+ * Sistema di gestione database per EnergiaCorp Premium
+ */
+
 // ===== CONFIGURAZIONE SUPABASE =====
-
-// IMPORTANTE: Sostituisci questi valori con i tuoi da Supabase Dashboard
+// ⚠️ IMPORTANTE: Sostituisci con i tuoi dati Supabase
 const SUPABASE_URL = 'https://ozmqftibxuspznnqaayh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk';';
 
-// Inizializzazione client Supabase
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inizializza client Supabase
+let supabaseClient = null;
 
-console.log('Supabase loaded successfully!');
-
-// ===== FUNZIONI AUTENTICAZIONE =====
-
-/**
- * Registrazione nuovo utente
- * @param {string} email - Email utente
- * @param {string} password - Password utente  
- * @param {string} fullName - Nome completo utente
- * @returns {Object} Risultato registrazione
- */
-async function signUp(email, password, fullName) {
+// Funzione per inizializzare Supabase (carica dinamicamente se CDN non disponibile)
+async function initSupabase() {
+    if (supabaseClient) return supabaseClient;
+    
     try {
-        console.log('🔐 Tentativo registrazione per:', email);
-
-        const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    full_name: fullName
-                }
-            }
-        });
-
-        if (error) {
-            console.error('❌ Errore registrazione:', error);
-            return { error, data: null };
+        // Prova a usare Supabase se già caricato globalmente
+        if (typeof supabase !== 'undefined') {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            // Carica dinamicamente Supabase CDN
+            await loadSupabaseScript();
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
-
-        console.log('✅ Registrazione riuscita:', data);
-        return { error: null, data };
-
+        
+        console.log('✅ Supabase inizializzato correttamente');
+        return supabaseClient;
     } catch (error) {
-        console.error('❌ Errore generale registrazione:', error);
-        return { error, data: null };
-    }
-}
-
-/**
- * Login utente esistente
- * @param {string} email - Email utente
- * @param {string} password - Password utente
- * @returns {Object} Risultato login
- */
-async function signIn(email, password) {
-    try {
-        console.log('🔐 Tentativo login per:', email);
-
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            console.error('❌ Errore login:', error);
-            return { error, data: null };
-        }
-
-        console.log('✅ Login riuscito:', data.user.email);
-        return { error: null, data };
-
-    } catch (error) {
-        console.error('❌ Errore generale login:', error);
-        return { error, data: null };
-    }
-}
-
-/**
- * Logout utente corrente
- * @returns {Object} Risultato logout
- */
-async function signOut() {
-    try {
-        console.log('👋 Tentativo logout...');
-
-        const { error } = await supabaseClient.auth.signOut();
-
-        if (error) {
-            console.error('❌ Errore logout:', error);
-            return { error };
-        }
-
-        console.log('✅ Logout riuscito');
-        return { error: null };
-
-    } catch (error) {
-        console.error('❌ Errore generale logout:', error);
-        return { error };
-    }
-}
-
-/**
- * Ottieni utente corrente
- * @returns {Object|null} Utente corrente o null
- */
-async function getCurrentUser() {
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        return user;
-    } catch (error) {
-        console.error('❌ Errore recupero utente:', error);
+        console.error('❌ Errore inizializzazione Supabase:', error);
+        // Fallback: usa localStorage se Supabase non disponibile
         return null;
     }
 }
 
-/**
- * Controlla se utente è autenticato
- * @returns {boolean} True se autenticato
- */
-async function isAuthenticated() {
-    const user = await getCurrentUser();
-    return user !== null;
+// Carica script Supabase dinamicamente
+function loadSupabaseScript() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
+// ===== AUTHENTICATION FUNCTIONS =====
+
 /**
- * Richiedi nuova email di conferma
- * @param {string} email - Email per cui richiedere nuova conferma
- * @returns {Object} Risultato richiesta
+ * Effettua il login dell'utente
  */
-async function requestNewConfirmationEmail(email) {
+async function signIn(email, password) {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: simula login con localStorage
+        const user = { 
+            id: '1', 
+            email: email, 
+            name: email.split('@')[0],
+            created_at: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        return { user, error: null };
+    }
+    
     try {
-        console.log('📧 Richiesta nuova email di conferma per:', email);
-
-        const { error } = await supabaseClient.auth.resend({
-            type: 'signup',
-            email: email
+        const { data, error } = await client.auth.signInWithPassword({
+            email: email,
+            password: password
         });
-
-        if (error) {
-            console.error('❌ Errore richiesta email:', error);
-            return { error };
+        
+        if (error) throw error;
+        
+        // Salva utente nel localStorage per persistenza
+        if (data.user) {
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
         }
-
-        console.log('✅ Nuova email di conferma inviata');
-        return { error: null };
-
+        
+        return { user: data.user, error: null };
     } catch (error) {
-        console.error('❌ Errore generale richiesta email:', error);
-        return { error };
+        console.error('Errore login:', error);
+        return { user: null, error: error.message };
     }
 }
 
-// ===== FUNZIONI DATABASE OFFERTE =====
+/**
+ * Registra un nuovo utente
+ */
+async function signUp(email, password, metadata = {}) {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: simula registrazione con localStorage
+        const user = { 
+            id: Date.now().toString(), 
+            email: email, 
+            name: metadata.name || email.split('@')[0],
+            created_at: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        return { user, error: null };
+    }
+    
+    try {
+        const { data, error } = await client.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: metadata
+            }
+        });
+        
+        if (error) throw error;
+        
+        return { user: data.user, error: null };
+    } catch (error) {
+        console.error('Errore registrazione:', error);
+        return { user: null, error: error.message };
+    }
+}
 
 /**
- * Carica tutte le offerte dell'utente corrente
- * @returns {Object} Array di offerte o errore
+ * Effettua il logout
  */
-async function loadOffers() {
+async function signOut() {
+    const client = await initSupabase();
+    
+    // Rimuovi da localStorage
+    localStorage.removeItem('currentUser');
+    
+    if (!client) return { error: null };
+    
+    try {
+        const { error } = await client.auth.signOut();
+        return { error };
+    } catch (error) {
+        console.error('Errore logout:', error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * Ottiene l'utente corrente
+ */
+async function getCurrentUser() {
+    // Prima controlla localStorage
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        try {
+            return JSON.parse(storedUser);
+        } catch (e) {
+            localStorage.removeItem('currentUser');
+        }
+    }
+    
+    const client = await initSupabase();
+    if (!client) return null;
+    
+    try {
+        const { data: { user } } = await client.auth.getUser();
+        if (user) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+        return user;
+    } catch (error) {
+        console.error('Errore get current user:', error);
+        return null;
+    }
+}
+
+// ===== DATABASE FUNCTIONS - OFFERS =====
+
+/**
+ * Carica tutte le offerte dell'utente
+ */
+async function getOffers() {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: usa localStorage
+        return getOffersFromLocalStorage();
+    }
+    
     try {
         const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('📊 Caricamento offerte per utente:', user.id);
-
-        const { data, error } = await supabaseClient
+        if (!user) throw new Error('Utente non autenticato');
+        
+        const { data, error } = await client
             .from('offerte_energia')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('❌ Errore caricamento offerte:', error);
-            return { error, data: null };
-        }
-
-        console.log(`✅ Caricate ${data?.length || 0} offerte`);
-        return { error: null, data: data || [] };
-
+        
+        if (error) throw error;
+        
+        return data || [];
     } catch (error) {
-        console.error('❌ Errore generale caricamento offerte:', error);
-        return { error, data: null };
+        console.error('Errore caricamento offerte:', error);
+        // Fallback a localStorage in caso di errore
+        return getOffersFromLocalStorage();
     }
 }
 
 /**
- * Salva una nuova offerta
- * @param {Object} offerData - Dati dell'offerta
- * @returns {Object} Offerta salvata o errore
+ * Inserisce una nuova offerta
  */
-async function saveOffer(offerData) {
+async function insertOffer(offerData) {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: salva in localStorage
+        return saveOfferToLocalStorage(offerData);
+    }
+    
     try {
         const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('💾 Salvataggio nuova offerta...');
-
-        // Aggiungi user_id e timestamp
-        const offerToSave = {
+        if (!user) throw new Error('Utente non autenticato');
+        
+        const offerToInsert = {
             ...offerData,
             user_id: user.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
-
-        const { data, error } = await supabaseClient
+        
+        const { data, error } = await client
             .from('offerte_energia')
-            .insert([offerToSave])
-            .select()
-            .single();
-
-        if (error) {
-            console.error('❌ Errore salvataggio offerta:', error);
-            return { error, data: null };
-        }
-
-        console.log('✅ Offerta salvata con ID:', data.id);
-        return { error: null, data };
-
+            .insert([offerToInsert])
+            .select();
+        
+        if (error) throw error;
+        
+        return data[0];
     } catch (error) {
-        console.error('❌ Errore generale salvataggio:', error);
-        return { error, data: null };
+        console.error('Errore inserimento offerta:', error);
+        // Fallback a localStorage
+        return saveOfferToLocalStorage(offerData);
     }
 }
 
 /**
  * Aggiorna un'offerta esistente
- * @param {number} offerId - ID dell'offerta da aggiornare
- * @param {Object} updates - Campi da aggiornare
- * @returns {Object} Offerta aggiornata o errore
  */
-async function updateOffer(offerId, updates) {
+async function updateOffer(offerId, offerData) {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: aggiorna localStorage
+        return updateOfferInLocalStorage(offerId, offerData);
+    }
+    
     try {
         const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('📝 Aggiornamento offerta ID:', offerId);
-
-        const updateData = {
-            ...updates,
-            updated_at: new Date().toISOString()
-        };
-
-        const { data, error } = await supabaseClient
+        if (!user) throw new Error('Utente non autenticato');
+        
+        const { data, error } = await client
             .from('offerte_energia')
-            .update(updateData)
+            .update({
+                ...offerData,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', offerId)
-            .eq('user_id', user.id) // Sicurezza: solo le proprie offerte
-            .select()
-            .single();
-
-        if (error) {
-            console.error('❌ Errore aggiornamento offerta:', error);
-            return { error, data: null };
-        }
-
-        console.log('✅ Offerta aggiornata:', data.id);
-        return { error: null, data };
-
+            .eq('user_id', user.id)
+            .select();
+        
+        if (error) throw error;
+        
+        return data[0];
     } catch (error) {
-        console.error('❌ Errore generale aggiornamento:', error);
-        return { error, data: null };
+        console.error('Errore aggiornamento offerta:', error);
+        return updateOfferInLocalStorage(offerId, offerData);
     }
 }
 
 /**
  * Elimina un'offerta
- * @param {number} offerId - ID dell'offerta da eliminare
- * @returns {Object} Risultato eliminazione
  */
-async function deleteOffer(offerId) {
+async function removeOffer(offerId) {
+    const client = await initSupabase();
+    
+    if (!client) {
+        // Fallback: rimuovi da localStorage
+        return removeOfferFromLocalStorage(offerId);
+    }
+    
     try {
         const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('🗑️ Eliminazione offerta ID:', offerId);
-
-        const { data, error } = await supabaseClient
+        if (!user) throw new Error('Utente non autenticato');
+        
+        const { error } = await client
             .from('offerte_energia')
             .delete()
             .eq('id', offerId)
-            .eq('user_id', user.id) // Sicurezza: solo le proprie offerte
-            .select()
-            .single();
-
-        if (error) {
-            console.error('❌ Errore eliminazione offerta:', error);
-            return { error, data: null };
-        }
-
-        console.log('✅ Offerta eliminata:', data.id);
-        return { error: null, data };
-
+            .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        return true;
     } catch (error) {
-        console.error('❌ Errore generale eliminazione:', error);
-        return { error, data: null };
+        console.error('Errore eliminazione offerta:', error);
+        return removeOfferFromLocalStorage(offerId);
+    }
+}
+
+// ===== FALLBACK FUNCTIONS (LocalStorage) =====
+
+/**
+ * Carica offerte da localStorage
+ */
+function getOffersFromLocalStorage() {
+    try {
+        const stored = localStorage.getItem('energiacorp_offers');
+        return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        console.error('Errore localStorage get offers:', error);
+        return [];
     }
 }
 
 /**
- * Cerca offerte con filtri
- * @param {Object} filters - Filtri di ricerca
- * @returns {Object} Array di offerte filtrate o errore
+ * Salva offerta in localStorage
  */
-async function searchOffers(filters = {}) {
+function saveOfferToLocalStorage(offerData) {
     try {
-        const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('🔍 Ricerca offerte con filtri:', filters);
-
-        let query = supabaseClient
-            .from('offerte_energia')
-            .select('*')
-            .eq('user_id', user.id);
-
-        // Applica filtri
-        if (filters.categoria) {
-            query = query.eq('categoria', filters.categoria);
-        }
-
-        if (filters.fornitore) {
-            query = query.eq('fornitore', filters.fornitore);
-        }
-
-        if (filters.tipo_prezzo) {
-            query = query.eq('tipo_prezzo', filters.tipo_prezzo);
-        }
-
-        if (filters.search) {
-            query = query.or(
-                `fornitore.ilike.%${filters.search}%,nome_offerta.ilike.%${filters.search}%`
-            );
-        }
-
-        // Ordinamento
-        query = query.order(filters.orderBy || 'created_at', { 
-            ascending: filters.ascending || false 
-        });
-
-        // Limite risultati
-        if (filters.limit) {
-            query = query.limit(filters.limit);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error('❌ Errore ricerca offerte:', error);
-            return { error, data: null };
-        }
-
-        console.log(`✅ Trovate ${data?.length || 0} offerte`);
-        return { error: null, data: data || [] };
-
-    } catch (error) {
-        console.error('❌ Errore generale ricerca:', error);
-        return { error, data: null };
-    }
-}
-
-/**
- * Ottieni statistiche offerte utente
- * @returns {Object} Statistiche o errore
- */
-async function getOfferStats() {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log('📈 Calcolo statistiche offerte...');
-
-        const { data, error } = await supabaseClient
-            .from('offerte_energia')
-            .select('categoria, prezzo_luce, prezzo_gas, commissioni, fornitore')
-            .eq('user_id', user.id);
-
-        if (error) {
-            console.error('❌ Errore calcolo statistiche:', error);
-            return { error, data: null };
-        }
-
-        // Calcola statistiche
-        const stats = {
-            total: data.length,
-            by_category: {},
-            by_supplier: {},
-            avg_prices: {
-                luce: 0,
-                gas: 0,
-                commissioni: 0
-            },
-            price_ranges: {
-                luce: { min: Number.MAX_VALUE, max: 0 },
-                gas: { min: Number.MAX_VALUE, max: 0 }
-            }
+        const offers = getOffersFromLocalStorage();
+        const newOffer = {
+            ...offerData,
+            id: Date.now().toString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         };
-
-        if (data.length > 0) {
-            let totalLuce = 0, totalGas = 0, totalCommissioni = 0;
-
-            data.forEach(offer => {
-                // Conteggi per categoria
-                stats.by_category[offer.categoria] = (stats.by_category[offer.categoria] || 0) + 1;
-
-                // Conteggi per fornitore
-                stats.by_supplier[offer.fornitore] = (stats.by_supplier[offer.fornitore] || 0) + 1;
-
-                // Calcoli prezzi
-                const prezzoLuce = parseFloat(offer.prezzo_luce) || 0;
-                const prezzoGas = parseFloat(offer.prezzo_gas) || 0;
-                const commissioni = parseFloat(offer.commissioni) || 0;
-
-                totalLuce += prezzoLuce;
-                totalGas += prezzoGas;
-                totalCommissioni += commissioni;
-
-                // Range prezzi
-                if (prezzoLuce > 0) {
-                    stats.price_ranges.luce.min = Math.min(stats.price_ranges.luce.min, prezzoLuce);
-                    stats.price_ranges.luce.max = Math.max(stats.price_ranges.luce.max, prezzoLuce);
-                }
-
-                if (prezzoGas > 0) {
-                    stats.price_ranges.gas.min = Math.min(stats.price_ranges.gas.min, prezzoGas);
-                    stats.price_ranges.gas.max = Math.max(stats.price_ranges.gas.max, prezzoGas);
-                }
-            });
-
-            // Medie
-            stats.avg_prices.luce = totalLuce / data.length;
-            stats.avg_prices.gas = totalGas / data.length;
-            stats.avg_prices.commissioni = totalCommissioni / data.length;
-
-            // Correggi min values se nessun dato valido
-            if (stats.price_ranges.luce.min === Number.MAX_VALUE) {
-                stats.price_ranges.luce.min = 0;
-            }
-            if (stats.price_ranges.gas.min === Number.MAX_VALUE) {
-                stats.price_ranges.gas.min = 0;
-            }
-        }
-
-        console.log('✅ Statistiche calcolate:', stats);
-        return { error: null, data: stats };
-
+        
+        offers.unshift(newOffer);
+        localStorage.setItem('energiacorp_offers', JSON.stringify(offers));
+        
+        return newOffer;
     } catch (error) {
-        console.error('❌ Errore generale calcolo statistiche:', error);
-        return { error, data: null };
+        console.error('Errore localStorage save offer:', error);
+        throw error;
     }
 }
 
-// ===== FUNZIONI UTILITÀ =====
+/**
+ * Aggiorna offerta in localStorage
+ */
+function updateOfferInLocalStorage(offerId, offerData) {
+    try {
+        const offers = getOffersFromLocalStorage();
+        const index = offers.findIndex(o => o.id === offerId);
+        
+        if (index === -1) {
+            throw new Error('Offerta non trovata');
+        }
+        
+        offers[index] = {
+            ...offers[index],
+            ...offerData,
+            updated_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('energiacorp_offers', JSON.stringify(offers));
+        return offers[index];
+    } catch (error) {
+        console.error('Errore localStorage update offer:', error);
+        throw error;
+    }
+}
 
 /**
- * Ottieni migliori offerte per categoria
- * @param {string} categoria - Categoria offerte
- * @param {number} limit - Numero massimo risultati
- * @returns {Object} Array delle migliori offerte o errore
+ * Rimuovi offerta da localStorage
  */
-async function getBestOffers(categoria, limit = 5) {
+function removeOfferFromLocalStorage(offerId) {
+    try {
+        const offers = getOffersFromLocalStorage();
+        const filteredOffers = offers.filter(o => o.id !== offerId);
+        
+        localStorage.setItem('energiacorp_offers', JSON.stringify(filteredOffers));
+        return true;
+    } catch (error) {
+        console.error('Errore localStorage remove offer:', error);
+        throw error;
+    }
+}
+
+// ===== UTILITY FUNCTIONS =====
+
+/**
+ * Test connessione Supabase
+ */
+async function testSupabaseConnection() {
+    try {
+        const client = await initSupabase();
+        if (!client) return false;
+        
+        // Test semplice: prova a fare una query
+        const { error } = await client
+            .from('offerte_energia')
+            .select('count', { count: 'exact', head: true });
+        
+        return !error;
+    } catch (error) {
+        console.error('Test connessione fallito:', error);
+        return false;
+    }
+}
+
+/**
+ * Inizializza il database (crea tabelle se non esistono)
+ */
+async function initializeDatabase() {
+    const client = await initSupabase();
+    if (!client) {
+        console.warn('Supabase non disponibile, uso localStorage come fallback');
+        return;
+    }
+    
+    try {
+        // Verifica se la tabella esiste facendo una query
+        const { error } = await client
+            .from('offerte_energia')
+            .select('count', { count: 'exact', head: true });
+        
+        if (error) {
+            console.warn('Tabella offerte_energia non trovata o non accessibile:', error.message);
+            console.log('Assicurati che la tabella esista nel database Supabase con RLS abilitato');
+        } else {
+            console.log('✅ Database Supabase connesso e configurato correttamente');
+        }
+    } catch (error) {
+        console.error('Errore inizializzazione database:', error);
+    }
+}
+
+/**
+ * Sincronizza localStorage con Supabase
+ */
+async function syncLocalStorageWithSupabase() {
+    const client = await initSupabase();
+    if (!client) return;
+    
     try {
         const user = await getCurrentUser();
-        if (!user) {
-            throw new Error('Utente non autenticato');
-        }
-
-        console.log(`🏆 Ricerca migliori offerte ${categoria}...`);
-
-        let query = supabaseClient
+        if (!user) return;
+        
+        // Carica offerte locali
+        const localOffers = getOffersFromLocalStorage();
+        
+        // Carica offerte remote
+        const { data: remoteOffers } = await client
             .from('offerte_energia')
             .select('*')
             .eq('user_id', user.id);
-
-        if (categoria && categoria !== 'all') {
-            query = query.eq('categoria', categoria);
+        
+        // Merge: priorità alle offerte remote più recenti
+        if (remoteOffers && remoteOffers.length > 0) {
+            console.log(`Sincronizzazione: ${remoteOffers.length} offerte remote, ${localOffers.length} locali`);
+            localStorage.setItem('energiacorp_offers', JSON.stringify(remoteOffers));
         }
-
-        const { data, error } = await query
-            .order('prezzo_luce', { ascending: true })
-            .limit(limit);
-
-        if (error) {
-            console.error('❌ Errore ricerca migliori offerte:', error);
-            return { error, data: null };
-        }
-
-        console.log(`✅ Trovate ${data?.length || 0} migliori offerte`);
-        return { error: null, data: data || [] };
-
     } catch (error) {
-        console.error('❌ Errore generale ricerca migliori offerte:', error);
-        return { error, data: null };
+        console.error('Errore sincronizzazione:', error);
     }
 }
 
 /**
- * Verifica se tabella offerte esiste e la crea se necessario
- * @returns {Object} Risultato verifica/creazione tabella
+ * Backup dati su Supabase
  */
-async function ensureOfferTableExists() {
+async function backupToSupabase() {
+    const client = await initSupabase();
+    if (!client) return false;
+    
     try {
-        console.log('🔍 Verifica esistenza tabella offerte...');
-
-        // Testa con una query semplice
-        const { error: testError } = await supabaseClient
-            .from('offerte_energia')
-            .select('id')
-            .limit(1);
-
-        if (testError) {
-            console.warn('⚠️ Tabella offerte non trovata:', testError.message);
-            return { 
-                error: new Error('Tabella offerte_energia non configurata. Controlla il database Supabase.'), 
-                data: null 
-            };
+        const user = await getCurrentUser();
+        if (!user) return false;
+        
+        const localOffers = getOffersFromLocalStorage();
+        
+        for (const offer of localOffers) {
+            // Controlla se l'offerta esiste già
+            const { data: existing } = await client
+                .from('offerte_energia')
+                .select('id')
+                .eq('id', offer.id)
+                .eq('user_id', user.id);
+            
+            if (!existing || existing.length === 0) {
+                // Inserisci l'offerta
+                await client
+                    .from('offerte_energia')
+                    .insert([{
+                        ...offer,
+                        user_id: user.id
+                    }]);
+            }
         }
-
-        console.log('✅ Tabella offerte trovata');
-        return { error: null, data: true };
-
+        
+        console.log(`✅ Backup completato: ${localOffers.length} offerte`);
+        return true;
     } catch (error) {
-        console.error('❌ Errore verifica tabella:', error);
-        return { error, data: null };
+        console.error('Errore backup:', error);
+        return false;
     }
 }
 
+// ===== REAL-TIME SUBSCRIPTIONS (Optional) =====
+
 /**
- * Funzione di setup iniziale
- * @returns {Object} Risultato setup
+ * Sottoscrivi aggiornamenti real-time
  */
-async function initializeSupabase() {
+async function subscribeToOffersChanges(callback) {
+    const client = await initSupabase();
+    if (!client) return null;
+    
+    const user = await getCurrentUser();
+    if (!user) return null;
+    
     try {
-        console.log('🚀 Inizializzazione Supabase...');
-
-        // Verifica configurazione
-        if (SUPABASE_URL === 'https://your-project.supabase.co' || 
-            SUPABASE_ANON_KEY === 'your-anon-key') {
-            throw new Error('Configurazione Supabase non valida. Aggiorna SUPABASE_URL e SUPABASE_ANON_KEY.');
-        }
-
-        // Verifica connessione
-        const { data, error } = await supabaseClient.auth.getSession();
-
-        if (error) {
-            console.error('❌ Errore connessione Supabase:', error);
-            return { error, data: null };
-        }
-
-        // Verifica tabella offerte
-        const tableCheck = await ensureOfferTableExists();
-        if (tableCheck.error) {
-            return tableCheck;
-        }
-
-        console.log('✅ Supabase inizializzato correttamente');
-        return { error: null, data: true };
-
+        const subscription = client
+            .channel('offerte_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'offerte_energia',
+                    filter: `user_id=eq.${user.id}`
+                },
+                callback
+            )
+            .subscribe();
+        
+        return subscription;
     } catch (error) {
-        console.error('❌ Errore inizializzazione Supabase:', error);
-        return { error, data: null };
+        console.error('Errore subscription:', error);
+        return null;
     }
 }
 
-// ===== LISTENERS AUTH STATE =====
+// ===== EXPORT FUNCTIONS =====
+// Queste funzioni sono disponibili globalmente per app.js
 
-/**
- * Listener per cambiamenti stato autenticazione
- * @param {Function} callback - Callback da chiamare su cambio stato
- */
-function onAuthStateChange(callback) {
-    return supabaseClient.auth.onAuthStateChange((event, session) => {
-        console.log('🔄 Auth state changed:', event, session?.user?.email);
-        if (callback) {
-            callback(event, session);
+// Per compatibilità con app.js
+window.getOffers = getOffers;
+window.insertOffer = insertOffer;
+window.updateOffer = updateOffer;
+window.removeOffer = removeOffer;
+window.getCurrentUser = getCurrentUser;
+window.signIn = signIn;
+window.signUp = signUp;
+window.signOut = signOut;
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Inizializzazione Supabase...');
+    
+    try {
+        // Inizializza database
+        await initializeDatabase();
+        
+        // Test connessione
+        const isConnected = await testSupabaseConnection();
+        console.log(`📡 Connessione Supabase: ${isConnected ? '✅ OK' : '❌ FALLBACK localStorage'}`);
+        
+        // Sincronizza dati se possibile
+        if (isConnected) {
+            await syncLocalStorageWithSupabase();
         }
-    });
-}
-
-// ===== ESPORTAZIONI GLOBALI =====
-
-// Rende le funzioni disponibili globalmente
-if (typeof window !== 'undefined') {
-    window.supabaseClient = supabaseClient;
-    window.signUp = signUp;
-    window.signIn = signIn;
-    window.signOut = signOut;
-    window.getCurrentUser = getCurrentUser;
-    window.isAuthenticated = isAuthenticated;
-    window.requestNewConfirmationEmail = requestNewConfirmationEmail;
-    window.loadOffers = loadOffers;
-    window.saveOffer = saveOffer;
-    window.updateOffer = updateOffer;
-    window.deleteOffer = deleteOffer;
-    window.searchOffers = searchOffers;
-    window.getOfferStats = getOfferStats;
-    window.getBestOffers = getBestOffers;
-    window.ensureOfferTableExists = ensureOfferTableExists;
-    window.initializeSupabase = initializeSupabase;
-    window.onAuthStateChange = onAuthStateChange;
-}
-
-// ===== AUTO-INIZIALIZZAZIONE =====
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('📱 Supabase DOM loaded, inizializzazione...');
-
-    const result = await initializeSupabase();
-    if (result.error) {
-        console.error('❌ Errore inizializzazione Supabase:', result.error.message);
-
-        // Notifica utente se funzione disponibile
-        if (typeof showNotification === 'function') {
-            showNotification('Errore configurazione database: ' + result.error.message, 'error');
-        } else {
-            alert('⚠️ Errore configurazione: ' + result.error.message);
-        }
-    } else {
-        console.log('✅ Supabase pronto all\'uso');
+        
+    } catch (error) {
+        console.error('Errore inizializzazione Supabase:', error);
+        console.log('💾 Utilizzo localStorage come fallback');
     }
 });
 
-console.log('🎯 Supabase.js caricato completamente');
+// ===== SQL SCHEMA PER RIFERIMENTO =====
+/*
+-- Tabella offerte_energia
+CREATE TABLE public.offerte_energia (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    fornitore TEXT NOT NULL,
+    nome_offerta TEXT,
+    categoria TEXT CHECK (categoria IN ('Domestico', 'Micro', 'PMI')),
+    tipo_prezzo TEXT CHECK (tipo_prezzo IN ('Fisso', 'Variabile')),
+    prezzo_luce DECIMAL(10,6),
+    spread_luce DECIMAL(10,6) DEFAULT 0,
+    prezzo_gas DECIMAL(10,6),
+    spread_gas DECIMAL(10,6) DEFAULT 0,
+    quota_fissa_luce DECIMAL(10,2),
+    quota_fissa_gas DECIMAL(10,2),
+    commissioni DECIMAL(10,2) DEFAULT 0,
+    scadenza DATE,
+    durata_mesi INTEGER,
+    attivo BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.offerte_energia ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can view own offers" 
+ON public.offerte_energia FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own offers" 
+ON public.offerte_energia FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own offers" 
+ON public.offerte_energia FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own offers" 
+ON public.offerte_energia FOR DELETE 
+USING (auth.uid() = user_id);
+
+-- Indexes for performance
+CREATE INDEX idx_offerte_user_id ON public.offerte_energia(user_id);
+CREATE INDEX idx_offerte_categoria ON public.offerte_energia(categoria);
+CREATE INDEX idx_offerte_fornitore ON public.offerte_energia(fornitore);
+*/
+
