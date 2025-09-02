@@ -3,17 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Premium - Gestione Offerte Energia con OCR</title>
-
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="style.css">
+    <title>EnergiaCorp Premium - Gestione Offerte Energia</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
-        /* Reset e Base */
+        /* ===== CSS VARIABILI ===== */
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #64748b;
+            --accent: #f59e0b;
+            --success: #059669;
+            --warning: #d97706;
+            --error: #dc2626;
+            --info: #0284c7;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-white: #ffffff;
+            --text-muted: #94a3b8;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-gradient: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+            
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-dark: #94a3b8;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 12px;
+            --space-lg: 16px;
+            --space-xl: 24px;
+            --space-2xl: 32px;
+            --space-3xl: 48px;
+            
+            --text-xs: 12px;
+            --text-sm: 14px;
+            --text-base: 16px;
+            --text-lg: 18px;
+            --text-xl: 20px;
+            --text-2xl: 24px;
+            
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 16px;
+        }
+
+        /* ===== RESET E BASE ===== */
         * {
             margin: 0;
             padding: 0;
@@ -21,437 +68,22 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             line-height: 1.6;
-            color: #333;
-            background: #f8fafc;
-        }
-
-        /* Landing Page Styles */
-        .landing-page {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
         }
 
-        .landing-page::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="1000" height="1000" fill="url(%23grain)"/></svg>');
-            pointer-events: none;
-        }
-
-        .landing-container {
-            max-width: 1200px;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .landing-content {
-            color: white;
-        }
-
-        .landing-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .brand-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: white;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .landing-title {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-        }
-
-        .landing-subtitle {
-            font-size: 1.25rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
-
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 2rem 0;
-        }
-
-        .features-list li {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-        }
-
-        .features-list li i {
-            width: 24px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            backdrop-filter: blur(10px);
-        }
-
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 3rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .login-header h2 {
-            color: #333;
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .login-header p {
-            color: #666;
-            font-size: 0.95rem;
-        }
-
-        .auth-tabs {
-            display: flex;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 2rem;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 12px 16px;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #666;
-        }
-
-        .auth-tab.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 16px 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 16px;
-            background: white;
-            color: #333;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            width: 100%;
-            padding: 12px 24px;
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 1rem;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(102, 126, 234, 0.2);
-        }
-
-        .btn-primary {
-            padding: 16px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .auth-footer {
-            text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        /* Email Status Screens */
-        .email-status-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-family: Inter, sans-serif;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .status-container {
-            max-width: 500px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 3rem 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .status-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            font-size: 2rem;
-        }
-
-        .status-icon.success {
-            background: rgba(16, 185, 129, 0.2);
-            border: 2px solid #10b981;
-            color: #10b981;
-        }
-
-        .status-icon.error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 2px solid #ef4444;
-            color: #ef4444;
-        }
-
-        .status-icon.warning {
-            background: rgba(245, 158, 11, 0.2);
-            border: 2px solid #f59e0b;
-            color: #f59e0b;
-        }
-
-        .status-icon.loading {
-            background: rgba(59, 130, 246, 0.2);
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .status-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .status-message {
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .status-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .btn-link {
-            padding: 8px 16px;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        /* App Container - Initially Hidden */
-        .app-container {
-            display: none;
-        }
-
-        /* App Styles */
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            left: 2rem;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.1);
-        }
-
+        /* ===== HEADER AZZURRO ===== */
         .header {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1rem 0;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            box-shadow: var(--shadow-md);
+            padding: var(--space-md) 0;
             position: sticky;
             top: 0;
             z-index: 50;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .header__container {
@@ -460,1389 +92,1273 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 2rem;
+            padding: 0 var(--space-md);
+            gap: var(--space-md);
         }
 
         .header__brand {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-sm);
+            flex-shrink: 0;
         }
 
         .header__brand .brand-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            color: white;
+            font-size: var(--text-lg);
+            color: var(--text-white);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .brand-text h1 {
             margin: 0;
-            font-size: 1.25rem;
+            font-size: var(--text-lg);
             font-weight: 700;
-            color: #1f2937;
+            color: var(--text-white);
+            display: none;
+        }
+
+        @media (min-width: 480px) {
+            .brand-text h1 {
+                display: block;
+            }
         }
 
         .brand-text span {
-            font-size: 0.8rem;
-            color: #6b7280;
+            font-size: var(--text-xs);
+            color: rgba(255, 255, 255, 0.8);
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .brand-text span {
+                display: block;
+            }
         }
 
         .header__nav {
             display: flex;
-            gap: 0.5rem;
+            gap: var(--space-sm);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .header__nav::-webkit-scrollbar {
+            display: none;
         }
 
         .nav-btn {
-            padding: 0.75rem 1rem;
+            padding: var(--space-md);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--space-xs);
             background: transparent;
-            color: #6b7280;
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 500;
             transition: all 0.2s;
+            font-size: var(--text-base);
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: 48px;
+            min-height: 48px;
+            justify-content: center;
         }
 
         .nav-btn.active {
-            background: #667eea;
-            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-white);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(10px);
         }
 
-        .nav-btn:hover {
-            background: #f3f4f6;
+        .nav-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-white);
         }
 
-        .nav-btn.active:hover {
-            background: #5a6fd8;
+        .nav-btn i {
+            font-size: var(--text-lg);
+        }
+
+        .nav-btn span {
+            display: none;
+        }
+
+        @media (min-width: 480px) {
+            .nav-btn span {
+                display: inline;
+            }
         }
 
         .header__actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-sm);
+            flex-shrink: 0;
         }
 
         #user-name {
-            color: #374151;
+            color: var(--text-white);
             font-weight: 500;
+            font-size: var(--text-sm);
+            display: none;
+            order: -1;
+            margin-right: 12px;
         }
 
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        @media (min-width: 600px) {
+            #user-name {
+                display: block;
+                max-width: 80px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
 
-        .section-header {
-            margin-bottom: 2rem;
-        }
-
-        .section-header h2 {
-            margin: 0 0 0.5rem 0;
-            font-size: 2rem;
-            font-weight: 800;
-            color: #1f2937;
-        }
-
-        .section-header p {
-            margin: 0;
-            color: #6b7280;
-        }
-
-        /* KPI Cards */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .kpi-card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            transition: transform 0.2s ease;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .kpi-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+        .theme-toggle {
+            width: 36px !important;
+            height: 36px !important;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            backdrop-filter: blur(10px);
+            font-size: var(--text-sm);
         }
 
-        .kpi-content h3 {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #1f2937;
-            margin: 0 0 0.5rem 0;
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.25);
         }
 
-        .kpi-content p {
-            color: #6b7280;
-            margin: 0;
+        #logout-btn {
+            padding: var(--space-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: var(--text-base);
+            color: rgba(255, 255, 255, 0.9);
+            transition: all 0.2s;
+            min-width: 48px;
+            min-height: 48px;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        #logout-btn:hover {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+        }
+
+        #logout-btn span {
+            display: none;
+        }
+
+        @media (min-width: 480px) {
+            #logout-btn span {
+                display: inline;
+            }
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+            min-height: calc(100vh - 80px);
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-2xl);
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-md);
+        }
+
+        .stat-card:nth-child(1) .stat-icon {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-card:nth-child(2) .stat-icon {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+        }
+
+        .stat-card:nth-child(3) .stat-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent);
+        }
+
+        .stat-card:nth-child(4) .stat-icon {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        .stat-value {
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
             font-weight: 500;
         }
 
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-container h3 {
-            margin: 0 0 1.5rem 0;
-            color: #1f2937;
-            font-weight: 700;
-        }
-
+        /* ===== TOP OFFERS (no chart) ===== */
         .top-offers {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            padding: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            margin-top: var(--space-xl);
         }
 
         .top-offers h3 {
-            margin: 0 0 1.5rem 0;
-            color: #1f2937;
-            font-weight: 700;
-        }
-
-        .top-offer-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .top-offer-section h4 {
-            color: #667eea;
+            font-size: var(--text-lg);
             font-weight: 600;
-            margin: 0 0 0.75rem 0;
+            color: var(--text-primary);
+            margin-bottom: var(--space-lg);
+            text-align: center;
         }
 
-        .top-offer-card {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1rem;
-            border-left: 4px solid #667eea;
+        .top-offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
         }
 
-        .top-offer-card h4 {
-            margin: 0 0 0.5rem 0;
-            font-size: 0.9rem;
-            font-weight: 600;
+        .offer-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: var(--space-lg);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
         }
 
-        .top-offer-card p {
-            margin: 0.25rem 0;
-            font-size: 0.8rem;
-            color: #6b7280;
+        .offer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
-        .price-info {
+        .offer-header {
             display: flex;
-            gap: 1rem;
-            margin: 0.5rem 0;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: var(--space-md);
         }
 
-        .price-info span {
-            font-size: 0.75rem;
-            background: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .savings {
+        .offer-category {
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 12px;
+            font-size: var(--text-xs);
             font-weight: 600;
-            color: #059669 !important;
+            text-transform: uppercase;
         }
 
-        /* Upload Area */
+        .category-domestico {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+        }
+
+        .category-micro {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent);
+        }
+
+        .category-pmi {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        /* ===== UPLOAD OCR ===== */
         .upload-container {
-            margin: 2rem 0;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .upload-area {
-            border: 2px dashed #d1d5db;
-            border-radius: 12px;
-            padding: 3rem;
+            border: 2px dashed var(--border-medium);
+            border-radius: var(--border-radius-lg);
+            padding: var(--space-3xl);
             text-align: center;
-            background: #f9fafb;
+            background: var(--bg-primary);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
         }
 
-        .upload-area:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+            transform: scale(1.02);
         }
 
         .upload-icon {
             font-size: 3rem;
-            color: #9ca3af;
-            margin-bottom: 1rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-lg);
         }
 
-        .upload-area h3 {
-            margin: 0 0 0.5rem 0;
-            color: #374151;
-        }
-
-        .upload-area p {
-            margin: 0;
-            color: #6b7280;
-        }
-
-        /* OCR Form */
-        .ocr-form-container {
-            background: white;
+        /* ===== FILE PREVIEW ===== */
+        .file-preview-container {
+            margin: var(--space-xl) 0;
+            background: var(--bg-primary);
             border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--border-light);
+            overflow: hidden;
+            animation: slideInUp 0.4s ease;
+            display: none;
         }
 
-        .ocr-form h3 {
-            margin: 0 0 2rem 0;
-            color: #1f2937;
+        .file-preview-container:not(:empty) {
+            display: block !important;
         }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .form-actions {
+        .preview-header {
+            background: var(--bg-gradient);
+            color: var(--text-white);
+            padding: var(--space-lg);
             display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* Filters */
+        .preview-header h4 {
+            margin: 0;
+            font-size: var(--text-lg);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-remove-file {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--text-white);
+            padding: var(--space-sm);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-remove-file:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .preview-body {
+            padding: var(--space-xl);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        @media (max-width: 640px) {
+            .preview-body {
+                grid-template-columns: 1fr;
+                gap: var(--space-lg);
+                text-align: center;
+            }
+        }
+
+        .file-thumbnail {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-md);
+        }
+
+        .pdf-thumb {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: var(--text-white);
+            border: 2px solid #dc2626;
+        }
+
+        .image-thumb {
+            border: 2px solid var(--border-light);
+        }
+
+        .image-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .unknown-thumb {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+            color: var(--text-white);
+            border: 2px solid #64748b;
+        }
+
+        .processing-status {
+            margin-top: var(--space-md);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md) var(--space-lg);
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* ===== GESTIONE OFFERTE ===== */
         .filters-container {
-            background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .filters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+            padding: var(--space-lg);
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
         }
 
-        .filter-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .filter-control {
+        .filters-container select,
+        .filters-container input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: white;
-            transition: border-color 0.2s ease;
+            padding: var(--space-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: var(--text-sm);
         }
 
-        .filter-control:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        /* Table */
         .table-container {
-            background: white;
-            border-radius: 16px;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            margin-top: 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
         }
 
         .offers-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            background: var(--bg-primary);
+        }
+
+        .offers-table thead {
+            background: var(--bg-gradient);
+            color: var(--text-white);
         }
 
         .offers-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 0.75rem;
+            padding: var(--space-lg) var(--space-md);
             text-align: left;
             font-weight: 600;
-            border: none;
+            font-size: var(--text-sm);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
+        }
+
+        .offers-table th:last-child {
+            border-right: none;
         }
 
         .offers-table td {
-            padding: 1rem 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
+            padding: var(--space-lg) var(--space-md);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: top;
+            background: var(--bg-primary);
+            transition: background 0.2s ease;
         }
 
-        .offers-table tbody tr:hover {
-            background: #f8fafc;
+        .offers-table tbody tr:hover td {
+            background: var(--bg-secondary);
         }
 
-        .offers-table tbody tr:last-child td {
-            border-bottom: none;
+        /* ===== COLONNE SPECIFICHE TABELLA ===== */
+        .col-fornitore {
+            min-width: 120px;
+            font-weight: 600;
+            color: var(--primary);
         }
 
-        .category-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
+        .col-nome {
+            min-width: 150px;
+            max-width: 200px;
+            word-break: break-word;
+        }
+
+        .col-categoria {
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .col-tipo {
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .col-commodity {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .col-valore {
+            min-width: 120px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .col-quota {
+            min-width: 100px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .col-scadenza {
+            min-width: 100px;
+            text-align: center;
+            font-size: var(--text-sm);
+        }
+
+        .col-azioni {
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* ===== BADGE E INDICATORI ===== */
+        .commodity-badge {
+            display: inline-block;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 12px;
+            font-size: var(--text-xs);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .category-badge.domestico {
-            background: rgba(34, 197, 94, 0.1);
-            color: #059669;
-            border: 1px solid #059669;
-        }
-
-        .category-badge.micro {
+        .commodity-luce {
             background: rgba(245, 158, 11, 0.1);
-            color: #d97706;
-            border: 1px solid #d97706;
+            color: var(--accent);
+            border: 1px solid var(--accent);
         }
 
-        .category-badge.pmi {
-            background: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-            border: 1px solid #dc2626;
-        }
-
-        .btn-edit, .btn-delete {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 0 0.25rem;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-
-        .btn-edit {
+        .commodity-gas {
             background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .tipo-badge {
+            display: inline-block;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 8px;
+            font-size: var(--text-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tipo-fisso {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .tipo-variabile {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .categoria-badge {
+            display: inline-block;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 8px;
+            font-size: var(--text-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .categoria-domestico {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+        }
+
+        .categoria-micro {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent);
+        }
+
+        .categoria-pmi {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        /* ===== VALORE E DETTAGLI ===== */
+        .valore-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .valore-principale {
+            font-size: var(--text-base);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .valore-tipo {
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .valore-unita {
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            margin-left: 2px;
+        }
+
+        /* ===== BOTTONI ===== */
+        .btn-edit,
+        .btn-delete {
+            background: transparent;
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: var(--text-xs);
+            transition: all 0.2s ease;
+            margin: 0 2px;
         }
 
         .btn-edit:hover {
-            background: rgba(59, 130, 246, 0.2);
-            transform: scale(1.1);
-        }
-
-        .btn-delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.2);
-            transform: scale(1.1);
+            background: rgba(220, 38, 38, 0.1);
+            border-color: var(--error);
+            color: var(--error);
         }
 
-        /* Loading States */
-        .loader-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .btn-sm {
+            padding: var(--space-xs);
+            font-size: var(--text-xs);
+        }
+
+        /* ===== FORM OCR ===== */
+        .ocr-form {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            padding: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            margin-top: var(--space-xl);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+            font-size: var(--text-sm);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
+            padding: var(--space-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: var(--text-base);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group input.prefilled,
+        .form-group select.prefilled {
+            background: rgba(59, 130, 246, 0.1) !important;
+            border-color: var(--primary) !important;
+            animation: pulseBlue 2s ease-in-out;
+        }
+
+        @keyframes pulseBlue {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+            }
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--space-lg);
+            padding: var(--space-lg);
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .pagination-info {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+
+        .pagination-controls {
             display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 9999;
+            gap: var(--space-sm);
         }
 
-        .loader {
-            text-align: center;
-            color: white;
+        .pagination-controls button {
+            padding: var(--space-sm) var(--space-md);
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            transition: all 0.2s ease;
         }
 
-        .loader-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+        .pagination-controls button:hover:not(:disabled) {
+            background: var(--bg-secondary);
+            border-color: var(--primary);
         }
 
-        /* Analytics */
-        .analytics-container {
-            background: white;
-            border-radius: 16px;
-            padding: 4rem 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .analytics-icon {
-            font-size: 4rem;
-            color: #d1d5db;
-            margin-bottom: 2rem;
-        }
-
-        .analytics-container h3 {
-            color: #374151;
-            margin: 0 0 1rem 0;
-        }
-
-        .analytics-container p {
-            color: #6b7280;
-            margin: 0 0 2rem 0;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .coming-features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .feature-item {
-            background: #f9fafb;
-            padding: 1rem;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .feature-item i {
-            color: #667eea;
-        }
-
-        .feature-item span {
-            font-size: 0.9rem;
-            color: #374151;
-        }
-
-        /* Footer */
-        .footer {
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
-            padding: 2rem 0;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            text-align: center;
-            padding: 0 2rem;
-            color: #6b7280;
-        }
-
-        .footer-content p {
-            margin: 0.5rem 0;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .landing-container {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-                text-align: center;
-            }
-
-            .landing-title {
-                font-size: 2.5rem;
-            }
-
-            .login-card {
-                padding: 2rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header__nav {
-                flex-wrap: wrap;
-            }
-
+        /* ===== RESPONSIVE MOBILE ===== */
+        @media (max-width: 1024px) {
             .offers-table {
-                font-size: 0.8rem;
+                font-size: var(--text-sm);
             }
-
+            
             .offers-table th,
             .offers-table td {
-                padding: 0.5rem 0.5rem;
+                padding: var(--space-sm) var(--space-xs);
             }
+            
+            .col-nome {
+                max-width: 150px;
+            }
+        }
 
+        @media (max-width: 768px) {
             .main-content {
-                padding: 1rem;
+                padding: var(--space-md);
+            }
+            
+            .dashboard-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: var(--space-md);
+            }
+            
+            .filters-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .offers-table {
+                min-width: 800px;
+            }
+            
+            .col-scadenza,
+            .col-quota {
+                display: none;
             }
         }
 
         @media (max-width: 480px) {
-            .landing-title {
-                font-size: 2rem;
+            .dashboard-stats {
+                grid-template-columns: 1fr;
             }
-
-            .landing-container {
-                padding: 1rem;
+            
+            .offers-table th,
+            .offers-table td {
+                padding: var(--space-xs);
             }
-
-            .login-card {
-                padding: 1.5rem;
-            }
-
-            .email-status-screen {
-                padding: 1rem;
-            }
-
-            .theme-toggle {
-                top: 1rem;
-                left: 1rem;
-                width: 40px;
-                height: 40px;
+            
+            .col-nome,
+            .col-fornitore {
+                max-width: 100px;
             }
         }
 
-        /* Theme Support */
-        [data-theme="dark"] {
-            --bg-primary: #1f2937;
-            --bg-secondary: #374151;
-            --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
+        /* ===== UTILITY CLASSES ===== */
+        .hidden {
+            display: none !important;
         }
 
-        /* Loading Animation */
-        .loading-dots::after {
-            content: '';
-            animation: dots 2s infinite;
+        .text-center {
+            text-align: center;
         }
 
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+        .text-right {
+            text-align: right;
         }
 
-        /* Hide sections by default */
-        .section {
-            display: none;
+        .font-mono {
+            font-family: 'Courier New', monospace;
         }
 
-        .section:first-child {
-            display: block;
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .text-primary {
+            color: var(--primary);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--accent);
+        }
+
+        .text-error {
+            color: var(--error);
+        }
+
+        .bg-primary {
+            background: var(--bg-primary);
+        }
+
+        .bg-secondary {
+            background: var(--bg-secondary);
+        }
+
+        .rounded {
+            border-radius: var(--border-radius);
+        }
+
+        .shadow {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* ===== DARK MODE SUPPORT (optional) ===== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #f8fafc;
+                --text-secondary: #cbd5e1;
+                --bg-primary: #1e293b;
+                --bg-secondary: #0f172a;
+                --border-light: #334155;
+            }
+        }
+
+        .dark {
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --bg-primary: #1e293b;
+            --bg-secondary: #0f172a;
+            --border-light: #334155;
         }
     </style>
 </head>
 <body>
-    <!-- Landing Page -->
-    <div id="landing-page" class="landing-page">
-        <div class="landing-container">
-            <!-- Left: Content -->
-            <div class="landing-content">
-                <div class="landing-logo">
-                    <div class="brand-icon">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div>
-                        <h1 class="landing-title">EnergiaCorp</h1>
-                        <p class="landing-subtitle">Premium</p>
-                    </div>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header__container">
+            <div class="header__brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h1>EnergiaCorp</h1>
+                    <span>Premium</span>
                 </div>
+            </div>
+            
+            <nav class="header__nav">
+                <button class="nav-btn active" data-section="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-btn" data-section="upload">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload OCR</span>
+                </button>
+                <button class="nav-btn" data-section="offers">
+                    <i class="fas fa-list"></i>
+                    <span>Gestione</span>
+                </button>
+                <button class="nav-btn" data-section="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </button>
+            </nav>
+            
+            <div class="header__actions">
+                <span id="user-name">Utente</span>
+                <button id="theme-toggle" class="theme-toggle" title="Cambia tema">
+                    🌓
+                </button>
+                <button id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-                <h2 class="landing-title">Gestione Intelligente Offerte Energia</h2>
-                <p class="landing-subtitle">
-                    La piattaforma più avanzata per analizzare e confrontare offerte di luce e gas 
-                    con tecnologia OCR e intelligenza artificiale
-                </p>
-
-                <ul class="features-list">
-                    <li>
-                        <i class="fas fa-robot"></i>
-                        <span><strong>OCR Avanzato:</strong> Estrai automaticamente dati da PDF e contratti</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-chart-line"></i>
-                        <span><strong>Analytics:</strong> Dashboard con grafici e statistiche in tempo reale</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-shield-alt"></i>
-                        <span><strong>Sicurezza:</strong> I tuoi dati sono protetti e privati</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-lightning-bolt"></i>
-                        <span><strong>Velocità:</strong> Analizza centinaia di offerte in pochi secondi</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-mobile-alt"></i>
-                        <span><strong>Multi-device:</strong> Accedi da qualsiasi dispositivo</span>
-                    </li>
-                </ul>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">25+</div>
-                        <div class="stat-label">Fornitori<br>Supportati</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">95%</div>
-                        <div class="stat-label">Precisione<br>OCR</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">3s</div>
-                        <div class="stat-label">Tempo Medio<br>Elaborazione</div>
-                    </div>
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- DASHBOARD -->
+        <section id="section-dashboard" class="section visible">
+            <div class="section-header">
+                <h2>📊 Dashboard</h2>
+            </div>
+            
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-value" id="total-offers">0</div>
+                    <div class="stat-label">Totale Offerte</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏠</div>
+                    <div class="stat-value" id="domestico-count">0</div>
+                    <div class="stat-label">Domestico</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏢</div>
+                    <div class="stat-value" id="micro-count">0</div>
+                    <div class="stat-label">Micro</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏭</div>
+                    <div class="stat-value" id="pmi-count">0</div>
+                    <div class="stat-label">PMI</div>
                 </div>
             </div>
 
-            <!-- Right: Login Form -->
-            <div class="login-card">
-                <div class="login-header">
-                    <h2 id="auth-title">Accedi alla Piattaforma</h2>
-                    <p>Inizia subito a gestire le tue offerte energia</p>
+            <div class="top-offers">
+                <h3>🏆 Migliori Offerte per Categoria</h3>
+                <div class="top-offers-grid" id="top-offers-grid">
+                    <!-- Popolato dinamicamente -->
                 </div>
+            </div>
+        </section>
 
-                <div class="auth-tabs">
-                    <button id="login-tab" class="auth-tab active">Accedi</button>
-                    <button id="signup-tab" class="auth-tab">Registrati</button>
-                </div>
-
-                <form id="auth-form">
-                    <div id="signup-fields" style="display: none;">
-                        <div class="form-group">
-                            <label for="full-name">Nome Completo</label>
-                            <input type="text" id="full-name" placeholder="Mario Rossi" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Indirizzo Email</label>
-                        <input type="email" id="email" placeholder="mario.rossi@email.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Inserisci una password sicura" required>
-                    </div>
-
-                    <button type="submit" id="auth-submit" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span id="auth-submit-text">Accedi alla Dashboard</span>
-                    </button>
-
-                    <button type="button" id="resend-confirmation" class="btn-secondary" style="display: none;">
-                        <i class="fas fa-envelope"></i>
-                        <span>Invia Nuova Email di Conferma</span>
-                    </button>
-                </form>
-
-                <div class="auth-footer">
-                    <p id="auth-footer-text">
-                        Accedendo accetti i nostri termini di servizio e la privacy policy
+        <!-- UPLOAD OCR -->
+        <section id="section-upload" class="section">
+            <div class="section-header">
+                <h2>📄 Upload OCR</h2>
+                <p>Carica un PDF o immagine dell'offerta energia per l'estrazione automatica dei dati</p>
+            </div>
+            
+            <div class="upload-container">
+                <div id="upload-area" class="upload-area">
+                    <div class="upload-icon">📄</div>
+                    <h3>Trascina qui il file PDF/Immagine</h3>
+                    <p>oppure clicca per selezionare</p>
+                    <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-md);">
+                        Formati supportati: PDF, JPG, PNG • Max 10MB
                     </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Application -->
-    <div id="app-container" class="app-container">
-        <!-- Main Loader -->
-        <div id="main-loader" class="loader-overlay" style="display: none;">
-            <div class="loader">
-                <div class="loader-spinner"></div>
-                <p>Caricamento<span class="loading-dots"></span></p>
-            </div>
-        </div>
-
-        <!-- Theme Toggle -->
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
-            <i class="fas fa-moon"></i>
-        </button>
-
-        <!-- Header -->
-        <header class="header">
-            <div class="header__container">
-                <div class="header__brand">
-                    <div class="brand-icon">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div class="brand-text">
-                        <h1>EnergiaCorp</h1>
-                        <span>Premium Dashboard</span>
-                    </div>
+                    <input id="pdf-file" type="file" accept="application/pdf,image/*" style="display: none;">
                 </div>
 
-                <nav class="header__nav">
-                    <button class="nav-btn active" data-section="dashboard">
-                        <i class="fas fa-chart-dashboard"></i>
-                        <span>Dashboard</span>
-                    </button>
-                    <button class="nav-btn" data-section="upload">
-                        <i class="fas fa-file-upload"></i>
-                        <span>Upload OCR</span>
-                    </button>
-                    <button class="nav-btn" data-section="gestione">
-                        <i class="fas fa-table"></i>
-                        <span>Gestione</span>
-                    </button>
-                    <button class="nav-btn" data-section="analisi">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analisi</span>
-                    </button>
-                </nav>
-
-                <div class="header__actions">
-                    <span id="user-name"></span>
-                    <button id="logout-btn" class="btn-secondary">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Section -->
-            <section id="dashboard-section" class="section">
-                <div class="section-header">
-                    <h2>Dashboard Offerte Energia</h2>
-                    <p>Panoramica completa delle tue offerte luce e gas</p>
+                <div id="file-preview-container" class="file-preview-container">
+                    <!-- Anteprima file generata dinamicamente -->
                 </div>
 
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-clipboard-list"></i>
+                <form id="ocr-form" class="ocr-form" style="display: none;">
+                    <h3>📋 Dati Estratti dall'OCR</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg);">
+                        <div class="form-group">
+                            <label for="fornitore">Fornitore</label>
+                            <input type="text" name="fornitore" id="fornitore" placeholder="es. ENEL Energia">
                         </div>
-                        <div class="kpi-content">
-                            <h3 id="total-offers">0</h3>
-                            <p>Offerte Totali</p>
+                        
+                        <div class="form-group">
+                            <label for="nome_offerta">Nome Offerta</label>
+                            <input type="text" name="nome_offerta" id="nome_offerta" placeholder="es. Offerta Casa Verde">
                         </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-home"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="domestico-count">0</h3>
-                            <p>Domestico</p>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="micro-count">0</h3>
-                            <p>Micro</p>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-industry"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <h3 id="pmi-count">0</h3>
-                            <p>PMI</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts and Top Offers -->
-                <div class="dashboard-grid">
-                    <div class="chart-container">
-                        <h3>Prezzi Medi per Categoria</h3>
-                        <canvas id="category-chart"></canvas>
-                    </div>
-
-                    <div class="top-offers">
-                        <h3>Migliori Offerte</h3>
-                        <div class="top-offer-section">
-                            <h4>Domestico</h4>
-                            <div id="top-domestico">Nessuna offerta disponibile</div>
-                        </div>
-                        <div class="top-offer-section">
-                            <h4>Micro</h4>
-                            <div id="top-micro">Nessuna offerta disponibile</div>
-                        </div>
-                        <div class="top-offer-section">
-                            <h4>PMI</h4>
-                            <div id="top-pmi">Nessuna offerta disponibile</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Upload OCR Section -->
-            <section id="upload-section" class="section">
-                <div class="section-header">
-                    <h2>Upload PDF con OCR Avanzato</h2>
-                    <p>Carica un PDF di offerta energia per estrazione automatica dei dati</p>
-                </div>
-
-                <!-- Upload Area -->
-                <div class="upload-container">
-                    <div id="upload-area" class="upload-area">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <h3>Trascina qui il tuo PDF o clicca per selezionare</h3>
-                        <p>Supportati: PDF, immagini (JPG, PNG). Max 5 pagine.</p>
-                        <input type="file" id="pdf-file" accept=".pdf,image/*" style="display: none;">
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div id="ocr-progress" class="progress-container" style="display: none;">
-                        <div class="progress-bar-bg" style="background: #e5e7eb; border-radius: 10px; overflow: hidden; height: 10px;">
-                            <div class="progress-bar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
-                        </div>
-                        <p id="progress-text" style="text-align: center; margin: 1rem 0; color: #6b7280;">Inizializzazione OCR avanzato<span class="loading-dots"></span></p>
-                    </div>
-                </div>
-
-                <!-- OCR Form -->
-                <div class="ocr-form-container">
-                    <form id="ocr-form" class="ocr-form">
-                        <h3>Dati Estratti - Verifica e Correggi</h3>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="fornitore">Fornitore</label>
-                                <input type="text" name="fornitore" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="nome_offerta">Nome Offerta</label>
-                                <input type="text" name="nome_offerta" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="categoria">Categoria</label>
-                                <select name="categoria" required>
-                                    <option value="Domestico">Domestico</option>
-                                    <option value="Micro">Micro</option>
-                                    <option value="PMI">PMI</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="tipo_prezzo">Tipo Prezzo</label>
-                                <select name="tipo_prezzo" required>
-                                    <option value="Fisso">Fisso</option>
-                                    <option value="Variabile">Variabile</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="prezzo_luce">Prezzo Luce (€/kWh)</label>
-                                <input type="number" name="prezzo_luce" step="0.0001" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="spread_luce">Spread Luce (€/kWh)</label>
-                                <input type="number" name="spread_luce" step="0.0001" value="0">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="prezzo_gas">Prezzo Gas (€/Smc)</label>
-                                <input type="number" name="prezzo_gas" step="0.0001" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="spread_gas">Spread Gas (€/Smc)</label>
-                                <input type="number" name="spread_gas" step="0.0001" value="0">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="quota_fissa_luce">Quota Fissa Luce (€/mese)</label>
-                                <input type="number" name="quota_fissa_luce" step="0.01" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="quota_fissa_gas">Quota Fissa Gas (€/mese)</label>
-                                <input type="number" name="quota_fissa_gas" step="0.01" required>
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="commissioni">Commissioni (€)</label>
-                                <input type="number" name="commissioni" step="0.01" value="0">
-                                <span class="confidence-indicator"></span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="scadenza">Scadenza</label>
-                                <input type="date" name="scadenza" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="durata_mesi">Durata (mesi)</label>
-                                <select name="durata_mesi" required>
-                                    <option value="12">12 mesi</option>
-                                    <option value="24">24 mesi</option>
-                                    <option value="36">36 mesi</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-save"></i>
-                                <span>Salva Offerta nel Database</span>
-                            </button>
-                            <button type="reset" class="btn-secondary">
-                                <i class="fas fa-undo"></i>
-                                <span>Reset Form</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Gestione Offerte Section -->
-            <section id="gestione-section" class="section">
-                <div class="section-header">
-                    <h2>Gestione Offerte</h2>
-                    <p>Visualizza, modifica ed elimina le tue offerte salvate</p>
-                </div>
-
-                <!-- Filters -->
-                <div class="filters-container">
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label for="filter-categoria">Categoria</label>
-                            <select id="filter-categoria" class="filter-control">
-                                <option value="">Tutte le categorie</option>
+                        
+                        <div class="form-group">
+                            <label for="categoria">Categoria</label>
+                            <select name="categoria" id="categoria">
                                 <option value="Domestico">Domestico</option>
                                 <option value="Micro">Micro</option>
                                 <option value="PMI">PMI</option>
                             </select>
                         </div>
-
-                        <div class="filter-group">
-                            <label for="filter-fornitore">Fornitore</label>
-                            <select id="filter-fornitore" class="filter-control">
-                                <option value="">Tutti i fornitori</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="filter-tipo-prezzo">Tipo Prezzo</label>
-                            <select id="filter-tipo-prezzo" class="filter-control">
-                                <option value="">Tutti i tipi</option>
+                        
+                        <div class="form-group">
+                            <label for="tipo_prezzo">Tipo Prezzo</label>
+                            <select name="tipo_prezzo" id="tipo_prezzo">
                                 <option value="Fisso">Fisso</option>
                                 <option value="Variabile">Variabile</option>
                             </select>
                         </div>
-
-                        <div class="filter-group">
-                            <label for="search-offers">Ricerca</label>
-                            <input type="text" id="search-offers" class="filter-control" placeholder="Cerca per nome o fornitore...">
+                        
+                        <div class="form-group">
+                            <label for="prezzo_luce">Prezzo Luce (€/kWh)</label>
+                            <input type="number" name="prezzo_luce" id="prezzo_luce" step="0.0001" placeholder="0.2500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="spread_luce">Spread Luce (€/kWh)</label>
+                            <input type="number" name="spread_luce" id="spread_luce" step="0.0001" placeholder="0.0150">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="prezzo_gas">Prezzo Gas (€/Smc)</label>
+                            <input type="number" name="prezzo_gas" id="prezzo_gas" step="0.0001" placeholder="0.8500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="spread_gas">Spread Gas (€/Smc)</label>
+                            <input type="number" name="spread_gas" id="spread_gas" step="0.0001" placeholder="0.0200">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="quota_fissa_luce">Quota Fissa Luce (€/mese)</label>
+                            <input type="number" name="quota_fissa_luce" id="quota_fissa_luce" step="0.01" placeholder="12.50">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="quota_fissa_gas">Quota Fissa Gas (€/mese)</label>
+                            <input type="number" name="quota_fissa_gas" id="quota_fissa_gas" step="0.01" placeholder="10.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="commissioni">Commissioni (€)</label>
+                            <input type="number" name="commissioni" id="commissioni" step="0.01" placeholder="0.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scadenza">Scadenza</label>
+                            <input type="date" name="scadenza" id="scadenza">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="durata_mesi">Durata (mesi)</label>
+                            <input type="number" name="durata_mesi" id="durata_mesi" min="1" max="60" placeholder="12">
                         </div>
                     </div>
-                </div>
-
-                <!-- Offers Table -->
-                <div class="table-container">
-                    <table id="offers-table" class="offers-table">
-                        <thead>
-                            <tr>
-                                <th>Fornitore</th>
-                                <th>Nome Offerta</th>
-                                <th>Categoria</th>
-                                <th>Tipo</th>
-                                <th>Prezzo Luce</th>
-                                <th>Prezzo Gas</th>
-                                <th>Commissioni</th>
-                                <th>Scadenza</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Analisi Section -->
-            <section id="analisi-section" class="section">
-                <div class="section-header">
-                    <h2>Analisi Avanzata</h2>
-                    <p>Statistiche dettagliate e confronti delle tue offerte</p>
-                </div>
-
-                <div class="analytics-container">
-                    <div class="analytics-placeholder">
-                        <div class="analytics-icon">
-                            <i class="fas fa-chart-bar"></i>
-                        </div>
-                        <h3>Sezione Analytics in Sviluppo</h3>
-                        <p>Stiamo preparando grafici avanzati, confronti automatici e analytics predittive per ottimizzare la tua gestione delle offerte energia.</p>
-                        <div class="coming-features">
-                            <div class="feature-item">
-                                <i class="fas fa-chart-pie"></i>
-                                <span>Grafici comparativi per categoria</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-trend-up"></i>
-                                <span>Trend dei prezzi energia</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-calculator"></i>
-                                <span>Calcolatore risparmi automatico</span>
-                            </div>
-                        </div>
+                    
+                    <div style="text-align: center; margin-top: var(--space-xl);">
+                        <button type="submit" style="background: var(--bg-gradient); color: var(--text-white); padding: var(--space-md) var(--space-2xl); border: none; border-radius: var(--border-radius); font-weight: 600; cursor: pointer; font-size: var(--text-base);">
+                            💾 Salva Offerta
+                        </button>
                     </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <p>&copy; 2025 EnergiaCorp Premium. Ultimo aggiornamento: <span id="last-update"></span></p>
-                <p>Piattaforma intelligente per la gestione delle offerte energetiche</p>
+                </form>
             </div>
-        </footer>
-    </div>
+        </section>
 
-    <!-- JavaScript Libraries - ORDINE IMPORTANTE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
+        <!-- GESTIONE OFFERTE -->
+        <section id="section-offers" class="section">
+            <div class="section-header">
+                <h2>📋 Gestione Offerte</h2>
+            </div>
+            
+            <div class="filters-container">
+                <select id="filter-categoria">
+                    <option value="">Tutte le categorie</option>
+                    <option value="Domestico">Domestico</option>
+                    <option value="Micro">Micro</option>
+                    <option value="PMI">PMI</option>
+                </select>
+                
+                <select id="filter-fornitore">
+                    <option value="">Tutti i fornitori</option>
+                </select>
+                
+                <select id="filter-tipo-prezzo">
+                    <option value="">Tutti i tipi</option>
+                    <option value="Fisso">Fisso</option>
+                    <option value="Variabile">Variabile</option>
+                </select>
+                
+                <input type="text" id="search-offers" placeholder="Cerca offerte...">
+            </div>
 
-    <!-- App Scripts -->
+            <div class="table-container">
+                <table id="offers-table" class="offers-table">
+                    <thead>
+                        <tr>
+                            <th class="col-fornitore">Fornitore</th>
+                            <th class="col-nome">Nome Offerta</th>
+                            <th class="col-categoria">Categoria</th>
+                            <th class="col-tipo">Tipo Prezzo</th>
+                            <th class="col-commodity">Commodity</th>
+                            <th class="col-valore">Prezzo/Spread</th>
+                            <th class="col-quota">Quota Fissa</th>
+                            <th class="col-scadenza">Scadenza</th>
+                            <th class="col-azioni">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Popolato dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    <span id="pagination-info">Mostrando 0 di 0 offerte</span>
+                </div>
+                <div class="pagination-controls">
+                    <button id="prev-page" disabled>← Precedente</button>
+                    <span id="page-numbers"></span>
+                    <button id="next-page" disabled>Successiva →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS -->
+        <section id="section-analytics" class="section">
+            <div class="section-header">
+                <h2>📈 Analytics</h2>
+                <p>Analisi e statistiche delle offerte energia</p>
+            </div>
+            
+            <div style="text-align: center; padding: var(--space-3xl); color: var(--text-secondary);">
+                <i class="fas fa-chart-line" style="font-size: 4rem; margin-bottom: var(--space-lg);"></i>
+                <h3>Sezione Analytics</h3>
+                <p>Funzionalità di analytics in sviluppo...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- SCRIPTS -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
-
-    <script>
-        // Landing Page + Email Error Logic
-        document.addEventListener('DOMContentLoaded', async function() {
-            let isSignupMode = false;
-
-            console.log('🚀 Landing page initialized');
-
-            // Check for email errors
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlHash = window.location.hash;
-            const hashParams = new URLSearchParams(urlHash.substring(1));
-
-            const error = hashParams.get('error') || urlParams.get('error');
-            const errorCode = hashParams.get('error_code') || urlParams.get('error_code');
-            const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
-
-            if (error) {
-                handleEmailError(error, errorCode, errorDescription);
-                return;
-            }
-
-            // Check for email confirmation
-            const hasEmailConfirmation = urlParams.get('type') === 'signup' || 
-                                       urlHash.includes('access_token') || 
-                                       urlParams.get('token_hash') ||
-                                       hashParams.get('type') === 'email_confirmation';
-
-            if (hasEmailConfirmation) {
-                handleEmailConfirmation();
-                return;
-            }
-
-            // Check if already logged in
-            try {
-                const currentUser = await getCurrentUser();
-                if (currentUser) {
-                    showApp(currentUser);
-                    return;
-                }
-            } catch (error) {
-                console.log('No user logged in, showing landing');
-            }
-
-            // Setup landing page
-            setupLandingPage();
-
-            function handleEmailError(error, errorCode, errorDescription) {
-                let title, message, iconClass;
-
-                if (errorCode === 'otp_expired' || error === 'access_denied') {
-                    title = '⏰ Link Email Scaduto';
-                    message = 'Il link di conferma email è scaduto. I link scadono dopo 1 ora per sicurezza.';
-                    iconClass = 'warning';
-                } else {
-                    title = '❌ Errore Email';
-                    message = 'Si è verificato un errore durante la conferma email.';
-                    iconClass = 'error';
-                }
-
-                document.body.innerHTML = `
-                    <div class="email-status-screen">
-                        <div class="status-container">
-                            <div class="status-icon ${iconClass}">
-                                <i class="fas fa-${iconClass === 'warning' ? 'exclamation-triangle' : 'times'}"></i>
-                            </div>
-                            <h2 class="status-title">${title}</h2>
-                            <div class="status-message">${message}</div>
-                            <div class="status-actions">
-                                <a href="${window.location.origin + window.location.pathname}" class="btn-primary">
-                                    <i class="fas fa-home"></i>
-                                    Torna alla Home
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
-            }
-
-            function handleEmailConfirmation() {
-                document.body.innerHTML = `
-                    <div class="email-status-screen">
-                        <div class="status-container">
-                            <div class="status-icon loading">
-                                <div class="loading-spinner"></div>
-                            </div>
-                            <h2 class="status-title">Conferma Email...</h2>
-                            <div class="status-message">Elaborazione in corso...</div>
-                        </div>
-                    </div>
-                `;
-
-                setTimeout(async () => {
-                    try {
-                        const user = await getCurrentUser();
-
-                        if (user) {
-                            document.body.innerHTML = `
-                                <div class="email-status-screen">
-                                    <div class="status-container">
-                                        <div class="status-icon success">
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        <h2 class="status-title">✅ Email Confermata!</h2>
-                                        <div class="status-message">Benvenuto! Reindirizzamento alla dashboard...</div>
-                                    </div>
-                                </div>
-                            `;
-
-                            setTimeout(() => {
-                                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            throw new Error('Confirmation failed');
-                        }
-                    } catch (error) {
-                        document.body.innerHTML = `
-                            <div class="email-status-screen">
-                                <div class="status-container">
-                                    <div class="status-icon error">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                    <h2 class="status-title">❌ Errore</h2>
-                                    <div class="status-message">Errore durante la conferma email</div>
-                                    <div class="status-actions">
-                                        <a href="${window.location.origin + window.location.pathname}" class="btn-primary">Torna alla Home</a>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }, 3000);
-            }
-
-            function showApp(user) {
-                document.getElementById('landing-page').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-
-                const userName = document.getElementById('user-name');
-                if (userName && user.user_metadata?.full_name) {
-                    userName.textContent = 'Ciao, ' + user.user_metadata.full_name;
-                }
-
-                if (typeof initializeApp === 'function') {
-                    initializeApp();
-                }
-            }
-
-            function setupLandingPage() {
-                const loginTab = document.getElementById('login-tab');
-                const signupTab = document.getElementById('signup-tab');
-                const signupFields = document.getElementById('signup-fields');
-                const authTitle = document.getElementById('auth-title');
-                const authSubmitText = document.getElementById('auth-submit-text');
-                const resendBtn = document.getElementById('resend-confirmation');
-
-                loginTab?.addEventListener('click', () => {
-                    isSignupMode = false;
-                    loginTab.classList.add('active');
-                    signupTab.classList.remove('active');
-                    signupFields.style.display = 'none';
-                    resendBtn.style.display = 'none';
-                    authTitle.textContent = 'Accedi alla Piattaforma';
-                    authSubmitText.textContent = 'Accedi alla Dashboard';
-                });
-
-                signupTab?.addEventListener('click', () => {
-                    isSignupMode = true;
-                    signupTab.classList.add('active');
-                    loginTab.classList.remove('active');
-                    signupFields.style.display = 'block';
-                    resendBtn.style.display = 'none';
-                    authTitle.textContent = 'Crea il Tuo Account';
-                    authSubmitText.textContent = 'Crea Account';
-                });
-
-                // Auth form
-                const authForm = document.getElementById('auth-form');
-                authForm?.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-
-                    const submitBtn = document.getElementById('auth-submit');
-                    const originalText = authSubmitText.textContent;
-
-                    try {
-                        submitBtn.disabled = true;
-                        authSubmitText.textContent = 'Elaborazione...';
-
-                        const email = document.getElementById('email').value;
-                        const password = document.getElementById('password').value;
-
-                        if (isSignupMode) {
-                            const fullName = document.getElementById('full-name').value;
-                            const result = await signUp(email, password, fullName);
-
-                            if (!result.error) {
-                                alert('📧 Registrazione completata! Controlla la tua email per confermare.');
-                                loginTab.click();
-                                document.getElementById('email').value = email;
-                                resendBtn.style.display = 'block';
-                            } else {
-                                alert('❌ ' + result.error.message);
-                            }
-                        } else {
-                            const result = await signIn(email, password);
-
-                            if (!result.error) {
-                                showApp(result.data.user);
-                            } else {
-                                let errorMessage = result.error.message;
-                                if (errorMessage.includes('Invalid login credentials')) {
-                                    errorMessage = 'Email o password non corretti';
-                                } else if (errorMessage.includes('Email not confirmed')) {
-                                    errorMessage = 'Email non confermata. Controlla la tua casella email.';
-                                    resendBtn.style.display = 'block';
-                                }
-                                alert('❌ ' + errorMessage);
-                            }
-                        }
-
-                    } catch (error) {
-                        alert('❌ Errore: ' + error.message);
-                    } finally {
-                        submitBtn.disabled = false;
-                        authSubmitText.textContent = originalText;
-                    }
-                });
-
-                // Resend confirmation
-                resendBtn?.addEventListener('click', async () => {
-                    const email = document.getElementById('email').value;
-                    if (!email) {
-                        alert('Inserisci la tua email');
-                        return;
-                    }
-
-                    try {
-                        if (typeof requestNewConfirmationEmail === 'function') {
-                            await requestNewConfirmationEmail(email);
-                            alert('✅ Nuova email inviata!');
-                        }
-                    } catch (error) {
-                        alert('❌ Errore: ' + error.message);
-                    }
-                });
-            }
-        });
-
-        // Global function for resending confirmation
-        async function requestNewConfirmationEmail(email) {
-            const { error } = await supabaseClient.auth.resend({
-                type: 'signup',
-                email: email
-            });
-            if (error) throw error;
-        }
-
-        // PDF.js worker
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-    </script>
 </body>
 </html>
