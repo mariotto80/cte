@@ -226,6 +226,107 @@
             letter-spacing: 0.5px;
         }
 
+        /* ===== BEST OFFERS CARDS ===== */
+        .best-offer-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .best-offer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .offer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .offer-supplier {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .offer-name {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .offer-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .offer-pricing {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .pricing-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .pricing-unit {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-left: 0.25rem;
+        }
+
+        .pricing-type {
+            font-size: 0.75rem;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .pricing-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.8rem;
+        }
+
+        .pricing-detail {
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+        }
+
+        .pricing-detail-value {
+            font-weight: 600;
+            color: #1e293b;
+            font-family: 'Courier New', monospace;
+        }
+
         /* ===== UPLOAD AREA ===== */
         .upload-container {
             max-width: 600px;
@@ -842,11 +943,20 @@
                 padding: 1rem 1.5rem;
                 flex-direction: column;
             }
+
+            .pricing-details {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .offer-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
 
@@ -1251,8 +1361,8 @@
     <!-- JAVASCRIPT -->
     <script>
         /**
-         * ===== ENERGIACORP PREMIUM - SISTEMA COMPLETO CON MODIFICA =====
-         * Versione con funzionalità di modifica offerte attivata
+         * ===== ENERGIACORP PREMIUM - SISTEMA COMPLETO CON MODIFICA E PREZZI RELATIVI =====
+         * Dashboard con prezzi dettagliati nelle migliori offerte
          */
 
         // ===== GLOBAL VARIABLES =====
@@ -1407,32 +1517,126 @@
                 const categoryOffers = offers.filter(o => o.categoria === categoria);
                 if (categoryOffers.length === 0) return;
 
-                // Trova migliore per prezzo
+                // Trova migliore per prezzo utilizzando la stessa logica della tabella
                 const bestOffer = categoryOffers.reduce((best, current) => {
-                    const bestPrice = best.prezzo_luce || best.prezzo_gas || Infinity;
-                    const currentPrice = current.prezzo_luce || current.prezzo_gas || Infinity;
-                    return currentPrice < bestPrice ? current : best;
+                    const bestMainPrice = getMainPrice(best);
+                    const currentMainPrice = getMainPrice(current);
+                    
+                    return currentMainPrice < bestMainPrice ? current : best;
                 });
 
-                const priceDisplay = bestOffer.prezzo_luce 
-                    ? `${formatCurrency(bestOffer.prezzo_luce)} €/kWh`
-                    : bestOffer.prezzo_gas 
-                    ? `${formatCurrency(bestOffer.prezzo_gas)} €/Smc`
-                    : 'Prezzo da definire';
+                // Usa le stesse funzioni della tabella per determinare commodity e pricing
+                const { commodityType, commodityLabel, commodityClass } = determineCommodity(bestOffer);
+                const { valueDisplay: tableValueDisplay, quotaDisplay } = determineValueAndQuota(bestOffer, commodityType);
+                
+                // Estrai i dati per la dashboard
+                const isVariabile = (bestOffer.tipo_prezzo || '').toLowerCase() === 'variabile';
+                let mainValue = null;
+                let mainUnit = '';
+                let mainType = '';
+                let quotaValue = null;
+                let altValue = null;
+                let altUnit = '';
+                let altType = '';
+
+                if (commodityType === 'luce') {
+                    if (isVariabile) {
+                        mainValue = bestOffer.spread_luce;
+                        mainUnit = '€/kWh';
+                        mainType = 'Spread';
+                        altValue = bestOffer.prezzo_luce;
+                        altUnit = '€/kWh';
+                        altType = 'Base';
+                    } else {
+                        mainValue = bestOffer.prezzo_luce;
+                        mainUnit = '€/kWh';
+                        mainType = 'Prezzo';
+                    }
+                    quotaValue = bestOffer.quota_fissa_luce;
+                } else {
+                    if (isVariabile) {
+                        mainValue = bestOffer.spread_gas;
+                        mainUnit = '€/Smc';
+                        mainType = 'Spread';
+                        altValue = bestOffer.prezzo_gas;
+                        altUnit = '€/Smc';
+                        altType = 'Base';
+                    } else {
+                        mainValue = bestOffer.prezzo_gas;
+                        mainUnit = '€/Smc';
+                        mainType = 'Prezzo';
+                    }
+                    quotaValue = bestOffer.quota_fissa_gas;
+                }
 
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'best-offer-card';
                 card.innerHTML = `
-                    <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">${bestOffer.fornitore || 'Fornitore N/D'}</h4>
-                    <p style="color: #64748b; margin-bottom: 0.75rem; font-size: 0.9rem;">${bestOffer.nome_offerta || 'Nome N/D'}</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="offer-header">
+                        <div>
+                            <div class="offer-supplier">${bestOffer.fornitore || 'Fornitore N/D'}</div>
+                            <div class="offer-name">${bestOffer.nome_offerta || 'Nome N/D'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="offer-badges">
                         <span class="badge badge-${categoria.toLowerCase()}">${categoria}</span>
-                        <strong style="color: #1e293b; font-family: 'Courier New', monospace;">${priceDisplay}</strong>
+                        <span class="badge badge-${commodityClass.split('-')[1]}">${commodityLabel}</span>
+                        <span class="badge badge-${isVariabile ? 'variabile' : 'fisso'}">${bestOffer.tipo_prezzo || 'Fisso'}</span>
+                    </div>
+                    
+                    <div class="offer-pricing">
+                        <div class="pricing-main">
+                            <div>
+                                <span class="pricing-value">${formatCurrency(mainValue)}</span>
+                                <span class="pricing-unit">${mainUnit}</span>
+                            </div>
+                            <div class="pricing-type">${mainType}</div>
+                        </div>
+                        
+                        <div class="pricing-details">
+                            ${altValue ? `
+                                <div class="pricing-detail">
+                                    <span>${altType}:</span>
+                                    <span class="pricing-detail-value">${formatCurrency(altValue)} ${altUnit}</span>
+                                </div>
+                            ` : ''}
+                            ${quotaValue != null ? `
+                                <div class="pricing-detail">
+                                    <span>Quota Fissa:</span>
+                                    <span class="pricing-detail-value">${formatCurrency(quotaValue, 2)} €/mese</span>
+                                </div>
+                            ` : ''}
+                            ${bestOffer.commissioni != null && bestOffer.commissioni > 0 ? `
+                                <div class="pricing-detail">
+                                    <span>Commissioni:</span>
+                                    <span class="pricing-detail-value">${formatCurrency(bestOffer.commissioni, 2)} €</span>
+                                </div>
+                            ` : ''}
+                            ${bestOffer.scadenza ? `
+                                <div class="pricing-detail">
+                                    <span>Scadenza:</span>
+                                    <span class="pricing-detail-value">${formatDate(bestOffer.scadenza)}</span>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
                 
                 container.appendChild(card);
             });
+        }
+
+        // Funzione helper per ottenere il prezzo principale per il confronto
+        function getMainPrice(offer) {
+            const isVariabile = (offer.tipo_prezzo || '').toLowerCase() === 'variabile';
+            const { commodityType } = determineCommodity(offer);
+            
+            if (commodityType === 'luce') {
+                return isVariabile ? (offer.spread_luce || Infinity) : (offer.prezzo_luce || Infinity);
+            } else {
+                return isVariabile ? (offer.spread_gas || Infinity) : (offer.prezzo_gas || Infinity);
+            }
         }
 
         // ===== UPLOAD & OCR =====
@@ -2378,7 +2582,7 @@
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 EnergiaCorp Premium con Modifica inizializzato');
+            console.log('🚀 EnergiaCorp Premium con Modifica e Prezzi Relativi inizializzato');
             
             // Navigation listeners
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -2420,7 +2624,7 @@
                 showNotification('Attenzione: salvataggio locale non disponibile', 'warning');
             }
             
-            console.log('✅ Sistema pronto con funzionalità di modifica!');
+            console.log('✅ Sistema pronto con funzionalità di modifica e prezzi dettagliati!');
         });
 
         // Error handling
@@ -2429,7 +2633,7 @@
             showNotification('Si è verificato un errore', 'error');
         });
 
-        console.log('📜 EnergiaCorp Premium con Modifica caricato! 🚀✏️');
+        console.log('📜 EnergiaCorp Premium con Dashboard Prezzi Relativi caricato! 🚀💰');
     </script>
 </body>
 </html>
