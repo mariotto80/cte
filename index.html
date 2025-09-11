@@ -1780,6 +1780,7 @@
         /**
          * ===== ENERGIACORP PREMIUM - SISTEMA CON SUPABASE =====
          * Versione con database cloud e autenticazione Supabase
+         * URL: https://ozmqftibxuspznnqaayh.supabase.co
          */
 
         // ===== GLOBAL VARIABLES =====
@@ -1791,16 +1792,10 @@
         let supabase = null;
         let isLoginMode = true;
 
-        // ===== SUPABASE CONFIGURATION =====
+        // ===== SUPABASE CONFIGURATION (TUE CREDENZIALI CONFIGURATE) =====
         const SUPABASE_CONFIG = {
-            // 🚨 IMPORTANTE: Sostituisci con le tue credenziali Supabase!
-            url: 'https://YOUR_PROJECT_ID.supabase.co',
-            anonKey: 'YOUR_ANON_KEY',
-            // Demo fallback per testing (rimuovi in produzione)
-            demo: {
-                url: 'https://demo.supabase.co',
-                anonKey: 'demo_key'
-            }
+            url: 'https://ozmqftibxuspznnqaayh.supabase.co',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk'
         };
 
         // ===== OCR CONFIG =====
@@ -1824,32 +1819,29 @@
             showSupabaseStatus('Connessione a Supabase...', 'loading');
             
             try {
-                // Prova connessione reale
-                if (SUPABASE_CONFIG.url !== 'https://YOUR_PROJECT_ID.supabase.co') {
-                    supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-                    
-                    // Test connessione
-                    const { data, error } = await supabase.auth.getSession();
-                    
-                    if (error && error.status !== 200) {
-                        throw new Error('Credenziali Supabase non valide');
-                    }
-                    
-                    console.log('✅ Connesso a Supabase:', SUPABASE_CONFIG.url);
-                    showSupabaseStatus('🟢 Connesso a Supabase', 'connected');
-                    
-                    return true;
+                // Prova connessione reale con le tue credenziali
+                supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                
+                // Test connessione
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error && !error.message?.includes('session')) {
+                    throw new Error('Credenziali Supabase non valide: ' + error.message);
                 }
+                
+                console.log('✅ Connesso a Supabase:', SUPABASE_CONFIG.url);
+                showSupabaseStatus('🟢 Connesso a Supabase Cloud Database', 'connected');
+                
+                return true;
+                
             } catch (error) {
                 console.warn('⚠️ Errore connessione Supabase:', error.message);
+                console.log('🧪 Modalità demo - usando localStorage');
+                showSupabaseStatus('🟡 Demo mode - LocalStorage (configura Supabase per cloud)', 'error');
+                supabase = createMockSupabase();
+                
+                return false;
             }
-            
-            // Modalità demo con localStorage
-            console.log('🧪 Modalità demo - usando localStorage');
-            showSupabaseStatus('🟡 Demo mode - LocalStorage', 'error');
-            supabase = createMockSupabase();
-            
-            return false;
         }
 
         function showSupabaseStatus(message, type) {
@@ -2482,7 +2474,7 @@
         async function initMainApp() {
             console.log('🚀 Inizializzazione app principale...');
             
-            showLoadingOverlay(true, 'Caricamento dati...');
+            showLoadingOverlay(true, 'Caricamento dati dal cloud...');
             
             // Navigation listeners
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -2695,7 +2687,7 @@
             }
         }
 
-        // ===== UPLOAD & OCR (resto identico ma con salvataggio Supabase) =====
+        // ===== UPLOAD & OCR =====
         function initUpload() {
             const fileInput = document.getElementById('pdf-file');
             const uploadArea = document.getElementById('upload-area');
@@ -3197,7 +3189,7 @@
             }
 
             try {
-                showLoadingOverlay(true, 'Salvataggio su database...');
+                showLoadingOverlay(true, 'Salvataggio su database cloud...');
                 
                 await saveOffer(offerData);
                 
@@ -3656,6 +3648,7 @@
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 EnergiaCorp Premium con Supabase inizializzato');
+            console.log('🔗 Database URL:', SUPABASE_CONFIG.url);
             
             try {
                 await initAuthSystem();
@@ -3672,6 +3665,7 @@
         });
 
         console.log('📜 EnergiaCorp Premium con Supabase caricato! 🚀☁️');
+        console.log('🔗 Configurato per:', SUPABASE_CONFIG.url);
     </script>
 </body>
 </html>
