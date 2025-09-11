@@ -1,624 +1,277 @@
- * ===== SUPABASE CONFIGURATION & DATABASE FUNCTIONS =====
- * Sistema di gestione database per EnergiaCorp Premium
- */
+-- ===== ENERGIACORP SUPABASE DATABASE SETUP =====
+-- Questo script SQL configura il database Supabase per EnergiaCorp Premium
+-- Eseguire nel SQL Editor di Supabase Dashboard
 
-// ===== CONFIGURAZIONE SUPABASE =====
-// ⚠️ IMPORTANTE: Sostituisci con i tuoi dati Supabase
-const SUPABASE_URL = 'https://ozmqftibxuspznnqaayh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk';';
-
-// Inizializza client Supabase
-let supabaseClient = null;
-
-// Funzione per inizializzare Supabase (carica dinamicamente se CDN non disponibile)
-async function initSupabase() {
-    if (supabaseClient) return supabaseClient;
-    
-    try {
-        // Prova a usare Supabase se già caricato globalmente
-        if (typeof supabase !== 'undefined') {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } else {
-            // Carica dinamicamente Supabase CDN
-            await loadSupabaseScript();
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-        
-        console.log('✅ Supabase inizializzato correttamente');
-        return supabaseClient;
-    } catch (error) {
-        console.error('❌ Errore inizializzazione Supabase:', error);
-        // Fallback: usa localStorage se Supabase non disponibile
-        return null;
-    }
-}
-
-// Carica script Supabase dinamicamente
-function loadSupabaseScript() {
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-}
-
-// ===== AUTHENTICATION FUNCTIONS =====
-
-/**
- * Effettua il login dell'utente
- */
-async function signIn(email, password) {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: simula login con localStorage
-        const user = { 
-            id: '1', 
-            email: email, 
-            name: email.split('@')[0],
-            created_at: new Date().toISOString()
-        };
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        return { user, error: null };
-    }
-    
-    try {
-        const { data, error } = await client.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
-        if (error) throw error;
-        
-        // Salva utente nel localStorage per persistenza
-        if (data.user) {
-            localStorage.setItem('currentUser', JSON.stringify(data.user));
-        }
-        
-        return { user: data.user, error: null };
-    } catch (error) {
-        console.error('Errore login:', error);
-        return { user: null, error: error.message };
-    }
-}
-
-/**
- * Registra un nuovo utente
- */
-async function signUp(email, password, metadata = {}) {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: simula registrazione con localStorage
-        const user = { 
-            id: Date.now().toString(), 
-            email: email, 
-            name: metadata.name || email.split('@')[0],
-            created_at: new Date().toISOString()
-        };
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        return { user, error: null };
-    }
-    
-    try {
-        const { data, error } = await client.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: metadata
-            }
-        });
-        
-        if (error) throw error;
-        
-        return { user: data.user, error: null };
-    } catch (error) {
-        console.error('Errore registrazione:', error);
-        return { user: null, error: error.message };
-    }
-}
-
-/**
- * Effettua il logout
- */
-async function signOut() {
-    const client = await initSupabase();
-    
-    // Rimuovi da localStorage
-    localStorage.removeItem('currentUser');
-    
-    if (!client) return { error: null };
-    
-    try {
-        const { error } = await client.auth.signOut();
-        return { error };
-    } catch (error) {
-        console.error('Errore logout:', error);
-        return { error: error.message };
-    }
-}
-
-/**
- * Ottiene l'utente corrente
- */
-async function getCurrentUser() {
-    // Prima controlla localStorage
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-        try {
-            return JSON.parse(storedUser);
-        } catch (e) {
-            localStorage.removeItem('currentUser');
-        }
-    }
-    
-    const client = await initSupabase();
-    if (!client) return null;
-    
-    try {
-        const { data: { user } } = await client.auth.getUser();
-        if (user) {
-            localStorage.setItem('currentUser', JSON.stringify(user));
-        }
-        return user;
-    } catch (error) {
-        console.error('Errore get current user:', error);
-        return null;
-    }
-}
-
-// ===== DATABASE FUNCTIONS - OFFERS =====
-
-/**
- * Carica tutte le offerte dell'utente
- */
-async function getOffers() {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: usa localStorage
-        return getOffersFromLocalStorage();
-    }
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) throw new Error('Utente non autenticato');
-        
-        const { data, error } = await client
-            .from('offerte_energia')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        return data || [];
-    } catch (error) {
-        console.error('Errore caricamento offerte:', error);
-        // Fallback a localStorage in caso di errore
-        return getOffersFromLocalStorage();
-    }
-}
-
-/**
- * Inserisce una nuova offerta
- */
-async function insertOffer(offerData) {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: salva in localStorage
-        return saveOfferToLocalStorage(offerData);
-    }
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) throw new Error('Utente non autenticato');
-        
-        const offerToInsert = {
-            ...offerData,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-        
-        const { data, error } = await client
-            .from('offerte_energia')
-            .insert([offerToInsert])
-            .select();
-        
-        if (error) throw error;
-        
-        return data[0];
-    } catch (error) {
-        console.error('Errore inserimento offerta:', error);
-        // Fallback a localStorage
-        return saveOfferToLocalStorage(offerData);
-    }
-}
-
-/**
- * Aggiorna un'offerta esistente
- */
-async function updateOffer(offerId, offerData) {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: aggiorna localStorage
-        return updateOfferInLocalStorage(offerId, offerData);
-    }
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) throw new Error('Utente non autenticato');
-        
-        const { data, error } = await client
-            .from('offerte_energia')
-            .update({
-                ...offerData,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', offerId)
-            .eq('user_id', user.id)
-            .select();
-        
-        if (error) throw error;
-        
-        return data[0];
-    } catch (error) {
-        console.error('Errore aggiornamento offerta:', error);
-        return updateOfferInLocalStorage(offerId, offerData);
-    }
-}
-
-/**
- * Elimina un'offerta
- */
-async function removeOffer(offerId) {
-    const client = await initSupabase();
-    
-    if (!client) {
-        // Fallback: rimuovi da localStorage
-        return removeOfferFromLocalStorage(offerId);
-    }
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) throw new Error('Utente non autenticato');
-        
-        const { error } = await client
-            .from('offerte_energia')
-            .delete()
-            .eq('id', offerId)
-            .eq('user_id', user.id);
-        
-        if (error) throw error;
-        
-        return true;
-    } catch (error) {
-        console.error('Errore eliminazione offerta:', error);
-        return removeOfferFromLocalStorage(offerId);
-    }
-}
-
-// ===== FALLBACK FUNCTIONS (LocalStorage) =====
-
-/**
- * Carica offerte da localStorage
- */
-function getOffersFromLocalStorage() {
-    try {
-        const stored = localStorage.getItem('energiacorp_offers');
-        return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-        console.error('Errore localStorage get offers:', error);
-        return [];
-    }
-}
-
-/**
- * Salva offerta in localStorage
- */
-function saveOfferToLocalStorage(offerData) {
-    try {
-        const offers = getOffersFromLocalStorage();
-        const newOffer = {
-            ...offerData,
-            id: Date.now().toString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-        
-        offers.unshift(newOffer);
-        localStorage.setItem('energiacorp_offers', JSON.stringify(offers));
-        
-        return newOffer;
-    } catch (error) {
-        console.error('Errore localStorage save offer:', error);
-        throw error;
-    }
-}
-
-/**
- * Aggiorna offerta in localStorage
- */
-function updateOfferInLocalStorage(offerId, offerData) {
-    try {
-        const offers = getOffersFromLocalStorage();
-        const index = offers.findIndex(o => o.id === offerId);
-        
-        if (index === -1) {
-            throw new Error('Offerta non trovata');
-        }
-        
-        offers[index] = {
-            ...offers[index],
-            ...offerData,
-            updated_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('energiacorp_offers', JSON.stringify(offers));
-        return offers[index];
-    } catch (error) {
-        console.error('Errore localStorage update offer:', error);
-        throw error;
-    }
-}
-
-/**
- * Rimuovi offerta da localStorage
- */
-function removeOfferFromLocalStorage(offerId) {
-    try {
-        const offers = getOffersFromLocalStorage();
-        const filteredOffers = offers.filter(o => o.id !== offerId);
-        
-        localStorage.setItem('energiacorp_offers', JSON.stringify(filteredOffers));
-        return true;
-    } catch (error) {
-        console.error('Errore localStorage remove offer:', error);
-        throw error;
-    }
-}
-
-// ===== UTILITY FUNCTIONS =====
-
-/**
- * Test connessione Supabase
- */
-async function testSupabaseConnection() {
-    try {
-        const client = await initSupabase();
-        if (!client) return false;
-        
-        // Test semplice: prova a fare una query
-        const { error } = await client
-            .from('offerte_energia')
-            .select('count', { count: 'exact', head: true });
-        
-        return !error;
-    } catch (error) {
-        console.error('Test connessione fallito:', error);
-        return false;
-    }
-}
-
-/**
- * Inizializza il database (crea tabelle se non esistono)
- */
-async function initializeDatabase() {
-    const client = await initSupabase();
-    if (!client) {
-        console.warn('Supabase non disponibile, uso localStorage come fallback');
-        return;
-    }
-    
-    try {
-        // Verifica se la tabella esiste facendo una query
-        const { error } = await client
-            .from('offerte_energia')
-            .select('count', { count: 'exact', head: true });
-        
-        if (error) {
-            console.warn('Tabella offerte_energia non trovata o non accessibile:', error.message);
-            console.log('Assicurati che la tabella esista nel database Supabase con RLS abilitato');
-        } else {
-            console.log('✅ Database Supabase connesso e configurato correttamente');
-        }
-    } catch (error) {
-        console.error('Errore inizializzazione database:', error);
-    }
-}
-
-/**
- * Sincronizza localStorage con Supabase
- */
-async function syncLocalStorageWithSupabase() {
-    const client = await initSupabase();
-    if (!client) return;
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) return;
-        
-        // Carica offerte locali
-        const localOffers = getOffersFromLocalStorage();
-        
-        // Carica offerte remote
-        const { data: remoteOffers } = await client
-            .from('offerte_energia')
-            .select('*')
-            .eq('user_id', user.id);
-        
-        // Merge: priorità alle offerte remote più recenti
-        if (remoteOffers && remoteOffers.length > 0) {
-            console.log(`Sincronizzazione: ${remoteOffers.length} offerte remote, ${localOffers.length} locali`);
-            localStorage.setItem('energiacorp_offers', JSON.stringify(remoteOffers));
-        }
-    } catch (error) {
-        console.error('Errore sincronizzazione:', error);
-    }
-}
-
-/**
- * Backup dati su Supabase
- */
-async function backupToSupabase() {
-    const client = await initSupabase();
-    if (!client) return false;
-    
-    try {
-        const user = await getCurrentUser();
-        if (!user) return false;
-        
-        const localOffers = getOffersFromLocalStorage();
-        
-        for (const offer of localOffers) {
-            // Controlla se l'offerta esiste già
-            const { data: existing } = await client
-                .from('offerte_energia')
-                .select('id')
-                .eq('id', offer.id)
-                .eq('user_id', user.id);
-            
-            if (!existing || existing.length === 0) {
-                // Inserisci l'offerta
-                await client
-                    .from('offerte_energia')
-                    .insert([{
-                        ...offer,
-                        user_id: user.id
-                    }]);
-            }
-        }
-        
-        console.log(`✅ Backup completato: ${localOffers.length} offerte`);
-        return true;
-    } catch (error) {
-        console.error('Errore backup:', error);
-        return false;
-    }
-}
-
-// ===== REAL-TIME SUBSCRIPTIONS (Optional) =====
-
-/**
- * Sottoscrivi aggiornamenti real-time
- */
-async function subscribeToOffersChanges(callback) {
-    const client = await initSupabase();
-    if (!client) return null;
-    
-    const user = await getCurrentUser();
-    if (!user) return null;
-    
-    try {
-        const subscription = client
-            .channel('offerte_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'offerte_energia',
-                    filter: `user_id=eq.${user.id}`
-                },
-                callback
-            )
-            .subscribe();
-        
-        return subscription;
-    } catch (error) {
-        console.error('Errore subscription:', error);
-        return null;
-    }
-}
-
-// ===== EXPORT FUNCTIONS =====
-// Queste funzioni sono disponibili globalmente per app.js
-
-// Per compatibilità con app.js
-window.getOffers = getOffers;
-window.insertOffer = insertOffer;
-window.updateOffer = updateOffer;
-window.removeOffer = removeOffer;
-window.getCurrentUser = getCurrentUser;
-window.signIn = signIn;
-window.signUp = signUp;
-window.signOut = signOut;
-
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Inizializzazione Supabase...');
-    
-    try {
-        // Inizializza database
-        await initializeDatabase();
-        
-        // Test connessione
-        const isConnected = await testSupabaseConnection();
-        console.log(`📡 Connessione Supabase: ${isConnected ? '✅ OK' : '❌ FALLBACK localStorage'}`);
-        
-        // Sincronizza dati se possibile
-        if (isConnected) {
-            await syncLocalStorageWithSupabase();
-        }
-        
-    } catch (error) {
-        console.error('Errore inizializzazione Supabase:', error);
-        console.log('💾 Utilizzo localStorage come fallback');
-    }
-});
-
-// ===== SQL SCHEMA PER RIFERIMENTO =====
-/*
--- Tabella offerte_energia
-CREATE TABLE public.offerte_energia (
-    id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    fornitore TEXT NOT NULL,
-    nome_offerta TEXT,
-    categoria TEXT CHECK (categoria IN ('Domestico', 'Micro', 'PMI')),
-    tipo_prezzo TEXT CHECK (tipo_prezzo IN ('Fisso', 'Variabile')),
-    prezzo_luce DECIMAL(10,6),
-    spread_luce DECIMAL(10,6) DEFAULT 0,
-    prezzo_gas DECIMAL(10,6),
-    spread_gas DECIMAL(10,6) DEFAULT 0,
-    quota_fissa_luce DECIMAL(10,2),
-    quota_fissa_gas DECIMAL(10,2),
-    commissioni DECIMAL(10,2) DEFAULT 0,
-    scadenza DATE,
-    durata_mesi INTEGER,
-    attivo BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+-- ===== CREAZIONE TABELLA OFFERS =====
+create table public.offers (
+  id bigint generated by default as identity primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  
+  -- Informazioni base offerta
+  fornitore text not null,
+  nome_offerta text not null,
+  categoria text not null default 'Domestico',
+  tipo_prezzo text not null default 'Fisso',
+  
+  -- Prezzi energia elettrica
+  prezzo_luce numeric(8,4),
+  spread_luce numeric(8,4),
+  quota_fissa_luce numeric(8,2),
+  
+  -- Prezzi gas
+  prezzo_gas numeric(8,4),
+  spread_gas numeric(8,4),
+  quota_fissa_gas numeric(8,2),
+  
+  -- Altri dati
+  commissioni numeric(8,2) default 0,
+  scadenza date,
+  durata_mesi integer default 12,
+  
+  -- Metadata
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  
+  -- Constraints
+  constraint offers_categoria_check check (categoria in ('Domestico', 'Micro', 'PMI')),
+  constraint offers_tipo_prezzo_check check (tipo_prezzo in ('Fisso', 'Variabile')),
+  constraint offers_durata_check check (durata_mesi > 0 and durata_mesi <= 60),
+  constraint offers_prezzi_check check (
+    (prezzo_luce is not null and prezzo_luce > 0) or 
+    (prezzo_gas is not null and prezzo_gas > 0) or
+    (spread_luce is not null and spread_luce > 0) or
+    (spread_gas is not null and spread_gas > 0)
+  )
 );
 
--- Enable RLS
-ALTER TABLE public.offerte_energia ENABLE ROW LEVEL SECURITY;
+-- ===== CREAZIONE INDICI PER PERFORMANCE =====
+create index offers_user_id_idx on public.offers(user_id);
+create index offers_fornitore_idx on public.offers(fornitore);
+create index offers_categoria_idx on public.offers(categoria);
+create index offers_tipo_prezzo_idx on public.offers(tipo_prezzo);
+create index offers_created_at_idx on public.offers(created_at desc);
+create index offers_scadenza_idx on public.offers(scadenza);
 
--- Policies
-CREATE POLICY "Users can view own offers" 
-ON public.offerte_energia FOR SELECT 
-USING (auth.uid() = user_id);
+-- Indice composto per query comuni
+create index offers_user_categoria_tipo_idx on public.offers(user_id, categoria, tipo_prezzo);
 
-CREATE POLICY "Users can insert own offers" 
-ON public.offerte_energia FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+-- ===== ROW LEVEL SECURITY (RLS) =====
+-- Abilita RLS sulla tabella offers
+alter table public.offers enable row level security;
 
-CREATE POLICY "Users can update own offers" 
-ON public.offerte_energia FOR UPDATE 
-USING (auth.uid() = user_id);
+-- Policy per SELECT: gli utenti possono vedere solo le proprie offerte
+create policy "Users can view own offers" on public.offers
+  for select using (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete own offers" 
-ON public.offerte_energia FOR DELETE 
-USING (auth.uid() = user_id);
+-- Policy per INSERT: gli utenti possono inserire solo offerte con il loro user_id
+create policy "Users can insert own offers" on public.offers
+  for insert with check (auth.uid() = user_id);
 
--- Indexes for performance
-CREATE INDEX idx_offerte_user_id ON public.offerte_energia(user_id);
-CREATE INDEX idx_offerte_categoria ON public.offerte_energia(categoria);
-CREATE INDEX idx_offerte_fornitore ON public.offerte_energia(fornitore);
+-- Policy per UPDATE: gli utenti possono aggiornare solo le proprie offerte
+create policy "Users can update own offers" on public.offers
+  for update using (auth.uid() = user_id);
+
+-- Policy per DELETE: gli utenti possono eliminare solo le proprie offerte
+create policy "Users can delete own offers" on public.offers
+  for delete using (auth.uid() = user_id);
+
+-- ===== TRIGGER PER UPDATED_AT =====
+-- Funzione per aggiornare automaticamente updated_at
+create or replace function public.handle_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+-- Trigger che esegue la funzione prima di ogni update
+create trigger on_auth_user_updated
+  before update on public.offers
+  for each row execute procedure public.handle_updated_at();
+
+-- ===== CREAZIONE PROFILI UTENTE (OPZIONALE) =====
+-- Tabella per informazioni aggiuntive degli utenti
+create table public.profiles (
+  id uuid references auth.users(id) on delete cascade primary key,
+  nome text,
+  cognome text,
+  azienda text,
+  display_name text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- RLS per profiles
+alter table public.profiles enable row level security;
+
+-- Policy per profiles
+create policy "Users can view own profile" on public.profiles
+  for select using (auth.uid() = id);
+create policy "Users can update own profile" on public.profiles
+  for update using (auth.uid() = id);
+create policy "Users can insert own profile" on public.profiles
+  for insert with check (auth.uid() = id);
+
+-- Trigger per updated_at su profiles
+create trigger on_profiles_updated
+  before update on public.profiles
+  for each row execute procedure public.handle_updated_at();
+
+-- ===== FUNZIONE PER AUTO-CREAZIONE PROFILO =====
+-- Funzione che crea automaticamente un profilo quando un utente si registra
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, nome, cognome, azienda, display_name)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nome', ''),
+    coalesce(new.raw_user_meta_data->>'cognome', ''),
+    coalesce(new.raw_user_meta_data->>'azienda', ''),
+    coalesce(new.raw_user_meta_data->>'display_name', new.email)
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger per auto-creazione profilo
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- ===== VISTE UTILI =====
+-- Vista per statistiche utente
+create view public.user_stats as
+select 
+  p.id as user_id,
+  p.display_name,
+  p.azienda,
+  count(o.id) as total_offers,
+  count(case when o.categoria = 'Domestico' then 1 end) as domestico_count,
+  count(case when o.categoria = 'Micro' then 1 end) as micro_count,
+  count(case when o.categoria = 'PMI' then 1 end) as pmi_count,
+  count(case when o.tipo_prezzo = 'Fisso' then 1 end) as fisso_count,
+  count(case when o.tipo_prezzo = 'Variabile' then 1 end) as variabile_count,
+  min(o.created_at) as first_offer_date,
+  max(o.created_at) as last_offer_date
+from public.profiles p
+left join public.offers o on p.id = o.user_id
+group by p.id, p.display_name, p.azienda;
+
+-- Vista per migliori offerte per categoria
+create view public.best_offers_by_category as
+with ranked_offers as (
+  select 
+    *,
+    case 
+      when tipo_prezzo = 'Variabile' then
+        case 
+          when spread_luce is not null then spread_luce
+          when spread_gas is not null then spread_gas
+          else 999
+        end
+      else
+        case 
+          when prezzo_luce is not null then prezzo_luce
+          when prezzo_gas is not null then prezzo_gas
+          else 999
+        end
+    end as price_for_ranking,
+    row_number() over (
+      partition by user_id, categoria 
+      order by 
+        case 
+          when tipo_prezzo = 'Variabile' then
+            case 
+              when spread_luce is not null then spread_luce
+              when spread_gas is not null then spread_gas
+              else 999
+            end
+          else
+            case 
+              when prezzo_luce is not null then prezzo_luce
+              when prezzo_gas is not null then prezzo_gas
+              else 999
+            end
+        end asc
+    ) as rank
+  from public.offers
+)
+select * from ranked_offers where rank = 1;
+
+-- ===== GRANT PERMESSI =====
+-- Permessi per le tabelle
+grant usage on schema public to anon, authenticated;
+grant all on public.offers to authenticated;
+grant all on public.profiles to authenticated;
+
+-- Permessi per le viste
+grant select on public.user_stats to authenticated;
+grant select on public.best_offers_by_category to authenticated;
+
+-- Permessi per le sequenze
+grant usage, select on all sequences in schema public to authenticated;
+
+-- ===== DATI DEMO (OPZIONALE) =====
+-- Inserimento account demo
+-- Nota: questo richiede che esista già un utente con email demo@energiacorp.it
+
+-- Uncomment se vuoi dati demo:
+/*
+-- Inserisci offerte demo solo se l'utente demo esiste
+do $$
+declare
+  demo_user_id uuid;
+begin
+  -- Trova l'ID dell'utente demo
+  select id into demo_user_id from auth.users where email = 'demo@energiacorp.it' limit 1;
+  
+  -- Se l'utente demo esiste, inserisci offerte demo
+  if demo_user_id is not null then
+    insert into public.offers (user_id, fornitore, nome_offerta, categoria, tipo_prezzo, prezzo_luce, prezzo_gas, quota_fissa_luce, quota_fissa_gas, scadenza, durata_mesi) values
+    (demo_user_id, 'ENEL Energia', 'Offerta Casa Verde', 'Domestico', 'Fisso', 0.2450, 0.8900, 12.50, 10.00, '2025-12-31', 12),
+    (demo_user_id, 'ENI Plenitude', 'Smart Business', 'Micro', 'Variabile', 0.2200, 0.8500, 0.0180, 0.0250, 15.00, 8.50, '2025-06-30', 24),
+    (demo_user_id, 'Edison Energia', 'Offerta PMI Plus', 'PMI', 'Fisso', 0.2100, 0.8200, 18.00, 12.00, '2025-08-15', 36),
+    (demo_user_id, 'A2A Energia', 'Green Light', 'Domestico', 'Fisso', 0.2380, null, 11.80, null, '2025-10-31', 12),
+    (demo_user_id, 'Hera Comm', 'Gas Natural', 'Domestico', 'Fisso', null, 0.8750, null, 9.50, '2025-09-30', 18);
+    
+    raise notice 'Dati demo inseriti per utente: %', demo_user_id;
+  else
+    raise notice 'Utente demo non trovato. Saltando inserimento dati demo.';
+  end if;
+end $$;
 */
 
+-- ===== COMMENTI E DOCUMENTAZIONE =====
+comment on table public.offers is 'Tabella principale per le offerte energia dei consulenti';
+comment on column public.offers.user_id is 'ID utente proprietario dell offerta (FK verso auth.users)';
+comment on column public.offers.fornitore is 'Nome del fornitore energia';
+comment on column public.offers.nome_offerta is 'Nome commerciale dell offerta';
+comment on column public.offers.categoria is 'Categoria cliente: Domestico, Micro, PMI';
+comment on column public.offers.tipo_prezzo is 'Tipo di prezzo: Fisso o Variabile';
+comment on column public.offers.prezzo_luce is 'Prezzo energia elettrica in €/kWh';
+comment on column public.offers.spread_luce is 'Spread energia elettrica in €/kWh (per tariffe variabili)';
+comment on column public.offers.quota_fissa_luce is 'Quota fissa mensile energia elettrica in €/mese';
+comment on column public.offers.prezzo_gas is 'Prezzo gas in €/Smc';
+comment on column public.offers.spread_gas is 'Spread gas in €/Smc (per tariffe variabili)';
+comment on column public.offers.quota_fissa_gas is 'Quota fissa mensile gas in €/mese';
+comment on column public.offers.commissioni is 'Commissioni aggiuntive in €';
+comment on column public.offers.scadenza is 'Data di scadenza dell offerta';
+comment on column public.offers.durata_mesi is 'Durata contratto in mesi';
+
+comment on table public.profiles is 'Profili estesi degli utenti con informazioni aggiuntive';
+
+-- ===== FINE SETUP =====
+-- Il database è ora configurato e pronto per l'uso con EnergiaCorp Premium!
+-- 
+-- PROSSIMI PASSI:
+-- 1. Esegui questo script nel SQL Editor di Supabase
+-- 2. Configura le credenziali Supabase nell'HTML
+-- 3. Testa la registrazione e il login
+-- 4. Verifica che le offerte vengano salvate correttamente
+--
+-- Per monitoraggio e debug:
+-- - Controlla la tabella auth.users per gli utenti registrati
+-- - Controlla la tabella public.offers per le offerte salvate
+-- - Usa la vista public.user_stats per statistiche rapide
