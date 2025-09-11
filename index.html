@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Premium - Sistema Completo</title>
+    <title>EnergiaCorp Premium - Sistema Completo con Modifica</title>
     
     <style>
         * {
@@ -104,6 +104,25 @@
 
         .btn-logout:hover {
             background: rgba(239,68,68,0.3);
+        }
+
+        @media (max-width: 600px) {
+            .header-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .nav {
+                order: 2;
+                width: 100%;
+            }
+            
+            .nav-btn {
+                flex: 1;
+                justify-content: center;
+                font-size: 0.8rem;
+                padding: 0.75rem 0.5rem;
+            }
         }
 
         /* ===== MAIN CONTENT ===== */
@@ -307,6 +326,13 @@
             align-items: start;
         }
 
+        @media (max-width: 640px) {
+            .preview-body {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
         .file-thumbnail {
             width: 120px;
             height: 120px;
@@ -435,7 +461,7 @@
         }
 
         /* ===== FORM ===== */
-        .ocr-form {
+        .ocr-form, .edit-form {
             background: white;
             border-radius: 12px;
             padding: 2rem;
@@ -535,6 +561,25 @@
         .btn-sm {
             padding: 0.5rem 0.75rem;
             font-size: 0.85rem;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-cancel {
+            background: #6b7280;
+            color: white;
+            margin-right: 0.5rem;
+        }
+
+        .btn-cancel:hover {
+            background: #4b5563;
         }
 
         /* ===== TABLE ===== */
@@ -651,6 +696,84 @@
             color: #64748b;
         }
 
+        /* ===== EDIT MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-actions {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            background: #f8fafc;
+        }
+
         /* ===== NOTIFICATIONS ===== */
         .notification {
             position: fixed;
@@ -678,48 +801,52 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .nav {
-                justify-content: center;
-            }
-
             .main {
                 padding: 1rem 0.5rem;
             }
-
+            
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
             }
-
-            .preview-body {
+            
+            .filters {
                 grid-template-columns: 1fr;
-                text-align: center;
             }
-
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            .table {
+                min-width: 800px;
+            }
+            
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
-            .table-container {
-                overflow-x: auto;
+            .modal-content {
+                margin: 0.5rem;
+                max-height: 95vh;
             }
 
-            .table {
-                min-width: 800px;
+            .modal-header {
+                padding: 1rem 1.5rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-actions {
+                padding: 1rem 1.5rem;
+                flex-direction: column;
             }
         }
 
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .summary-actions {
-                flex-direction: column;
             }
         }
 
@@ -754,7 +881,7 @@
             height: 16px;
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            border-top-color: #fff;
+            border-top-color: currentColor;
             animation: spin 1s ease-in-out infinite;
         }
 
@@ -1022,18 +1149,117 @@
         </section>
     </main>
 
+    <!-- EDIT MODAL -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Modifica Offerta</h3>
+                <button class="modal-close" onclick="closeEditModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" name="id" id="edit-id">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Fornitore</label>
+                            <input type="text" name="fornitore" id="edit-fornitore" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Nome Offerta</label>
+                            <input type="text" name="nome_offerta" id="edit-nome_offerta" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <select name="categoria" id="edit-categoria" class="form-select">
+                                <option value="Domestico">Domestico</option>
+                                <option value="Micro">Micro</option>
+                                <option value="PMI">PMI</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tipo Prezzo</label>
+                            <select name="tipo_prezzo" id="edit-tipo_prezzo" class="form-select">
+                                <option value="Fisso">Fisso</option>
+                                <option value="Variabile">Variabile</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Prezzo Luce (€/kWh)</label>
+                            <input type="number" name="prezzo_luce" id="edit-prezzo_luce" class="form-input" step="0.0001" placeholder="0.2500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Spread Luce (€/kWh)</label>
+                            <input type="number" name="spread_luce" id="edit-spread_luce" class="form-input" step="0.0001" placeholder="0.0150">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Prezzo Gas (€/Smc)</label>
+                            <input type="number" name="prezzo_gas" id="edit-prezzo_gas" class="form-input" step="0.0001" placeholder="0.8500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Spread Gas (€/Smc)</label>
+                            <input type="number" name="spread_gas" id="edit-spread_gas" class="form-input" step="0.0001" placeholder="0.0200">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Quota Fissa Luce (€/mese)</label>
+                            <input type="number" name="quota_fissa_luce" id="edit-quota_fissa_luce" class="form-input" step="0.01" placeholder="12.50">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Quota Fissa Gas (€/mese)</label>
+                            <input type="number" name="quota_fissa_gas" id="edit-quota_fissa_gas" class="form-input" step="0.01" placeholder="10.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Commissioni (€)</label>
+                            <input type="number" name="commissioni" id="edit-commissioni" class="form-input" step="0.01" placeholder="0.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Scadenza</label>
+                            <input type="date" name="scadenza" id="edit-scadenza" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Durata (mesi)</label>
+                            <input type="number" name="durata_mesi" id="edit-durata_mesi" class="form-input" min="1" max="60" placeholder="12">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeEditModal()">
+                    ❌ Annulla
+                </button>
+                <button type="button" class="btn btn-success" onclick="saveEditedOffer()">
+                    ✅ Salva Modifiche
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT -->
     <script>
         /**
-         * ===== ENERGIACORP PREMIUM - SISTEMA COMPLETO =====
-         * Versione standalone completamente funzionante
-         * Include: Dashboard, OCR, Tabella Gestione, Storage
+         * ===== ENERGIACORP PREMIUM - SISTEMA COMPLETO CON MODIFICA =====
+         * Versione con funzionalità di modifica offerte attivata
          */
 
-        // ===== VARIABILI GLOBALI =====
+        // ===== GLOBAL VARIABLES =====
         let currentOffers = [];
         let filteredOffers = [];
         let currentFile = null;
+        let editingOfferId = null;
 
         // ===== OCR CONFIG =====
         const OCR_CONFIG = {
@@ -1053,14 +1279,32 @@
         function showNotification(message, type = 'info') {
             console.log(`[${type.toUpperCase()}] ${message}`);
             
+            // Rimuovi notifiche esistenti
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.textContent = message;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>${getNotificationIcon(type)}</span>
+                    <span>${message}</span>
+                </div>
+            `;
             document.body.appendChild(notification);
 
             setTimeout(() => {
                 notification.remove();
             }, 5000);
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                success: '✅',
+                error: '❌', 
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            return icons[type] || 'ℹ️';
         }
 
         function formatCurrency(value, decimals = 4) {
@@ -1239,11 +1483,14 @@
             if (file) {
                 currentFile = file;
                 
-                // Aggiorna input per coerenza
                 const fileInput = document.getElementById('pdf-file');
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                fileInput.files = dt.files;
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                } catch (error) {
+                    console.warn('DataTransfer not supported:', error);
+                }
                 
                 processFile(file);
             }
@@ -1275,7 +1522,7 @@
                 const url = URL.createObjectURL(file);
                 thumbnail = `
                     <div class="file-thumbnail img-thumb">
-                        <img src="${url}" alt="Preview">
+                        <img src="${url}" alt="Preview" onload="URL.revokeObjectURL(this.src)">
                     </div>
                 `;
             } else {
@@ -1305,7 +1552,7 @@
                         
                         <div class="status processing" id="ocr-status">
                             <span class="spinner"></span>
-                            <span>In attesa di elaborazione...</span>
+                            <span>Elaborazione...</span>
                         </div>
                     </div>
                 </div>
@@ -1316,7 +1563,7 @@
             `;
 
             preview.style.display = 'block';
-            preview.scrollIntoView({ behavior: 'smooth' });
+            preview.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function removeFilePreview() {
@@ -1824,8 +2071,12 @@
                 <td>${quotaDisplay}</td>
                 <td>${formatDate(offer.scadenza)}</td>
                 <td>
-                    <button class="btn btn-sm btn-secondary" onclick="editOffer('${offer.id}')">✏️</button>
-                    <button class="btn btn-sm" style="background:#dc2626;color:white;" onclick="deleteOffer('${offer.id}')">🗑️</button>
+                    <button class="btn btn-sm btn-secondary" onclick="editOffer('${offer.id}')" title="Modifica offerta">
+                        ✏️
+                    </button>
+                    <button class="btn btn-sm" style="background:#dc2626;color:white;" onclick="deleteOffer('${offer.id}')" title="Elimina offerta">
+                        🗑️
+                    </button>
                 </td>
             `;
             
@@ -1921,23 +2172,153 @@
             }
         }
 
+        // ===== EDIT FUNCTIONALITY =====
         function editOffer(id) {
-            console.log('Edit offer:', id);
-            showNotification('Funzionalità modifica in sviluppo', 'info');
+            console.log('✏️ Modifica offerta:', id);
+            
+            const offers = loadOffers();
+            const offer = offers.find(o => o.id === id);
+            
+            if (!offer) {
+                showNotification('Offerta non trovata', 'error');
+                return;
+            }
+            
+            editingOfferId = id;
+            populateEditForm(offer);
+            openEditModal();
+        }
+
+        function populateEditForm(offer) {
+            // Popola tutti i campi del form di modifica
+            const fields = [
+                'id', 'fornitore', 'nome_offerta', 'categoria', 'tipo_prezzo',
+                'prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas',
+                'quota_fissa_luce', 'quota_fissa_gas', 'commissioni', 'scadenza', 'durata_mesi'
+            ];
+            
+            fields.forEach(field => {
+                const element = document.getElementById(`edit-${field}`);
+                if (element) {
+                    const value = offer[field];
+                    if (value !== null && value !== undefined) {
+                        element.value = value;
+                    } else {
+                        element.value = '';
+                    }
+                }
+            });
+        }
+
+        function openEditModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Previene scroll della pagina sottostante
+            
+            // Focus sul primo campo
+            setTimeout(() => {
+                document.getElementById('edit-fornitore')?.focus();
+            }, 100);
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = ''; // Ripristina scroll
+            editingOfferId = null;
+        }
+
+        function saveEditedOffer() {
+            console.log('💾 Salvataggio modifiche offerta...');
+            
+            if (!editingOfferId) {
+                showNotification('ID offerta non valido', 'error');
+                return;
+            }
+            
+            const formData = new FormData(document.getElementById('edit-form'));
+            const updatedData = {};
+            
+            for (const [key, value] of formData.entries()) {
+                updatedData[key] = value;
+            }
+            
+            // Converti campi numerici
+            const numericFields = [
+                'prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 
+                'quota_fissa_luce', 'quota_fissa_gas', 'commissioni', 'durata_mesi'
+            ];
+            
+            numericFields.forEach(field => {
+                if (updatedData[field]) {
+                    const num = parseFloat(updatedData[field]);
+                    updatedData[field] = isNaN(num) ? null : num;
+                } else {
+                    updatedData[field] = null;
+                }
+            });
+
+            // Validazioni
+            if (!updatedData.fornitore || !updatedData.nome_offerta) {
+                showNotification('Campi obbligatori mancanti (Fornitore, Nome Offerta)', 'error');
+                return;
+            }
+            
+            try {
+                // Carica offerte esistenti
+                const offers = loadOffers();
+                const offerIndex = offers.findIndex(o => o.id === editingOfferId);
+                
+                if (offerIndex === -1) {
+                    showNotification('Offerta non trovata', 'error');
+                    return;
+                }
+                
+                // Aggiorna l'offerta mantenendo i metadati originali
+                const originalOffer = offers[offerIndex];
+                const updatedOffer = {
+                    ...originalOffer,
+                    ...updatedData,
+                    id: editingOfferId, // Mantieni ID originale
+                    updated_at: new Date().toISOString() // Aggiorna timestamp
+                };
+                
+                // Sostituisci l'offerta nell'array
+                offers[offerIndex] = updatedOffer;
+                
+                // Salva le modifiche
+                localStorage.setItem('energiacorp_offers', JSON.stringify(offers));
+                
+                showNotification('✅ Offerta modificata con successo!', 'success');
+                
+                // Chiudi modal
+                closeEditModal();
+                
+                // Aggiorna le viste
+                initOffersTable();
+                
+                if (document.getElementById('section-dashboard').classList.contains('active')) {
+                    loadDashboardData();
+                }
+                
+            } catch (error) {
+                console.error('❌ Errore salvataggio modifiche:', error);
+                showNotification('❌ Errore nel salvataggio delle modifiche', 'error');
+            }
         }
 
         function deleteOffer(id) {
             if (confirm('Sei sicuro di voler eliminare questa offerta?')) {
                 try {
                     removeOffer(id);
-                    showNotification('Offerta eliminata', 'success');
+                    showNotification('✅ Offerta eliminata con successo', 'success');
                     initOffersTable();
                     
                     if (document.getElementById('section-dashboard').classList.contains('active')) {
                         loadDashboardData();
                     }
                 } catch (error) {
-                    showNotification('Errore eliminazione', 'error');
+                    showNotification('❌ Errore nell\'eliminazione', 'error');
                 }
             }
         }
@@ -1959,7 +2340,8 @@
                 const newOffer = {
                     ...offerData,
                     id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 };
                 
                 offers.unshift(newOffer);
@@ -1996,7 +2378,7 @@
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 EnergiaCorp Premium inizializzato');
+            console.log('🚀 EnergiaCorp Premium con Modifica inizializzato');
             
             // Navigation listeners
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -2014,6 +2396,20 @@
             // Initialize dashboard
             initDashboard();
             
+            // ESC key per chiudere modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeEditModal();
+                }
+            });
+            
+            // Click outside modal per chiudere
+            document.getElementById('edit-modal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    closeEditModal();
+                }
+            });
+            
             // Test localStorage
             try {
                 localStorage.setItem('test', 'ok');
@@ -2024,7 +2420,7 @@
                 showNotification('Attenzione: salvataggio locale non disponibile', 'warning');
             }
             
-            console.log('✅ Sistema pronto!');
+            console.log('✅ Sistema pronto con funzionalità di modifica!');
         });
 
         // Error handling
@@ -2033,7 +2429,7 @@
             showNotification('Si è verificato un errore', 'error');
         });
 
-        console.log('📜 EnergiaCorp Premium caricato - Sistema standalone completo! 🚀');
+        console.log('📜 EnergiaCorp Premium con Modifica caricato! 🚀✏️');
     </script>
 </body>
 </html>
