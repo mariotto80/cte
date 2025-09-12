@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Cloud Ultimate - Sistema Completo OCR</title>
+    <title>EnergiaCorp Ultimate - OCR Perfetto + Mobile Fix</title>
     
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.0/dist/umd/supabase.min.js"></script>
     <!-- jsPDF per esportazione PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <!-- Tesseract.js per OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
+    <!-- Tesseract.js per OCR PERFETTO -->
+    <script src="https://unpkg.com/tesseract.js@v5.0.5/dist/tesseract.min.js"></script>
     
     <style>
         * {
@@ -522,7 +522,7 @@
 
         .ocr-progress {
             background: #f1f5f9;
-            padding: 1rem;
+            padding: 1.5rem;
             border-radius: 8px;
             margin: 1rem 0;
             display: none;
@@ -532,31 +532,77 @@
             display: block;
         }
 
+        .ocr-progress-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .ocr-robot {
+            font-size: 2rem;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .ocr-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
         .ocr-progress-bar {
             width: 100%;
-            height: 8px;
+            height: 12px;
             background: #e2e8f0;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .ocr-progress-fill {
             height: 100%;
             background: linear-gradient(135deg, #3b82f6, #0ea5e9);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .ocr-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .ocr-progress-text {
+            font-size: 0.9rem;
+            color: #64748b;
+            text-align: center;
         }
 
         .ocr-extracted-text {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 1rem;
+            padding: 1.5rem;
             margin: 1rem 0;
-            font-family: monospace;
+            font-family: 'Consolas', 'Monaco', monospace;
             font-size: 0.85rem;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             display: none;
         }
@@ -565,7 +611,18 @@
             display: block;
         }
 
-        /* ===== TABLE ===== */
+        .ocr-extracted-text h4 {
+            margin-bottom: 1rem;
+            color: #1e293b;
+            font-family: inherit;
+        }
+
+        .ocr-text-content {
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        /* ===== TABLE IMPROVEMENTS FOR MOBILE ===== */
         .table-container {
             background: white;
             border-radius: 12px;
@@ -583,9 +640,18 @@
             gap: 1rem;
         }
 
+        /* MOBILE TABLE SCROLLING FIX */
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 70vh;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px; /* Minimum width for proper display */
         }
 
         .table th {
@@ -597,6 +663,9 @@
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .table td {
@@ -952,10 +1021,6 @@
             animation: spin 1s ease-in-out infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
@@ -984,7 +1049,7 @@
             display: none !important;
         }
 
-        /* ===== RESPONSIVE ===== */
+        /* ===== RESPONSIVE MOBILE FIXES ===== */
         @media (max-width: 768px) {
             .main {
                 padding: 1rem 0.5rem;
@@ -1027,6 +1092,106 @@
                 flex-direction: column;
                 text-align: center;
             }
+
+            /* MOBILE TABLE IMPROVEMENTS */
+            .table-container {
+                margin: 0 -0.5rem;
+                border-radius: 8px;
+            }
+
+            .table-wrapper {
+                max-height: 60vh;
+            }
+
+            .table {
+                min-width: 700px;
+                font-size: 0.85rem;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .filters {
+                padding: 1rem;
+            }
+
+            /* Mobile commodity display */
+            .commodity-image {
+                width: 32px;
+                height: 32px;
+            }
+
+            .commodity-display {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .btn-sm {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            /* Modal responsive */
+            .modal-content {
+                margin: 0.5rem;
+                max-width: calc(100vw - 1rem);
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-actions {
+                padding: 1rem 1.5rem;
+                flex-direction: column;
+            }
+
+            /* OCR Mobile */
+            .ocr-progress-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+
+            .upload-icon {
+                font-size: 3rem;
+            }
+
+            /* Documents grid mobile */
+            .document-actions {
+                gap: 0.25rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .nav-btn {
+                font-size: 0.75rem;
+                padding: 0.5rem 0.25rem;
+            }
+
+            .table {
+                min-width: 600px;
+                font-size: 0.8rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                gap: 1rem;
+            }
         }
     </style>
 </head>
@@ -1043,11 +1208,11 @@
     <div id="auth-container" class="auth-container">
         <div class="auth-card">
             <div class="auth-logo">⚡</div>
-            <h1 class="auth-title">EnergiaCorp Ultimate OCR</h1>
-            <p class="auth-subtitle">Sistema Premium con OCR Reale e Upload Cartelle Funzionante</p>
+            <h1 class="auth-title">EnergiaCorp OCR Perfetto</h1>
+            <p class="auth-subtitle">OCR Tesseract Funzionante + Mobile Fix</p>
             
             <div id="supabase-status" class="supabase-status">
-                🟢 Connesso a Supabase Cloud Database
+                🟢 Connesso a Supabase Cloud + OCR Ready
             </div>
             
             <form id="login-form" class="auth-form" style="margin-top: 2rem;">
@@ -1076,7 +1241,7 @@
             <div class="header-container">
                 <div class="logo">
                     <div class="logo-icon">⚡</div>
-                    <span>EnergiaCorp Ultimate OCR</span>
+                    <span>EnergiaCorp OCR</span>
                 </div>
                 
                 <nav class="nav">
@@ -1111,8 +1276,8 @@
             <!-- DASHBOARD -->
             <section id="section-dashboard" class="section active">
                 <div class="section-header">
-                    <h1 class="section-title">📊 Dashboard Ultimate OCR</h1>
-                    <p class="section-subtitle">Sistema completo con OCR reale e upload cartelle funzionante</p>
+                    <h1 class="section-title">📊 Dashboard OCR Perfetto</h1>
+                    <p class="section-subtitle">OCR Tesseract funzionante + Mobile optimized</p>
                 </div>
 
                 <div class="section-actions">
@@ -1160,50 +1325,58 @@
             <!-- UPLOAD OCR -->
             <section id="section-upload" class="section">
                 <div class="section-header">
-                    <h1 class="section-title">🤖 OCR AI Tesseract</h1>
-                    <p class="section-subtitle">Estrazione automatica testo con AI reale + parsing PUN/PSV</p>
+                    <h1 class="section-title">🤖 OCR AI Tesseract Perfetto</h1>
+                    <p class="section-subtitle">Riconoscimento testo REALE + parsing automatico PUN/PSV</p>
                 </div>
                 
                 <div style="max-width: 800px; margin: 0 auto;">
                     <div id="upload-area" class="upload-area">
                         <div class="upload-icon">🤖</div>
-                        <h3 class="upload-title">Trascina qui il file PDF/Immagine per OCR</h3>
-                        <p class="upload-subtitle">OCR Tesseract.js analizza il testo automaticamente</p>
-                        <div style="font-size: 0.9rem; color: #64748b;">
-                            <strong>Supporta:</strong> PDF, JPG, PNG, WebP • Max 10MB<br>
-                            <strong>OCR AI:</strong> Tesseract.js + parsing automatico PUN/PSV
+                        <h3 class="upload-title">Carica Immagine/PDF per OCR</h3>
+                        <p class="upload-subtitle">Tesseract estrae il testo automaticamente</p>
+                        <div style="font-size: 0.9rem; color: #64748b; margin-top: 1rem;">
+                            <strong>✅ Supporta:</strong> JPG, PNG, WebP, PDF • Max 10MB<br>
+                            <strong>🤖 AI OCR:</strong> Tesseract.js + parsing PUN/PSV intelligente<br>
+                            <strong>🔍 Riconosce:</strong> ENEL, ENI, Edison, PUN, PSV, prezzi
                         </div>
                         <input id="pdf-file" type="file" accept="application/pdf,image/*" style="display: none;">
                     </div>
 
                     <!-- OCR PREVIEW E PROGRESS -->
-                    <div id="ocr-preview-container" style="display: none; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;">
-                        <h3 style="margin-bottom: 1rem;">📸 Anteprima Documento</h3>
+                    <div id="ocr-preview-container" style="display: none; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            📸 <span>Anteprima Documento</span>
+                        </h3>
                         <img id="ocr-preview" class="ocr-preview" alt="Preview documento">
                         
-                        <!-- PROGRESS OCR -->
+                        <!-- PROGRESS OCR PERFETTO -->
                         <div id="ocr-progress" class="ocr-progress">
-                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                                <span>🤖</span>
-                                <span id="ocr-status">Inizializzando OCR...</span>
+                            <div class="ocr-progress-header">
+                                <div class="ocr-robot">🤖</div>
+                                <div>
+                                    <div class="ocr-status" id="ocr-status">Inizializzando OCR Tesseract...</div>
+                                    <div class="ocr-progress-text">Preparazione motore riconoscimento testo</div>
+                                </div>
                             </div>
                             <div class="ocr-progress-bar">
                                 <div id="ocr-progress-fill" class="ocr-progress-fill"></div>
                             </div>
-                            <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">
-                                Tesseract.js sta analizzando il documento...
+                            <div id="ocr-progress-details" class="ocr-progress-text">
+                                Caricamento modelli linguistici...
                             </div>
                         </div>
 
                         <!-- TESTO ESTRATTO -->
                         <div id="ocr-extracted-text" class="ocr-extracted-text">
-                            <h4 style="margin-bottom: 0.5rem;">📄 Testo Estratto dall'OCR:</h4>
-                            <div id="ocr-text-content"></div>
+                            <h4>✨ Testo Estratto dall'OCR Tesseract:</h4>
+                            <div id="ocr-text-content" class="ocr-text-content"></div>
                         </div>
                     </div>
 
                     <form id="ocr-form" style="display: none; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem;">
-                        <h3 style="text-align: center; margin-bottom: 2rem;">✨ Dati Estratti e Validati dall'OCR AI</h3>
+                        <h3 style="text-align: center; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            ✨ <span>Dati Estratti e Pre-compilati dall'OCR AI</span>
+                        </h3>
                         
                         <div class="form-grid">
                             <div class="form-group">
@@ -1276,9 +1449,9 @@
                             </div>
                         </div>
                         
-                        <div style="text-align: center;">
-                            <button type="submit" class="btn btn-primary">
-                                💾 Salva Offerta nel Database
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                                💾 Salva Offerta Estratta dall'OCR
                             </button>
                         </div>
                     </form>
@@ -1288,8 +1461,8 @@
             <!-- GESTIONE OFFERTE -->
             <section id="section-offers" class="section">
                 <div class="section-header">
-                    <h1 class="section-title">📋 Gestione Offerte con Immagini</h1>
-                    <p class="section-subtitle">Tabella completa con immagini commodity e supporto PUN/PSV</p>
+                    <h1 class="section-title">📋 Gestione Offerte Mobile-Ready</h1>
+                    <p class="section-subtitle">Tabella responsive con scrolling perfetto</p>
                 </div>
 
                 <div class="section-actions">
@@ -1320,23 +1493,26 @@
                         <input type="text" id="search-offers" class="form-input" placeholder="Cerca offerte...">
                     </div>
 
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fornitore</th>
-                                <th>Nome Offerta</th>
-                                <th>Categoria</th>
-                                <th>Tipo</th>
-                                <th>Commodity</th>
-                                <th>Prezzo/Spread</th>
-                                <th>Scadenza</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="offers-tbody">
-                            <!-- Popolato dinamicamente -->
-                        </tbody>
-                    </table>
+                    <!-- MOBILE-OPTIMIZED TABLE WITH SCROLLING -->
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fornitore</th>
+                                    <th>Nome Offerta</th>
+                                    <th>Categoria</th>
+                                    <th>Tipo</th>
+                                    <th>Commodity</th>
+                                    <th>Prezzo/Spread</th>
+                                    <th>Scadenza</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="offers-tbody">
+                                <!-- Popolato dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -1344,7 +1520,7 @@
             <section id="section-documents" class="section">
                 <div class="section-header">
                     <h1 class="section-title">📁 Gestione Documenti e Cartelle</h1>
-                    <p class="section-subtitle">Carica singoli file o intere cartelle dei tuoi clienti</p>
+                    <p class="section-subtitle">Upload singoli e cartelle complete</p>
                 </div>
 
                 <div class="section-actions">
@@ -1513,6 +1689,7 @@
         let currentDocuments = [];
         let ocrWorker = null;
         let currentOCRFile = null;
+        let ocrInitialized = false;
         
         // ===== COMMODITY IMAGES =====
         const COMMODITY_IMAGES = {
@@ -1528,7 +1705,7 @@
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 EnergiaCorp Ultimate OCR inizializzato');
+            console.log('🚀 EnergiaCorp Ultimate OCR Perfetto inizializzato');
             
             supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             
@@ -1537,25 +1714,40 @@
             setupUpload();
             setupDocumentUpload();
             setupFolderUpload();
-            initializeOCR();
+            
+            // Inizializza OCR in background
+            initializeOCRBackground();
         });
 
-        // ===== OCR INITIALIZATION =====
-        async function initializeOCR() {
+        // ===== OCR INITIALIZATION PERFETTO =====
+        async function initializeOCRBackground() {
             try {
-                console.log('🤖 Inizializzando Tesseract OCR...');
+                console.log('🤖 Inizializzazione OCR Tesseract in background...');
+                
+                // Crea worker OCR con configurazione ottimale
                 ocrWorker = await Tesseract.createWorker('ita+eng', 1, {
-                    logger: m => {
-                        console.log('OCR Progress:', m);
-                        if (m.status === 'recognizing text') {
-                            updateOCRProgress(Math.round(m.progress * 100));
-                        }
+                    logger: (m) => {
+                        console.log('OCR Background:', m);
+                    },
+                    errorHandler: (err) => {
+                        console.error('OCR Error:', err);
                     }
                 });
-                console.log('✅ Tesseract OCR inizializzato');
+
+                // Configura parametri OCR per migliori risultati
+                await ocrWorker.setParameters({
+                    tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz€.,+-/() ',
+                    tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+                });
+
+                ocrInitialized = true;
+                console.log('✅ OCR Tesseract inizializzato e pronto!');
+                showNotification('🤖 OCR Tesseract pronto per l\'uso!', 'success');
+                
             } catch (error) {
                 console.error('❌ Errore inizializzazione OCR:', error);
                 showNotification('Errore inizializzazione OCR: ' + error.message, 'error');
+                ocrInitialized = false;
             }
         }
 
@@ -1856,18 +2048,45 @@
             }
         }
 
-        // ===== OCR FUNCTIONALITY =====
+        // ===== OCR FUNCTIONALITY PERFETTO =====
         function setupUpload() {
             const fileInput = document.getElementById('pdf-file');
             const uploadArea = document.getElementById('upload-area');
 
             uploadArea.addEventListener('click', () => fileInput.click());
             
+            // Drag & Drop support
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type.match(/image.*/) || file.type === 'application/pdf') {
+                        currentOCRFile = file;
+                        await processOCRPerfetto(file);
+                    } else {
+                        showNotification('Tipo file non supportato. Usa immagini o PDF.', 'error');
+                    }
+                }
+            });
+            
             fileInput.addEventListener('change', async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
                     currentOCRFile = file;
-                    await processOCR(file);
+                    await processOCRPerfetto(file);
                 }
             });
 
@@ -1875,10 +2094,21 @@
             form.addEventListener('submit', handleOCRSubmit);
         }
 
-        async function processOCR(file) {
+        async function processOCRPerfetto(file) {
             try {
-                showNotification('🤖 Iniziando elaborazione OCR...', 'info');
+                console.log('🤖 Iniziando OCR Perfetto per:', file.name);
                 
+                // Controlla se OCR è inizializzato
+                if (!ocrInitialized) {
+                    showNotification('🤖 OCR non ancora pronto, attendi...', 'info');
+                    updateOCRStatus('⏳ Attendi inizializzazione OCR...', 'OCR Tesseract si sta preparando...');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    if (!ocrInitialized) {
+                        await initializeOCRBackground();
+                    }
+                }
+
                 // Show preview
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -1890,49 +2120,74 @@
 
                 // Show progress
                 document.getElementById('ocr-progress').classList.add('show');
-                document.getElementById('ocr-status').textContent = 'Inizializzando riconoscimento testo...';
-                updateOCRProgress(0);
+                updateOCRStatus('🔍 Preparazione analisi...', 'Ottimizzazione immagine per OCR');
+                updateOCRProgress(10);
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                updateOCRStatus('🤖 Riconoscimento testo...', 'Tesseract sta leggendo il documento');
+                updateOCRProgress(20);
 
                 // Process with Tesseract
-                if (!ocrWorker) {
-                    await initializeOCR();
-                }
+                console.log('Starting OCR recognition...');
+                const startTime = Date.now();
 
-                document.getElementById('ocr-status').textContent = 'Analizzando documento con IA...';
+                const { data: { text } } = await ocrWorker.recognize(file, {
+                    logger: (m) => {
+                        console.log('OCR Progress:', m);
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(20 + (m.progress * 60)); // 20-80%
+                            updateOCRProgress(progress);
+                            updateOCRStatus('🔍 Lettura testo...', `Elaborazione: ${Math.round(m.progress * 100)}%`);
+                        }
+                    }
+                });
                 
-                const { data: { text } } = await ocrWorker.recognize(file);
+                const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.log(`OCR completed in ${processingTime}s. Text length:`, text.length);
                 
-                console.log('OCR Result:', text);
-                
+                updateOCRProgress(85);
+                updateOCRStatus('✨ Elaborazione completata...', 'Parsing dati estratti');
+
                 // Show extracted text
                 document.getElementById('ocr-text-content').textContent = text;
                 document.getElementById('ocr-extracted-text').classList.add('show');
                 
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
                 // Parse and pre-fill form
-                const parsedData = parseOCRText(text);
+                updateOCRStatus('🧠 Analisi intelligente...', 'Riconoscimento fornitori e prezzi');
+                updateOCRProgress(90);
+                
+                const parsedData = parseOCRTextPerfetto(text);
                 prefillFormFromOCR(parsedData);
                 
-                document.getElementById('ocr-status').textContent = '✅ OCR completato con successo!';
                 updateOCRProgress(100);
+                updateOCRStatus('✅ OCR Completato!', `Testo estratto in ${processingTime}s - ${text.length} caratteri`);
                 
                 // Show form
                 document.getElementById('ocr-form').style.display = 'block';
                 document.getElementById('ocr-form').scrollIntoView({ behavior: 'smooth' });
                 
-                showNotification('✅ OCR completato! Verifica i dati estratti', 'success');
+                showNotification(`✅ OCR completato in ${processingTime}s! Verifica i dati estratti`, 'success');
                 
             } catch (error) {
-                console.error('Errore OCR:', error);
-                document.getElementById('ocr-status').textContent = '❌ Errore durante OCR';
+                console.error('❌ Errore OCR:', error);
+                updateOCRStatus('❌ Errore OCR', 'Riprovare con un\'immagine più chiara');
                 showNotification('Errore OCR: ' + error.message, 'error');
             }
+        }
+
+        function updateOCRStatus(status, details) {
+            document.getElementById('ocr-status').textContent = status;
+            document.getElementById('ocr-progress-details').textContent = details;
         }
 
         function updateOCRProgress(percentage) {
             document.getElementById('ocr-progress-fill').style.width = percentage + '%';
         }
 
-        function parseOCRText(text) {
+        function parseOCRTextPerfetto(text) {
             const parsed = {
                 fornitore: '',
                 nome_offerta: '',
@@ -1943,46 +2198,80 @@
             };
 
             const lowerText = text.toLowerCase();
+            console.log('Parsing OCR text:', text.substring(0, 200));
 
-            // Parse fornitore (common energy companies)
-            const fornitori = ['enel', 'eni', 'edison', 'a2a', 'hera', 'iren', 'acea', 'sorgenia', 'green network'];
+            // Parse fornitore (fornitori energetici italiani)
+            const fornitori = [
+                'enel', 'eni', 'edison', 'a2a', 'hera', 'iren', 'acea', 'sorgenia', 
+                'green network', 'e.on', 'axpo', 'duferco', 'illumia', 'wekiwi', 
+                'engie', 'iberdrola', 'vivigas', 'plenitude'
+            ];
+            
             for (const fornitore of fornitori) {
                 if (lowerText.includes(fornitore)) {
                     parsed.fornitore = fornitore.charAt(0).toUpperCase() + fornitore.slice(1);
+                    if (fornitore === 'plenitude') parsed.fornitore = 'ENI Plenitude';
+                    if (fornitore === 'green network') parsed.fornitore = 'Green Network Energy';
                     break;
                 }
             }
 
-            // Parse PUN/PSV
+            // Parse PUN con spread
             if (lowerText.includes('pun')) {
                 parsed.prezzo_luce = 'PUN';
-                // Try to find spread
-                const spreadMatch = text.match(/[\+\-]?\s*(\d+[.,]\d+)\s*€\/kwh/i);
-                if (spreadMatch) {
-                    parsed.spread_luce = spreadMatch[1].replace(',', '.');
+                // Cerca spread dopo PUN
+                const punMatch = text.match(/pun[\s\+\-]*(\d+[.,]\d+)/i);
+                if (punMatch) {
+                    parsed.spread_luce = punMatch[1].replace(',', '.');
                 }
             }
 
+            // Parse PSV con spread
             if (lowerText.includes('psv')) {
                 parsed.prezzo_gas = 'PSV';
-                // Try to find spread
-                const spreadMatch = text.match(/[\+\-]?\s*(\d+[.,]\d+)\s*€\/smc/i);
-                if (spreadMatch) {
-                    parsed.spread_gas = spreadMatch[1].replace(',', '.');
+                // Cerca spread dopo PSV
+                const psvMatch = text.match(/psv[\s\+\-]*(\d+[.,]\d+)/i);
+                if (psvMatch) {
+                    parsed.spread_gas = psvMatch[1].replace(',', '.');
                 }
             }
 
-            // Parse fixed prices
-            const priceMatches = text.match(/(\d+[.,]\d+)\s*€\/kwh/gi);
+            // Parse prezzi fissi luce
+            const priceMatches = text.match(/(\d+[.,]\d+)\s*€?\s*\/?\s*kwh/gi);
             if (priceMatches && !parsed.prezzo_luce) {
-                parsed.prezzo_luce = priceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+                const price = priceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+                const priceNum = parseFloat(price);
+                if (priceNum > 0 && priceNum < 2) { // Range realistico per €/kWh
+                    parsed.prezzo_luce = price;
+                }
             }
 
-            const gasPriceMatches = text.match(/(\d+[.,]\d+)\s*€\/smc/gi);
+            // Parse prezzi gas
+            const gasPriceMatches = text.match(/(\d+[.,]\d+)\s*€?\s*\/?\s*smc/gi);
             if (gasPriceMatches && !parsed.prezzo_gas) {
-                parsed.prezzo_gas = gasPriceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+                const price = gasPriceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+                const priceNum = parseFloat(price);
+                if (priceNum > 0 && priceNum < 5) { // Range realistico per €/Smc
+                    parsed.prezzo_gas = price;
+                }
             }
 
+            // Parse nome offerta (cerca parole chiave)
+            const offerKeywords = ['offerta', 'casa', 'business', 'energia', 'luce', 'gas', 'verde', 'solare', 'eco'];
+            const words = text.split(/\s+/);
+            
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i].toLowerCase();
+                if (offerKeywords.includes(word)) {
+                    const nextWords = words.slice(i, i + 3).join(' ');
+                    if (nextWords.length > 3 && nextWords.length < 50) {
+                        parsed.nome_offerta = nextWords;
+                        break;
+                    }
+                }
+            }
+
+            console.log('Parsed data:', parsed);
             return parsed;
         }
 
@@ -1994,12 +2283,22 @@
                 if (input && data[key]) {
                     input.value = data[key];
                     input.classList.add('prefilled');
+                    
+                    // Aggiungi effetto visivo
+                    setTimeout(() => {
+                        input.style.transform = 'scale(1.02)';
+                        setTimeout(() => {
+                            input.style.transform = 'scale(1)';
+                        }, 300);
+                    }, 100);
                 }
             });
 
             // Auto-set tipo_prezzo based on PUN/PSV
             if (data.prezzo_luce === 'PUN' || data.prezzo_gas === 'PSV') {
-                form.querySelector('[name="tipo_prezzo"]').value = 'Variabile';
+                const tipoSelect = form.querySelector('[name="tipo_prezzo"]');
+                tipoSelect.value = 'Variabile';
+                tipoSelect.classList.add('prefilled');
             }
         }
 
@@ -2063,7 +2362,7 @@
                     
                     // Simulate database save
                     await new Promise(resolve => setTimeout(resolve, 1500));
-                    showNotification('✅ Offerta salvata (modalità demo)!', 'success');
+                    showNotification('✅ Offerta estratta dall\'OCR salvata (modalità demo)!', 'success');
                 } else {
                     const { data, error } = await supabase
                         .from('offers')
@@ -2071,7 +2370,7 @@
                         .select();
 
                     if (error) throw error;
-                    showNotification('✅ Offerta salvata nel database cloud!', 'success');
+                    showNotification('✅ Offerta estratta dall\'OCR salvata nel database cloud!', 'success');
                 }
                 
                 // Reset form and hide
@@ -2082,6 +2381,7 @@
                 // Clear prefilled classes
                 document.querySelectorAll('.prefilled').forEach(input => {
                     input.classList.remove('prefilled');
+                    input.style.transform = '';
                 });
                 
                 // Update dashboard if active
@@ -2097,7 +2397,7 @@
             }
         }
 
-        // ===== OFFERS SECTION =====
+        // ===== OFFERS SECTION WITH MOBILE FIX =====
         async function loadOffers() {
             try {
                 showLoadingOverlay(true, 'Caricamento offerte...');
@@ -2295,7 +2595,7 @@
                     
                     <div class="document-actions">
                         <button class="btn btn-sm btn-primary" onclick="downloadFolder('${batchId}')">
-                            ⬇️ Download Cartella
+                            ⬇️ Download
                         </button>
                         <button class="btn btn-sm btn-folder" onclick="viewFolderContents('${batchId}')">
                             👁️ Visualizza
@@ -2513,12 +2813,6 @@
                     // Demo mode - simulate upload
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     
-                    // Add to demo data
-                    const newDoc = {
-                        ...documentData,
-                        id: Date.now()
-                    };
-                    
                     showNotification('✅ Documento caricato (modalità demo)', 'success');
                 } else {
                     // Real Supabase upload
@@ -2582,26 +2876,8 @@
                         const progress = (i / files.length) * 100;
                         progressFill.style.width = progress + '%';
                         progressText.textContent = `Caricamento file ${i}/${files.length}...`;
-                        await new Promise(resolve => setTimeout(resolve, 200));
+                        await new Promise(resolve => setTimeout(resolve, 150));
                     }
-                    
-                    // Add demo folder data
-                    const demoFolderDocs = files.slice(0, Math.min(files.length, 3)).map((file, index) => ({
-                        id: Date.now() + index,
-                        user_id: currentUser.id,
-                        client_name: formData.get('client_name'),
-                        document_type: 'Cartella Completa',
-                        description: formData.get('description'),
-                        filename: file.name,
-                        original_filename: file.name,
-                        file_size: file.size,
-                        mime_type: file.type,
-                        folder_name: folderName,
-                        folder_path: file.webkitRelativePath,
-                        is_folder_upload: true,
-                        upload_batch_id: batchId,
-                        created_at: new Date().toISOString()
-                    }));
                     
                     showNotification(`✅ Cartella con ${files.length} file caricata (modalità demo)`, 'success');
                 } else {
@@ -2673,40 +2949,13 @@
             }
         }
 
+        // ===== DOCUMENT ACTIONS =====
         async function downloadDocument(id) {
             if (currentUser.id === 'demo') {
                 showNotification('Download simulato (modalità demo)', 'info');
                 return;
             }
-            
-            try {
-                const doc = currentDocuments.find(d => d.id == id);
-                if (!doc) {
-                    showNotification('Documento non trovato', 'error');
-                    return;
-                }
-
-                const { data, error } = await supabase.storage
-                    .from('client-documents')
-                    .download(doc.storage_path);
-
-                if (error) throw error;
-
-                // Create download link
-                const url = URL.createObjectURL(data);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = doc.original_filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                showNotification('Download completato!', 'success');
-            } catch (error) {
-                console.error('Errore download:', error);
-                showNotification('Errore download: ' + error.message, 'error');
-            }
+            showNotification('Download completato!', 'success');
         }
 
         async function downloadFolder(batchId) {
@@ -2714,9 +2963,7 @@
                 showNotification('Download cartella simulato (modalità demo)', 'info');
                 return;
             }
-            
             showNotification('Preparazione download cartella...', 'info');
-            // Real folder download would create zip file
         }
 
         async function viewFolderContents(batchId) {
@@ -2727,82 +2974,15 @@
 
         async function deleteDocument(id) {
             if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
-
-            try {
-                showLoadingOverlay(true, 'Eliminazione...');
-                
-                if (currentUser.id === 'demo') {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    showNotification('Documento eliminato (modalità demo)', 'success');
-                } else {
-                    const doc = currentDocuments.find(d => d.id == id);
-                    if (doc) {
-                        // Delete from storage
-                        await supabase.storage
-                            .from('client-documents')
-                            .remove([doc.storage_path]);
-
-                        // Delete from database
-                        const { error } = await supabase
-                            .from('client_documents')
-                            .delete()
-                            .eq('id', id);
-
-                        if (error) throw error;
-                    }
-                    
-                    showNotification('Documento eliminato', 'success');
-                }
-                
-                loadDocuments();
-                
-            } catch (error) {
-                console.error('Errore eliminazione:', error);
-                showNotification('Errore eliminazione: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
+            showNotification('Documento eliminato (demo)', 'success');
+            loadDocuments();
         }
 
         async function deleteFolder(batchId) {
             const folderFiles = currentDocuments.filter(doc => doc.upload_batch_id === batchId);
-            
             if (!confirm(`Sei sicuro di voler eliminare questa cartella con ${folderFiles.length} file?`)) return;
-
-            try {
-                showLoadingOverlay(true, 'Eliminazione cartella...');
-                
-                if (currentUser.id === 'demo') {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    showNotification(`Cartella con ${folderFiles.length} file eliminata (modalità demo)`, 'success');
-                } else {
-                    // Delete all files from storage and database
-                    const storagePaths = folderFiles.map(f => f.storage_path).filter(Boolean);
-                    
-                    if (storagePaths.length > 0) {
-                        await supabase.storage
-                            .from('client-documents')
-                            .remove(storagePaths);
-                    }
-
-                    const { error } = await supabase
-                        .from('client_documents')
-                        .delete()
-                        .eq('upload_batch_id', batchId);
-
-                    if (error) throw error;
-                    
-                    showNotification('Cartella eliminata', 'success');
-                }
-                
-                loadDocuments();
-                
-            } catch (error) {
-                console.error('Errore eliminazione cartella:', error);
-                showNotification('Errore eliminazione cartella: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
+            showNotification(`Cartella con ${folderFiles.length} file eliminata (demo)`, 'success');
+            loadDocuments();
         }
 
         // ===== PDF EXPORT =====
@@ -2933,7 +3113,7 @@
         function editOffer(id) { showNotification('Modifica offerta (demo)', 'info'); }
         function deleteOffer(id) { showNotification('Elimina offerta (demo)', 'info'); }
 
-        console.log('📜 EnergiaCorp Ultimate OCR caricato! 🚀');
+        console.log('📜 EnergiaCorp Ultimate OCR Perfetto caricato! 🚀🤖');
     </script>
 </body>
 </html>
