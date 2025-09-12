@@ -133,9 +133,6 @@
             border-radius: 6px;
             font-size: 0.85rem;
             text-align: center;
-        }
-
-        .supabase-status.connected {
             background: rgba(5, 150, 105, 0.1);
             border: 1px solid #059669;
             color: #059669;
@@ -385,6 +382,91 @@
             box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
         }
 
+        .btn-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        /* ===== COMMODITY IMAGES ===== */
+        .commodity-display {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .commodity-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .commodity-image:hover {
+            transform: scale(1.1);
+            border-color: #3b82f6;
+        }
+
+        .commodity-luce {
+            border-color: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+        }
+
+        .commodity-gas {
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .best-offer-commodity {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .best-offer-commodity .commodity-image {
+            width: 60px;
+            height: 60px;
+        }
+
+        .commodity-info {
+            flex: 1;
+        }
+
+        .commodity-type {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .commodity-details {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-pun { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid #0ea5e9; }
+        .badge-psv { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid #a855f7; }
+        .badge-luce { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b; }
+        .badge-gas { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid #3b82f6; }
+        .badge-fisso { background: rgba(5,150,105,0.1); color: #059669; border: 1px solid #059669; }
+        .badge-variabile { background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid #dc2626; }
+        .badge-domestico { background: rgba(5,150,105,0.1); color: #059669; }
+        .badge-micro { background: rgba(245,158,11,0.1); color: #f59e0b; }
+        .badge-pmi { background: rgba(220,38,38,0.1); color: #dc2626; }
+
         /* ===== UPLOAD AREA ===== */
         .upload-area {
             border: 2px dashed #cbd5e1;
@@ -471,87 +553,6 @@
             background: #f8fafc;
         }
 
-        /* ===== COMMODITY IMAGES ===== */
-        .commodity-display {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .commodity-image {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-            border: 2px solid #e2e8f0;
-            transition: all 0.2s;
-        }
-
-        .commodity-image:hover {
-            transform: scale(1.1);
-            border-color: #3b82f6;
-        }
-
-        .commodity-luce {
-            border-color: #f59e0b;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
-        }
-
-        .commodity-gas {
-            border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
-        }
-
-        .best-offer-commodity {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .best-offer-commodity .commodity-image {
-            width: 60px;
-            height: 60px;
-        }
-
-        .commodity-info {
-            flex: 1;
-        }
-
-        .commodity-type {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-
-        .commodity-details {
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-
-        /* ===== BADGES ===== */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-pun { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid #0ea5e9; }
-        .badge-psv { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid #a855f7; }
-        .badge-luce { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b; }
-        .badge-gas { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid #3b82f6; }
-        .badge-fisso { background: rgba(5,150,105,0.1); color: #059669; border: 1px solid #059669; }
-        .badge-variabile { background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid #dc2626; }
-        .badge-domestico { background: rgba(5,150,105,0.1); color: #059669; }
-        .badge-micro { background: rgba(245,158,11,0.1); color: #f59e0b; }
-        .badge-pmi { background: rgba(220,38,38,0.1); color: #dc2626; }
-
-        /* ===== FORM ===== */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -760,45 +761,6 @@
             flex-wrap: wrap;
         }
 
-        .btn-sm {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        /* ===== FOLDER UPLOAD MODE ===== */
-        .upload-mode-switcher {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            justify-content: center;
-        }
-
-        .mode-btn {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .mode-btn.active {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-
-        .mode-btn.folder-active {
-            border-color: #8b5cf6;
-            background: rgba(139, 92, 246, 0.1);
-            color: #8b5cf6;
-        }
-
-        /* ===== FILE LIST (FOR FOLDER UPLOADS) ===== */
         .file-list {
             max-height: 200px;
             overflow-y: auto;
@@ -844,6 +806,34 @@
             font-size: 0.8rem;
             color: #64748b;
             margin-left: 1rem;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #64748b;
+            text-align: center;
         }
 
         /* ===== NOTIFICATION ===== */
@@ -910,6 +900,34 @@
             to { transform: rotate(360deg); }
         }
 
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #64748b;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-subtitle {
+            margin-bottom: 1.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .main {
@@ -954,62 +972,6 @@
                 text-align: center;
             }
         }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: #64748b;
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #cbd5e1;
-        }
-
-        .empty-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-subtitle {
-            margin-bottom: 1.5rem;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* ===== PROGRESS BAR ===== */
-        .progress-container {
-            margin-top: 1rem;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #3b82f6, #0ea5e9);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #64748b;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -1028,7 +990,7 @@
             <h1 class="auth-title">EnergiaCorp Ultimate</h1>
             <p class="auth-subtitle">Sistema Premium con Immagini e Cartelle</p>
             
-            <div id="supabase-status" class="supabase-status connected">
+            <div id="supabase-status" class="supabase-status">
                 🟢 Connesso a Supabase Cloud Database
             </div>
             
@@ -1468,7 +1430,7 @@
         let currentOffers = [];
         let currentDocuments = [];
         
-        // ===== COMMODITY IMAGES (BASE64 EMBEDDED) =====
+        // ===== COMMODITY IMAGES =====
         const COMMODITY_IMAGES = {
             luce: 'https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/828d54fa-4279-4559-8f7b-f6f7c914a62e.png',
             gas: 'https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/06c8ff08-cd26-4d93-a58b-348983138d50.png'
@@ -1484,22 +1446,12 @@
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 EnergiaCorp Ultimate inizializzato');
             
-            // Initialize Supabase
             supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             
-            // Setup auth
             setupAuthSystem();
-            
-            // Setup navigation
             setupNavigation();
-            
-            // Setup upload
             setupUpload();
-            
-            // Setup document upload
             setupDocumentUpload();
-            
-            // Setup folder upload
             setupFolderUpload();
         });
 
@@ -1516,7 +1468,6 @@
                 
                 try {
                     if (email === 'demo@energiacorp.it' && password === 'demo123') {
-                        // Demo user
                         currentUser = {
                             id: 'demo',
                             email: email,
@@ -1658,9 +1609,7 @@
                 const categoryOffers = offers.filter(o => o.categoria === categoria);
                 if (categoryOffers.length === 0) return;
 
-                const bestOffer = categoryOffers[0]; // Semplificato per demo
-                
-                // Determina commodity
+                const bestOffer = categoryOffers[0];
                 const { commodityType, commodityImage } = determineCommodityInfo(bestOffer);
                 
                 const card = document.createElement('div');
@@ -1743,7 +1692,7 @@
                 return [
                     { id: 1, client_name: 'Mario Rossi', document_type: 'Contratto', filename: 'contratto_rossi.pdf', is_folder_upload: false },
                     { id: 2, client_name: 'Anna Bianchi', document_type: 'Bolletta', filename: 'bolletta_bianchi.pdf', is_folder_upload: false },
-                    { id: 3, client_name: 'Luca Verdi', document_type: 'Cartella Completa', folder_name: 'Documenti_Verdi', filename: 'contratto.pdf', is_folder_upload: true, upload_batch_id: 'batch_001' }
+                    { id: 3, client_name: 'Luca Verdi', document_type: 'Cartella Completa', folder_name: 'Documenti_Verdi', filename: 'contratto.pdf', is_folder_upload: true, upload_batch_id: 'batch_001', file_size: 2048576 }
                 ];
             }
             
@@ -1793,7 +1742,6 @@
             offers.forEach(offer => {
                 const tr = document.createElement('tr');
                 
-                // Determina commodity e immagine
                 const { commodityType, commodityImage } = determineCommodityInfo(offer);
                 
                 let commodityDisplay = `
@@ -1842,7 +1790,6 @@
         }
 
         function setupOffersFilters() {
-            // Setup filter listeners
             ['filter-categoria', 'filter-fornitore', 'filter-tipo-prezzo', 'search-offers'].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -1851,7 +1798,6 @@
                 }
             });
             
-            // Populate fornitore filter
             const fornitori = [...new Set(currentOffers.map(o => o.fornitore).filter(Boolean))].sort();
             const fornitoreSelect = document.getElementById('filter-fornitore');
             fornitoreSelect.innerHTML = '<option value="">Tutti i fornitori</option>' +
@@ -1916,7 +1862,6 @@
                 return;
             }
 
-            // Group by batch_id for folder uploads
             const folders = {};
             const singleFiles = [];
             
@@ -1931,7 +1876,6 @@
                 }
             });
 
-            // Render folder cards
             Object.entries(folders).forEach(([batchId, files]) => {
                 const firstFile = files[0];
                 const totalSize = files.reduce((sum, file) => sum + (file.file_size || 0), 0);
@@ -1979,7 +1923,6 @@
                 container.appendChild(card);
             });
 
-            // Render single file cards
             singleFiles.forEach(doc => {
                 const card = document.createElement('div');
                 card.className = 'document-card';
@@ -2081,7 +2024,6 @@
             });
         }
 
-        // ===== FOLDER UPLOAD =====
         function setupFolderUpload() {
             const folderArea = document.getElementById('folder-upload-area');
             const folderInput = document.getElementById('folder-file');
@@ -2115,7 +2057,6 @@
                 fileList.appendChild(fileItem);
             });
             
-            // Add summary
             const summary = document.createElement('div');
             summary.style.cssText = 'margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 6px; text-align: center; font-weight: 600; color: #3b82f6;';
             summary.innerHTML = `📁 ${files.length} file selezionati • 💾 ${formatFileSize(totalSize)} totali`;
@@ -2132,8 +2073,6 @@
         function closeUploadDocumentModal() {
             document.getElementById('upload-document-modal').classList.remove('active');
             document.body.style.overflow = '';
-            
-            // Reset form
             document.getElementById('upload-document-form').reset();
             document.getElementById('selected-file-info').style.display = 'none';
         }
@@ -2146,12 +2085,10 @@
         function closeUploadFolderModal() {
             document.getElementById('upload-folder-modal').classList.remove('active');
             document.body.style.overflow = '';
-            
-            // Reset form
             document.getElementById('upload-folder-form').reset();
             document.getElementById('folder-file-list').innerHTML = '';
             document.getElementById('folder-file-list').classList.remove('show');
-            document.getElementById('folder-progress').classList.remove('progress-container');
+            document.getElementById('folder-progress').style.display = 'none';
         }
 
         async function uploadDocument() {
@@ -2173,7 +2110,6 @@
                 showLoadingOverlay(true, 'Caricamento documento...');
                 
                 if (currentUser.id === 'demo') {
-                    // Demo mode - simulate upload
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     showNotification('Documento caricato (modalità demo)', 'success');
                     closeUploadDocumentModal();
@@ -2181,7 +2117,6 @@
                     return;
                 }
 
-                // Real upload implementation would go here
                 showNotification('Funzionalità upload in sviluppo', 'info');
                 closeUploadDocumentModal();
                 
@@ -2211,14 +2146,12 @@
             try {
                 showLoadingOverlay(true, 'Caricamento cartella...');
                 
-                // Show progress
                 const progressContainer = document.getElementById('folder-progress');
                 const progressFill = progressContainer.querySelector('.progress-fill');
                 const progressText = progressContainer.querySelector('.progress-text');
                 progressContainer.style.display = 'block';
                 
                 if (currentUser.id === 'demo') {
-                    // Demo mode - simulate folder upload with progress
                     for (let i = 0; i <= files.length; i++) {
                         const progress = (i / files.length) * 100;
                         progressFill.style.width = progress + '%';
@@ -2232,7 +2165,6 @@
                     return;
                 }
 
-                // Real folder upload implementation would go here
                 showNotification('Funzionalità upload cartelle in sviluppo', 'info');
                 closeUploadFolderModal();
                 
@@ -2244,13 +2176,11 @@
             }
         }
 
-        // ===== DOCUMENT ACTIONS =====
         async function downloadDocument(id) {
             if (currentUser.id === 'demo') {
                 showNotification('Download simulato (modalità demo)', 'info');
                 return;
             }
-            // Real implementation would download from Supabase Storage
             showNotification('Download completato!', 'success');
         }
 
@@ -2259,7 +2189,6 @@
                 showNotification('Download cartella simulato (modalità demo)', 'info');
                 return;
             }
-            // Real implementation would create zip and download
             showNotification('Download cartella completato!', 'success');
         }
 
@@ -2279,7 +2208,6 @@
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     showNotification('Documento eliminato (modalità demo)', 'success');
                 } else {
-                    // Real delete implementation
                     showNotification('Documento eliminato', 'success');
                 }
                 
@@ -2305,7 +2233,6 @@
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     showNotification(`Cartella con ${folderFiles.length} file eliminata (modalità demo)`, 'success');
                 } else {
-                    // Real folder delete implementation
                     showNotification('Cartella eliminata', 'success');
                 }
                 
@@ -2334,7 +2261,6 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
-                // Intestazione
                 doc.setFontSize(20);
                 doc.text('EnergiaCorp - Report Offerte', 20, 20);
                 
@@ -2343,7 +2269,6 @@
                 doc.text(`Consulente: ${currentUser.displayName}`, 20, 45);
                 doc.text(`Totale offerte: ${offers.length}`, 20, 55);
                 
-                // Tabella offerte
                 const tableData = offers.map(offer => {
                     const { commodityType } = determineCommodityInfo(offer);
                     return [
@@ -2374,7 +2299,6 @@
                     }
                 });
 
-                // Salva PDF
                 doc.save(`EnergiaCorp_Offerte_${new Date().toISOString().split('T')[0]}.pdf`);
                 
                 showNotification('PDF esportato con successo!', 'success');
@@ -2420,7 +2344,6 @@
                 offerData[key] = value;
             }
             
-            // Handle PUN/PSV
             offerData.indice_luce = null;
             offerData.indice_gas = null;
             
@@ -2433,7 +2356,6 @@
                 offerData.prezzo_gas = null;
             }
             
-            // Convert numbers
             ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'durata_mesi'].forEach(field => {
                 if (offerData[field]) {
                     const num = parseFloat(offerData[field]);
@@ -2443,7 +2365,6 @@
                 }
             });
 
-            // Validation for PUN/PSV
             if (offerData.indice_luce === 'PUN' && (!offerData.spread_luce || offerData.spread_luce <= 0)) {
                 showNotification('Devi inserire lo spread luce quando usi PUN', 'error');
                 return;
@@ -2464,7 +2385,6 @@
                 offerData.user_id = currentUser.id;
                 
                 if (currentUser.id === 'demo') {
-                    // Demo mode
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     showNotification('Offerta salvata (modalità demo)!', 'success');
                 } else {
@@ -2480,7 +2400,6 @@
                 e.target.reset();
                 e.target.style.display = 'none';
                 
-                // Aggiorna dashboard se attiva
                 if (document.getElementById('section-dashboard').classList.contains('active')) {
                     loadDashboard();
                 }
@@ -2529,7 +2448,6 @@
         }
 
         function showNotification(message, type = 'info') {
-            // Remove existing notifications
             document.querySelectorAll('.notification').forEach(n => n.remove());
             
             const notification = document.createElement('div');
@@ -2554,7 +2472,6 @@
             }
         }
 
-        // Placeholder functions for demo
         function editOffer(id) { showNotification('Modifica offerta (demo)', 'info'); }
         function deleteOffer(id) { showNotification('Elimina offerta (demo)', 'info'); }
 
