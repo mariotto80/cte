@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Cloud Ultimate - Sistema Completo</title>
+    <title>EnergiaCorp Cloud Ultimate - Sistema Completo OCR</title>
     
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.0/dist/umd/supabase.min.js"></script>
     <!-- jsPDF per esportazione PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Tesseract.js per OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
     
     <style>
         * {
@@ -509,6 +511,60 @@
             margin-bottom: 1rem;
         }
 
+        /* ===== OCR SPECIFIC ===== */
+        .ocr-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .ocr-progress {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .ocr-progress.show {
+            display: block;
+        }
+
+        .ocr-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .ocr-progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .ocr-extracted-text {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .ocr-extracted-text.show {
+            display: block;
+        }
+
         /* ===== TABLE ===== */
         .table-container {
             background: white;
@@ -987,8 +1043,8 @@
     <div id="auth-container" class="auth-container">
         <div class="auth-card">
             <div class="auth-logo">⚡</div>
-            <h1 class="auth-title">EnergiaCorp Ultimate</h1>
-            <p class="auth-subtitle">Sistema Premium con Immagini e Cartelle</p>
+            <h1 class="auth-title">EnergiaCorp Ultimate OCR</h1>
+            <p class="auth-subtitle">Sistema Premium con OCR Reale e Upload Cartelle Funzionante</p>
             
             <div id="supabase-status" class="supabase-status">
                 🟢 Connesso a Supabase Cloud Database
@@ -1020,7 +1076,7 @@
             <div class="header-container">
                 <div class="logo">
                     <div class="logo-icon">⚡</div>
-                    <span>EnergiaCorp Ultimate</span>
+                    <span>EnergiaCorp Ultimate OCR</span>
                 </div>
                 
                 <nav class="nav">
@@ -1028,7 +1084,7 @@
                         <span>📊</span> Dashboard
                     </button>
                     <button class="nav-btn" data-section="upload">
-                        <span>📄</span> Upload OCR
+                        <span>🤖</span> OCR AI
                     </button>
                     <button class="nav-btn" data-section="offers">
                         <span>📋</span> Offerte
@@ -1055,8 +1111,8 @@
             <!-- DASHBOARD -->
             <section id="section-dashboard" class="section active">
                 <div class="section-header">
-                    <h1 class="section-title">📊 Dashboard Ultimate</h1>
-                    <p class="section-subtitle">Sistema completo con immagini commodity e gestione cartelle</p>
+                    <h1 class="section-title">📊 Dashboard Ultimate OCR</h1>
+                    <p class="section-subtitle">Sistema completo con OCR reale e upload cartelle funzionante</p>
                 </div>
 
                 <div class="section-actions">
@@ -1104,24 +1160,50 @@
             <!-- UPLOAD OCR -->
             <section id="section-upload" class="section">
                 <div class="section-header">
-                    <h1 class="section-title">📄 Upload OCR Premium</h1>
-                    <p class="section-subtitle">Estrazione automatica dati con supporto PUN/PSV</p>
+                    <h1 class="section-title">🤖 OCR AI Tesseract</h1>
+                    <p class="section-subtitle">Estrazione automatica testo con AI reale + parsing PUN/PSV</p>
                 </div>
                 
-                <div style="max-width: 600px; margin: 0 auto;">
+                <div style="max-width: 800px; margin: 0 auto;">
                     <div id="upload-area" class="upload-area">
-                        <div class="upload-icon">📄</div>
-                        <h3 class="upload-title">Trascina qui il file PDF/Immagine</h3>
-                        <p class="upload-subtitle">oppure clicca per selezionare</p>
+                        <div class="upload-icon">🤖</div>
+                        <h3 class="upload-title">Trascina qui il file PDF/Immagine per OCR</h3>
+                        <p class="upload-subtitle">OCR Tesseract.js analizza il testo automaticamente</p>
                         <div style="font-size: 0.9rem; color: #64748b;">
-                            <strong>Supporta:</strong> PDF, JPG, PNG • Max 10MB<br>
-                            <strong>OCR AI:</strong> Google Vision + estrazione automatica PUN/PSV
+                            <strong>Supporta:</strong> PDF, JPG, PNG, WebP • Max 10MB<br>
+                            <strong>OCR AI:</strong> Tesseract.js + parsing automatico PUN/PSV
                         </div>
                         <input id="pdf-file" type="file" accept="application/pdf,image/*" style="display: none;">
                     </div>
 
+                    <!-- OCR PREVIEW E PROGRESS -->
+                    <div id="ocr-preview-container" style="display: none; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">📸 Anteprima Documento</h3>
+                        <img id="ocr-preview" class="ocr-preview" alt="Preview documento">
+                        
+                        <!-- PROGRESS OCR -->
+                        <div id="ocr-progress" class="ocr-progress">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                <span>🤖</span>
+                                <span id="ocr-status">Inizializzando OCR...</span>
+                            </div>
+                            <div class="ocr-progress-bar">
+                                <div id="ocr-progress-fill" class="ocr-progress-fill"></div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">
+                                Tesseract.js sta analizzando il documento...
+                            </div>
+                        </div>
+
+                        <!-- TESTO ESTRATTO -->
+                        <div id="ocr-extracted-text" class="ocr-extracted-text">
+                            <h4 style="margin-bottom: 0.5rem;">📄 Testo Estratto dall'OCR:</h4>
+                            <div id="ocr-text-content"></div>
+                        </div>
+                    </div>
+
                     <form id="ocr-form" style="display: none; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem;">
-                        <h3 style="text-align: center; margin-bottom: 2rem;">🤖 Dati Estratti con OCR</h3>
+                        <h3 style="text-align: center; margin-bottom: 2rem;">✨ Dati Estratti e Validati dall'OCR AI</h3>
                         
                         <div class="form-grid">
                             <div class="form-group">
@@ -1196,7 +1278,7 @@
                         
                         <div style="text-align: center;">
                             <button type="submit" class="btn btn-primary">
-                                💾 Salva su Database Cloud
+                                💾 Salva Offerta nel Database
                             </button>
                         </div>
                     </form>
@@ -1429,6 +1511,8 @@
         let supabase = null;
         let currentOffers = [];
         let currentDocuments = [];
+        let ocrWorker = null;
+        let currentOCRFile = null;
         
         // ===== COMMODITY IMAGES =====
         const COMMODITY_IMAGES = {
@@ -1444,7 +1528,7 @@
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 EnergiaCorp Ultimate inizializzato');
+            console.log('🚀 EnergiaCorp Ultimate OCR inizializzato');
             
             supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             
@@ -1453,7 +1537,27 @@
             setupUpload();
             setupDocumentUpload();
             setupFolderUpload();
+            initializeOCR();
         });
+
+        // ===== OCR INITIALIZATION =====
+        async function initializeOCR() {
+            try {
+                console.log('🤖 Inizializzando Tesseract OCR...');
+                ocrWorker = await Tesseract.createWorker('ita+eng', 1, {
+                    logger: m => {
+                        console.log('OCR Progress:', m);
+                        if (m.status === 'recognizing text') {
+                            updateOCRProgress(Math.round(m.progress * 100));
+                        }
+                    }
+                });
+                console.log('✅ Tesseract OCR inizializzato');
+            } catch (error) {
+                console.error('❌ Errore inizializzazione OCR:', error);
+                showNotification('Errore inizializzazione OCR: ' + error.message, 'error');
+            }
+        }
 
         // ===== AUTH SYSTEM =====
         function setupAuthSystem() {
@@ -1666,9 +1770,9 @@
         async function loadOffersData() {
             if (currentUser.id === 'demo') {
                 return [
-                    { id: 1, fornitore: 'ENEL Energia', nome_offerta: 'Casa Verde', categoria: 'Domestico', tipo_prezzo: 'Fisso', prezzo_luce: 0.22 },
-                    { id: 2, fornitore: 'ENI Plenitude', nome_offerta: 'Business PUN', categoria: 'Micro', tipo_prezzo: 'Variabile', indice_luce: 'PUN', spread_luce: 0.015 },
-                    { id: 3, fornitore: 'Edison Energia', nome_offerta: 'Gas PSV Plus', categoria: 'PMI', tipo_prezzo: 'Variabile', indice_gas: 'PSV', spread_gas: 0.025 }
+                    { id: 1, fornitore: 'ENEL Energia', nome_offerta: 'Casa Verde', categoria: 'Domestico', tipo_prezzo: 'Fisso', prezzo_luce: 0.22, created_at: '2025-09-10' },
+                    { id: 2, fornitore: 'ENI Plenitude', nome_offerta: 'Business PUN', categoria: 'Micro', tipo_prezzo: 'Variabile', indice_luce: 'PUN', spread_luce: 0.015, created_at: '2025-09-11' },
+                    { id: 3, fornitore: 'Edison Energia', nome_offerta: 'Gas PSV Plus', categoria: 'PMI', tipo_prezzo: 'Variabile', indice_gas: 'PSV', spread_gas: 0.025, created_at: '2025-09-12' }
                 ];
             }
             
@@ -1690,9 +1794,50 @@
         async function loadDocumentsData() {
             if (currentUser.id === 'demo') {
                 return [
-                    { id: 1, client_name: 'Mario Rossi', document_type: 'Contratto', filename: 'contratto_rossi.pdf', is_folder_upload: false },
-                    { id: 2, client_name: 'Anna Bianchi', document_type: 'Bolletta', filename: 'bolletta_bianchi.pdf', is_folder_upload: false },
-                    { id: 3, client_name: 'Luca Verdi', document_type: 'Cartella Completa', folder_name: 'Documenti_Verdi', filename: 'contratto.pdf', is_folder_upload: true, upload_batch_id: 'batch_001', file_size: 2048576 }
+                    { 
+                        id: 1, 
+                        client_name: 'Mario Rossi', 
+                        document_type: 'Contratto', 
+                        filename: 'contratto_rossi.pdf',
+                        original_filename: 'contratto_rossi.pdf',
+                        is_folder_upload: false,
+                        created_at: '2025-09-10',
+                        file_size: 1024576
+                    },
+                    { 
+                        id: 2, 
+                        client_name: 'Anna Bianchi', 
+                        document_type: 'Bolletta', 
+                        filename: 'bolletta_bianchi.pdf',
+                        original_filename: 'bolletta_bianchi.pdf', 
+                        is_folder_upload: false,
+                        created_at: '2025-09-11',
+                        file_size: 512000
+                    },
+                    { 
+                        id: 3, 
+                        client_name: 'Luca Verdi', 
+                        document_type: 'Cartella Completa', 
+                        folder_name: 'Documenti_Verdi', 
+                        filename: 'contratto.pdf',
+                        original_filename: 'contratto.pdf',
+                        is_folder_upload: true, 
+                        upload_batch_id: 'batch_001',
+                        created_at: '2025-09-12',
+                        file_size: 2048576
+                    },
+                    { 
+                        id: 4, 
+                        client_name: 'Luca Verdi', 
+                        document_type: 'Cartella Completa', 
+                        folder_name: 'Documenti_Verdi', 
+                        filename: 'bolletta.pdf',
+                        original_filename: 'bolletta.pdf',
+                        is_folder_upload: true, 
+                        upload_batch_id: 'batch_001',
+                        created_at: '2025-09-12',
+                        file_size: 1500000
+                    }
                 ];
             }
             
@@ -1708,6 +1853,247 @@
             } catch (error) {
                 console.error('Errore caricamento documenti:', error);
                 return [];
+            }
+        }
+
+        // ===== OCR FUNCTIONALITY =====
+        function setupUpload() {
+            const fileInput = document.getElementById('pdf-file');
+            const uploadArea = document.getElementById('upload-area');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                    currentOCRFile = file;
+                    await processOCR(file);
+                }
+            });
+
+            const form = document.getElementById('ocr-form');
+            form.addEventListener('submit', handleOCRSubmit);
+        }
+
+        async function processOCR(file) {
+            try {
+                showNotification('🤖 Iniziando elaborazione OCR...', 'info');
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('ocr-preview');
+                    preview.src = e.target.result;
+                    document.getElementById('ocr-preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+
+                // Show progress
+                document.getElementById('ocr-progress').classList.add('show');
+                document.getElementById('ocr-status').textContent = 'Inizializzando riconoscimento testo...';
+                updateOCRProgress(0);
+
+                // Process with Tesseract
+                if (!ocrWorker) {
+                    await initializeOCR();
+                }
+
+                document.getElementById('ocr-status').textContent = 'Analizzando documento con IA...';
+                
+                const { data: { text } } = await ocrWorker.recognize(file);
+                
+                console.log('OCR Result:', text);
+                
+                // Show extracted text
+                document.getElementById('ocr-text-content').textContent = text;
+                document.getElementById('ocr-extracted-text').classList.add('show');
+                
+                // Parse and pre-fill form
+                const parsedData = parseOCRText(text);
+                prefillFormFromOCR(parsedData);
+                
+                document.getElementById('ocr-status').textContent = '✅ OCR completato con successo!';
+                updateOCRProgress(100);
+                
+                // Show form
+                document.getElementById('ocr-form').style.display = 'block';
+                document.getElementById('ocr-form').scrollIntoView({ behavior: 'smooth' });
+                
+                showNotification('✅ OCR completato! Verifica i dati estratti', 'success');
+                
+            } catch (error) {
+                console.error('Errore OCR:', error);
+                document.getElementById('ocr-status').textContent = '❌ Errore durante OCR';
+                showNotification('Errore OCR: ' + error.message, 'error');
+            }
+        }
+
+        function updateOCRProgress(percentage) {
+            document.getElementById('ocr-progress-fill').style.width = percentage + '%';
+        }
+
+        function parseOCRText(text) {
+            const parsed = {
+                fornitore: '',
+                nome_offerta: '',
+                prezzo_luce: '',
+                prezzo_gas: '',
+                spread_luce: '',
+                spread_gas: ''
+            };
+
+            const lowerText = text.toLowerCase();
+
+            // Parse fornitore (common energy companies)
+            const fornitori = ['enel', 'eni', 'edison', 'a2a', 'hera', 'iren', 'acea', 'sorgenia', 'green network'];
+            for (const fornitore of fornitori) {
+                if (lowerText.includes(fornitore)) {
+                    parsed.fornitore = fornitore.charAt(0).toUpperCase() + fornitore.slice(1);
+                    break;
+                }
+            }
+
+            // Parse PUN/PSV
+            if (lowerText.includes('pun')) {
+                parsed.prezzo_luce = 'PUN';
+                // Try to find spread
+                const spreadMatch = text.match(/[\+\-]?\s*(\d+[.,]\d+)\s*€\/kwh/i);
+                if (spreadMatch) {
+                    parsed.spread_luce = spreadMatch[1].replace(',', '.');
+                }
+            }
+
+            if (lowerText.includes('psv')) {
+                parsed.prezzo_gas = 'PSV';
+                // Try to find spread
+                const spreadMatch = text.match(/[\+\-]?\s*(\d+[.,]\d+)\s*€\/smc/i);
+                if (spreadMatch) {
+                    parsed.spread_gas = spreadMatch[1].replace(',', '.');
+                }
+            }
+
+            // Parse fixed prices
+            const priceMatches = text.match(/(\d+[.,]\d+)\s*€\/kwh/gi);
+            if (priceMatches && !parsed.prezzo_luce) {
+                parsed.prezzo_luce = priceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+            }
+
+            const gasPriceMatches = text.match(/(\d+[.,]\d+)\s*€\/smc/gi);
+            if (gasPriceMatches && !parsed.prezzo_gas) {
+                parsed.prezzo_gas = gasPriceMatches[0].match(/\d+[.,]\d+/)[0].replace(',', '.');
+            }
+
+            return parsed;
+        }
+
+        function prefillFormFromOCR(data) {
+            const form = document.getElementById('ocr-form');
+            
+            Object.keys(data).forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if (input && data[key]) {
+                    input.value = data[key];
+                    input.classList.add('prefilled');
+                }
+            });
+
+            // Auto-set tipo_prezzo based on PUN/PSV
+            if (data.prezzo_luce === 'PUN' || data.prezzo_gas === 'PSV') {
+                form.querySelector('[name="tipo_prezzo"]').value = 'Variabile';
+            }
+        }
+
+        async function handleOCRSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const offerData = {};
+            
+            for (const [key, value] of formData.entries()) {
+                offerData[key] = value;
+            }
+            
+            offerData.indice_luce = null;
+            offerData.indice_gas = null;
+            
+            if (isPun(offerData.prezzo_luce)) {
+                offerData.indice_luce = 'PUN';
+                offerData.prezzo_luce = null;
+            }
+            if (isPsv(offerData.prezzo_gas)) {
+                offerData.indice_gas = 'PSV';
+                offerData.prezzo_gas = null;
+            }
+            
+            ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'durata_mesi'].forEach(field => {
+                if (offerData[field]) {
+                    const num = parseFloat(offerData[field]);
+                    offerData[field] = isNaN(num) ? null : num;
+                } else {
+                    offerData[field] = null;
+                }
+            });
+
+            if (offerData.indice_luce === 'PUN' && (!offerData.spread_luce || offerData.spread_luce <= 0)) {
+                showNotification('Devi inserire lo spread luce quando usi PUN', 'error');
+                return;
+            }
+            if (offerData.indice_gas === 'PSV' && (!offerData.spread_gas || offerData.spread_gas <= 0)) {
+                showNotification('Devi inserire lo spread gas quando usi PSV', 'error');
+                return;
+            }
+
+            if (!offerData.fornitore || !offerData.nome_offerta) {
+                showNotification('Campi obbligatori mancanti', 'error');
+                return;
+            }
+
+            try {
+                showLoadingOverlay(true, 'Salvataggio offerta...');
+                
+                offerData.user_id = currentUser.id;
+                offerData.created_at = new Date().toISOString();
+                
+                if (currentUser.id === 'demo') {
+                    // Add to demo data
+                    const newOffer = {
+                        ...offerData,
+                        id: Date.now()
+                    };
+                    
+                    // Simulate database save
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    showNotification('✅ Offerta salvata (modalità demo)!', 'success');
+                } else {
+                    const { data, error } = await supabase
+                        .from('offers')
+                        .insert([offerData])
+                        .select();
+
+                    if (error) throw error;
+                    showNotification('✅ Offerta salvata nel database cloud!', 'success');
+                }
+                
+                // Reset form and hide
+                e.target.reset();
+                e.target.style.display = 'none';
+                document.getElementById('ocr-preview-container').style.display = 'none';
+                
+                // Clear prefilled classes
+                document.querySelectorAll('.prefilled').forEach(input => {
+                    input.classList.remove('prefilled');
+                });
+                
+                // Update dashboard if active
+                if (document.getElementById('section-dashboard').classList.contains('active')) {
+                    loadDashboard();
+                }
+                
+            } catch (error) {
+                console.error('Errore salvataggio:', error);
+                showNotification('Errore salvataggio: ' + error.message, 'error');
+            } finally {
+                showLoadingOverlay(false);
             }
         }
 
@@ -2109,16 +2495,52 @@
             try {
                 showLoadingOverlay(true, 'Caricamento documento...');
                 
+                const documentData = {
+                    user_id: currentUser.id,
+                    client_name: formData.get('client_name'),
+                    document_type: formData.get('document_type'),
+                    description: formData.get('description'),
+                    filename: file.name,
+                    original_filename: file.name,
+                    file_size: file.size,
+                    mime_type: file.type,
+                    is_folder_upload: false,
+                    storage_path: `documents/${currentUser.id}/${Date.now()}_${file.name}`,
+                    created_at: new Date().toISOString()
+                };
+                
                 if (currentUser.id === 'demo') {
+                    // Demo mode - simulate upload
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                    showNotification('Documento caricato (modalità demo)', 'success');
-                    closeUploadDocumentModal();
-                    loadDocuments();
-                    return;
+                    
+                    // Add to demo data
+                    const newDoc = {
+                        ...documentData,
+                        id: Date.now()
+                    };
+                    
+                    showNotification('✅ Documento caricato (modalità demo)', 'success');
+                } else {
+                    // Real Supabase upload
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('client-documents')
+                        .upload(documentData.storage_path, file);
+
+                    if (uploadError) throw uploadError;
+
+                    // Save metadata to database
+                    const { data, error } = await supabase
+                        .from('client_documents')
+                        .insert([documentData])
+                        .select();
+
+                    if (error) throw error;
+                    
+                    showNotification('✅ Documento caricato nel cloud!', 'success');
                 }
 
-                showNotification('Funzionalità upload in sviluppo', 'info');
                 closeUploadDocumentModal();
+                loadDocuments();
                 
             } catch (error) {
                 console.error('Errore upload documento:', error);
@@ -2151,7 +2573,11 @@
                 const progressText = progressContainer.querySelector('.progress-text');
                 progressContainer.style.display = 'block';
                 
+                const batchId = `batch_${Date.now()}`;
+                const folderName = files[0].webkitRelativePath.split('/')[0];
+                
                 if (currentUser.id === 'demo') {
+                    // Demo mode - simulate folder upload with progress
                     for (let i = 0; i <= files.length; i++) {
                         const progress = (i / files.length) * 100;
                         progressFill.style.width = progress + '%';
@@ -2159,14 +2585,85 @@
                         await new Promise(resolve => setTimeout(resolve, 200));
                     }
                     
-                    showNotification(`Cartella con ${files.length} file caricata (modalità demo)`, 'success');
-                    closeUploadFolderModal();
-                    loadDocuments();
-                    return;
+                    // Add demo folder data
+                    const demoFolderDocs = files.slice(0, Math.min(files.length, 3)).map((file, index) => ({
+                        id: Date.now() + index,
+                        user_id: currentUser.id,
+                        client_name: formData.get('client_name'),
+                        document_type: 'Cartella Completa',
+                        description: formData.get('description'),
+                        filename: file.name,
+                        original_filename: file.name,
+                        file_size: file.size,
+                        mime_type: file.type,
+                        folder_name: folderName,
+                        folder_path: file.webkitRelativePath,
+                        is_folder_upload: true,
+                        upload_batch_id: batchId,
+                        created_at: new Date().toISOString()
+                    }));
+                    
+                    showNotification(`✅ Cartella con ${files.length} file caricata (modalità demo)`, 'success');
+                } else {
+                    // Real folder upload
+                    let uploadedCount = 0;
+                    const documentInserts = [];
+                    
+                    for (const file of files) {
+                        try {
+                            const storagePath = `documents/${currentUser.id}/${batchId}/${file.webkitRelativePath}`;
+                            
+                            const { data: uploadData, error: uploadError } = await supabase.storage
+                                .from('client-documents')
+                                .upload(storagePath, file);
+
+                            if (uploadError) {
+                                console.error('Error uploading file:', file.name, uploadError);
+                                continue;
+                            }
+
+                            documentInserts.push({
+                                user_id: currentUser.id,
+                                client_name: formData.get('client_name'),
+                                document_type: 'Cartella Completa',
+                                description: formData.get('description'),
+                                filename: file.name,
+                                original_filename: file.name,
+                                file_size: file.size,
+                                mime_type: file.type,
+                                folder_name: folderName,
+                                folder_path: file.webkitRelativePath,
+                                is_folder_upload: true,
+                                upload_batch_id: batchId,
+                                storage_path: storagePath,
+                                created_at: new Date().toISOString()
+                            });
+
+                            uploadedCount++;
+                            const progress = (uploadedCount / files.length) * 100;
+                            progressFill.style.width = progress + '%';
+                            progressText.textContent = `Caricamento file ${uploadedCount}/${files.length}...`;
+
+                        } catch (error) {
+                            console.error('Error processing file:', file.name, error);
+                        }
+                    }
+
+                    // Insert all document records
+                    if (documentInserts.length > 0) {
+                        const { data, error } = await supabase
+                            .from('client_documents')
+                            .insert(documentInserts)
+                            .select();
+
+                        if (error) throw error;
+                    }
+                    
+                    showNotification(`✅ Cartella caricata: ${uploadedCount}/${files.length} file`, 'success');
                 }
 
-                showNotification('Funzionalità upload cartelle in sviluppo', 'info');
                 closeUploadFolderModal();
+                loadDocuments();
                 
             } catch (error) {
                 console.error('Errore upload cartella:', error);
@@ -2181,7 +2678,35 @@
                 showNotification('Download simulato (modalità demo)', 'info');
                 return;
             }
-            showNotification('Download completato!', 'success');
+            
+            try {
+                const doc = currentDocuments.find(d => d.id == id);
+                if (!doc) {
+                    showNotification('Documento non trovato', 'error');
+                    return;
+                }
+
+                const { data, error } = await supabase.storage
+                    .from('client-documents')
+                    .download(doc.storage_path);
+
+                if (error) throw error;
+
+                // Create download link
+                const url = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = doc.original_filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showNotification('Download completato!', 'success');
+            } catch (error) {
+                console.error('Errore download:', error);
+                showNotification('Errore download: ' + error.message, 'error');
+            }
         }
 
         async function downloadFolder(batchId) {
@@ -2189,7 +2714,9 @@
                 showNotification('Download cartella simulato (modalità demo)', 'info');
                 return;
             }
-            showNotification('Download cartella completato!', 'success');
+            
+            showNotification('Preparazione download cartella...', 'info');
+            // Real folder download would create zip file
         }
 
         async function viewFolderContents(batchId) {
@@ -2208,6 +2735,22 @@
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     showNotification('Documento eliminato (modalità demo)', 'success');
                 } else {
+                    const doc = currentDocuments.find(d => d.id == id);
+                    if (doc) {
+                        // Delete from storage
+                        await supabase.storage
+                            .from('client-documents')
+                            .remove([doc.storage_path]);
+
+                        // Delete from database
+                        const { error } = await supabase
+                            .from('client_documents')
+                            .delete()
+                            .eq('id', id);
+
+                        if (error) throw error;
+                    }
+                    
                     showNotification('Documento eliminato', 'success');
                 }
                 
@@ -2233,6 +2776,22 @@
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     showNotification(`Cartella con ${folderFiles.length} file eliminata (modalità demo)`, 'success');
                 } else {
+                    // Delete all files from storage and database
+                    const storagePaths = folderFiles.map(f => f.storage_path).filter(Boolean);
+                    
+                    if (storagePaths.length > 0) {
+                        await supabase.storage
+                            .from('client-documents')
+                            .remove(storagePaths);
+                    }
+
+                    const { error } = await supabase
+                        .from('client_documents')
+                        .delete()
+                        .eq('upload_batch_id', batchId);
+
+                    if (error) throw error;
+                    
                     showNotification('Cartella eliminata', 'success');
                 }
                 
@@ -2311,107 +2870,6 @@
             }
         }
 
-        // ===== UPLOAD OCR =====
-        function setupUpload() {
-            const fileInput = document.getElementById('pdf-file');
-            const uploadArea = document.getElementById('upload-area');
-
-            uploadArea.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    showOCRForm();
-                }
-            });
-
-            const form = document.getElementById('ocr-form');
-            form.addEventListener('submit', handleOCRSubmit);
-        }
-
-        function showOCRForm() {
-            document.getElementById('ocr-form').style.display = 'block';
-            document.getElementById('ocr-form').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function handleOCRSubmit(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const offerData = {};
-            
-            for (const [key, value] of formData.entries()) {
-                offerData[key] = value;
-            }
-            
-            offerData.indice_luce = null;
-            offerData.indice_gas = null;
-            
-            if (isPun(offerData.prezzo_luce)) {
-                offerData.indice_luce = 'PUN';
-                offerData.prezzo_luce = null;
-            }
-            if (isPsv(offerData.prezzo_gas)) {
-                offerData.indice_gas = 'PSV';
-                offerData.prezzo_gas = null;
-            }
-            
-            ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'durata_mesi'].forEach(field => {
-                if (offerData[field]) {
-                    const num = parseFloat(offerData[field]);
-                    offerData[field] = isNaN(num) ? null : num;
-                } else {
-                    offerData[field] = null;
-                }
-            });
-
-            if (offerData.indice_luce === 'PUN' && (!offerData.spread_luce || offerData.spread_luce <= 0)) {
-                showNotification('Devi inserire lo spread luce quando usi PUN', 'error');
-                return;
-            }
-            if (offerData.indice_gas === 'PSV' && (!offerData.spread_gas || offerData.spread_gas <= 0)) {
-                showNotification('Devi inserire lo spread gas quando usi PSV', 'error');
-                return;
-            }
-
-            if (!offerData.fornitore || !offerData.nome_offerta) {
-                showNotification('Campi obbligatori mancanti', 'error');
-                return;
-            }
-
-            try {
-                showLoadingOverlay(true, 'Salvataggio offerta...');
-                
-                offerData.user_id = currentUser.id;
-                
-                if (currentUser.id === 'demo') {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    showNotification('Offerta salvata (modalità demo)!', 'success');
-                } else {
-                    const { data, error } = await supabase
-                        .from('offers')
-                        .insert([offerData])
-                        .select();
-
-                    if (error) throw error;
-                    showNotification('Offerta salvata nel database cloud!', 'success');
-                }
-                
-                e.target.reset();
-                e.target.style.display = 'none';
-                
-                if (document.getElementById('section-dashboard').classList.contains('active')) {
-                    loadDashboard();
-                }
-                
-            } catch (error) {
-                console.error('Errore salvataggio:', error);
-                showNotification('Errore salvataggio: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
         // ===== UTILITY FUNCTIONS =====
         function isPun(value) {
             return typeof value === 'string' && value.trim().toUpperCase() === 'PUN';
@@ -2475,7 +2933,7 @@
         function editOffer(id) { showNotification('Modifica offerta (demo)', 'info'); }
         function deleteOffer(id) { showNotification('Elimina offerta (demo)', 'info'); }
 
-        console.log('📜 EnergiaCorp Ultimate caricato! 🚀');
+        console.log('📜 EnergiaCorp Ultimate OCR caricato! 🚀');
     </script>
 </body>
 </html>
