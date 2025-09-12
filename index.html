@@ -1,2043 +1,484 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EnergiaCorp Cloud Premium - Gestione Completa</title>
-    
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.0/dist/umd/supabase.min.js"></script>
-    <!-- jsPDF per esportazione PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8fafc;
-            color: #1e293b;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        /* ===== AUTH SCREEN ===== */
-        .auth-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1rem;
-        }
-
-        .auth-card {
-            background: white;
-            border-radius: 16px;
-            padding: 3rem 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
-
-        .auth-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-        }
-
-        .auth-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .auth-subtitle {
-            color: #64748b;
-            margin-bottom: 2rem;
-            font-size: 1rem;
-        }
-
-        .auth-form {
-            text-align: left;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
-            color: #1e293b;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .btn-auth {
-            width: 100%;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            padding: 0.875rem 1rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn-auth:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .supabase-status {
-            margin-top: 1rem;
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        .supabase-status.connected {
-            background: rgba(5, 150, 105, 0.1);
-            border: 1px solid #059669;
-            color: #059669;
-        }
-
-        /* ===== MAIN APP ===== */
-        .app-container {
-            display: none;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            color: white;
-            padding: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .nav {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .nav-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .nav-btn:hover,
-        .nav-btn.active {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-1px);
-        }
-
-        .user-info {
-            color: rgba(255,255,255,0.9);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-logout {
-            background: rgba(239,68,68,0.2);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        /* ===== MAIN CONTENT ===== */
-        .main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-            min-height: calc(100vh - 80px);
-        }
-
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .section-subtitle {
-            color: #64748b;
-            font-size: 1.1rem;
-        }
-
-        .section-actions {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        /* ===== CARDS ===== */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 1rem;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .stat-card:nth-child(1) .stat-icon { background: #3b82f6; }
-        .stat-card:nth-child(2) .stat-icon { background: #059669; }
-        .stat-card:nth-child(3) .stat-icon { background: #f59e0b; }
-        .stat-card:nth-child(4) .stat-icon { background: #dc2626; }
-        .stat-card:nth-child(5) .stat-icon { background: #8b5cf6; }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #64748b;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            border: none;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-success {
-            background: #059669;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        /* ===== UPLOAD AREA ===== */
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            text-align: center;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 2rem;
-        }
-
-        .upload-area:hover,
-        .upload-area.dragover {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.05);
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 4rem;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-        }
-
-        .upload-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-subtitle {
-            color: #64748b;
-            margin-bottom: 1rem;
-        }
-
-        /* ===== TABLE ===== */
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-        }
-
-        .filters {
-            padding: 1.5rem;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .table th {
-            background: linear-gradient(135deg, #3b82f6, #0ea5e9);
-            color: white;
-            padding: 1rem 0.75rem;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table td {
-            padding: 1rem 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
-
-        .table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-pun { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid #0ea5e9; }
-        .badge-psv { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid #a855f7; }
-        .badge-luce { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b; }
-        .badge-gas { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid #3b82f6; }
-        .badge-fisso { background: rgba(5,150,105,0.1); color: #059669; border: 1px solid #059669; }
-        .badge-variabile { background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid #dc2626; }
-        .badge-domestico { background: rgba(5,150,105,0.1); color: #059669; }
-        .badge-micro { background: rgba(245,158,11,0.1); color: #f59e0b; }
-        .badge-pmi { background: rgba(220,38,38,0.1); color: #dc2626; }
-
-        /* ===== FORM ===== */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            background: white;
-            color: #1e293b;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-
-        .form-input:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-input.prefilled {
-            background: rgba(59, 130, 246, 0.05);
-            border-color: #3b82f6;
-        }
-
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 1rem;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 0.5rem;
-            border-radius: 50%;
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-actions {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            background: #f8fafc;
-        }
-
-        /* ===== DOCUMENT GRID ===== */
-        .documents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .document-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .document-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .document-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .document-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .doc-pdf { background: #dc2626; }
-        .doc-image { background: #059669; }
-        .doc-doc { background: #3b82f6; }
-        .doc-default { background: #6b7280; }
-
-        .document-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .document-name {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-            word-break: break-word;
-        }
-
-        .document-client {
-            color: #3b82f6;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-        }
-
-        .document-type {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-bottom: 0.5rem;
-        }
-
-        .document-meta {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-bottom: 1rem;
-        }
-
-        .document-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-sm {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        /* ===== NOTIFICATION ===== */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-width: 350px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.success { background: #059669; }
-        .notification.error { background: #dc2626; }
-        .notification.info { background: #3b82f6; }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* ===== LOADING ===== */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1500;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-content {
-            text-align: center;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: currentColor;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .main {
-                padding: 1rem 0.5rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            
-            .filters {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .documents-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav {
-                order: 2;
-                width: 100%;
-            }
-            
-            .nav-btn {
-                flex: 1;
-                justify-content: center;
-                font-size: 0.8rem;
-                padding: 0.75rem 0.5rem;
-            }
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: #64748b;
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #cbd5e1;
-        }
-
-        .empty-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-subtitle {
-            margin-bottom: 1.5rem;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EnergiaCorp - Gestione Offerte & Documenti</title>
+<!-- Google Fonts e icone -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+
+  --primary: #3b82f6;
+  --accent: #f59e0b;
+  --error: #ef4444;
+  --success: #16a34a;
+  --bg-primary: #f9fafb;
+  --bg-secondary: #e0f2fe;
+  --border-light: #d1d5db;
+
+  --shadow-md: rgba(0,0,0,0.1) 0 4px 12px;
+
+  --bg-gradient: linear-gradient(135deg, #3b82f6, #0ea5e9);
+  --text-white: #fff;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+}
+
+/* Layout generico */
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: var(--bg-primary);
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+}
+h1, h2, h3 {
+  margin: 0 0 var(--space-md) 0;
+}
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--primary);
+  color: var(--text-white);
+  font-size: var(--text-sm);
+  transition: background-color 0.2s;
+}
+button:hover {
+  background-color: #2563eb;
+}
+input, select {
+  padding: var(--space-sm);
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Header / Menu */
+#header {
+  background: var(--bg-gradient);
+  padding: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+#header h1 {
+  color: var(--text-white);
+  font-size: var(--text-xl);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+#header h1 i {
+  margin-right: var(--space-md);
+}
+#header .menu-buttons {
+  display: flex;
+  gap: var(--space-md);
+}
+/* Sezione principale */
+section {
+  padding: var(--space-xl);
+}
+/* Variabili per tabella */
+.offers-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-xl);
+}
+.offers-table thead {
+  background: var(--bg-gradient);
+  color: var(--text-white);
+}
+.offers-table th, .offers-table td {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+}
+.offers-table th {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.offers-table tbody tr:hover td {
+  background: var(--bg-secondary);
+}
+.offers-table .col-commodity {
+  min-width: 50px;
+  text-align: center;
+}
+/* Badge per commodity */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-luce {
+  background-color: #facc15;
+  color: #ca8a04;
+}
+.badge-gas {
+  background-color: #3b82f6;
+  color: #1e40af;
+}
+/* Card miglior offerte */
+.card-offerta {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+.card-offerta .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-offerta h3 {
+  margin: 0;
+  font-size: 1.2em;
+}
+.card-offerta img {
+  max-width: 40px;
+  height: auto;
+}
+.card-offerta .pricing {
+  margin-top: var(--space-md);
+  display: flex;
+  justify-content: space-between;
+}
+.card-offerta .pricing .price {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #111;
+}
+.card-offerta .details {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+/* Sezione Documenti */
+#documenti-section {
+  margin-top: var(--space-xl);
+}
+#documenti-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-md);
+}
+.card-doc {
+  background: #fff;
+  padding: var(--space-md);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+.card-doc h4 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--text-sm);
+}
+.card-doc .actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-overlay {
+  position: fixed;
+  top: 0; left: 0; right:0; bottom:0;
+  background: rgba(0,0,0,0.3);
+  display:flex;
+  align-items:center;
+  justify-content: center;
+  z-index: 9999;
+  display: none;
+}
+.progress-overlay.show {
+  display: flex;
+}
+.spinner {
+  border: 4px solid #eee;
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {transform: rotate(0deg);}
+  100% {transform: rotate(360deg);}
+}
+</style>
 </head>
 <body>
-    <!-- LOADING OVERLAY -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; margin: 0 auto 1rem;"></div>
-            <div>Caricamento in corso...</div>
-        </div>
+
+<!-- HEADER NAVBAR -->
+<header id="header">
+  <h1><i class="fas fa-bolt"></i>EnergiaCorp</h1>
+  <div class="menu-buttons">
+    <button data-section="dashboard"><i class="fas fa-home"></i> Dashboard</button>
+    <button data-section="offerte"><i class="fas fa-file-alt"></i> Offerte</button>
+    <button data-section="gestione"><i class="fas fa-tasks"></i> Gestione</button>
+    <button data-section="documenti"><i class="fas fa-folder-open"></i> Documenti</button>
+    <button data-section="logout"><i class="fas fa-sign-out-alt"></i> Esci</button>
+  </div>
+</header>
+
+<!-- SEZIONI -->
+<section id="section-dashboard" style="display:none;">
+  <h2>📊 Dashboard Offerte</h2>
+  <!-- Statistiche, cards, ecc., esempio -->
+  <div style="display:flex; gap:var(--space-md); flex-wrap:wrap;">
+    <div class="card-offerta" style="flex:1 1 200px;">
+      <div class="header">
+        <h3>Migliore Offerta Luce</h3>
+        <img src="https://img.icons8.com/material-outlined/40/sky--v3.png" title="Luce"/>
+      </div>
+      <div class="pricing"><span class="price">0.2500 €/kWh</span></div>
+      <div class="details">
+        <div>Quota Fissa: 12,50 €/mese</div>
+        <div>Scadenza: 15/09/2026</div>
+      </div>
     </div>
-
-    <!-- AUTH SCREEN -->
-    <div id="auth-container" class="auth-container">
-        <div class="auth-card">
-            <div class="auth-logo">⚡</div>
-            <h1 class="auth-title">EnergiaCorp Cloud</h1>
-            <p class="auth-subtitle">Sistema Premium Completo</p>
-            
-            <div id="supabase-status" class="supabase-status connected">
-                🟢 Connesso a Supabase Cloud Database
-            </div>
-            
-            <form id="login-form" class="auth-form" style="margin-top: 2rem;">
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" id="login-email" class="form-input" value="demo@energiacorp.it" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="login-password" class="form-input" value="demo123" required>
-                </div>
-                
-                <button type="submit" class="btn-auth">
-                    <span>🔐</span>
-                    <span>Accedi al Sistema</span>
-                </button>
-            </form>
-        </div>
+    <div class="card-offerta" style="flex:1 1 200px;">
+      <div class="header">
+        <h3>Migliore Offerta Gas</h3>
+        <img src="https://img.icons8.com/material-outlined/40/fire.png" title="Gas"/>
+      </div>
+      <div class="pricing"><span class="price">0.8500 €/Smc</span></div>
+      <div class="details">
+        <div>Quota Fissa: 10,00 €/mese</div>
+        <div>Scadenza: 15/10/2026</div>
+      </div>
     </div>
-
-    <!-- MAIN APPLICATION -->
-    <div id="app-container" class="app-container">
-        <!-- HEADER -->
-        <header class="header">
-            <div class="header-container">
-                <div class="logo">
-                    <div class="logo-icon">⚡</div>
-                    <span>EnergiaCorp Cloud</span>
-                </div>
-                
-                <nav class="nav">
-                    <button class="nav-btn active" data-section="dashboard">
-                        <span>📊</span> Dashboard
-                    </button>
-                    <button class="nav-btn" data-section="upload">
-                        <span>📄</span> Upload OCR
-                    </button>
-                    <button class="nav-btn" data-section="offers">
-                        <span>📋</span> Offerte
-                    </button>
-                    <button class="nav-btn" data-section="documents">
-                        <span>📁</span> Documenti
-                    </button>
-                </nav>
-                
-                <div class="actions">
-                    <div class="user-info">
-                        <span>👤</span>
-                        <span id="user-display">Demo User</span>
-                    </div>
-                    <button class="btn-logout" onclick="handleLogout()">
-                        <span>🚪</span> Logout
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- MAIN CONTENT -->
-        <main class="main">
-            <!-- DASHBOARD -->
-            <section id="section-dashboard" class="section active">
-                <div class="section-header">
-                    <h1 class="section-title">📊 Dashboard Cloud</h1>
-                    <p class="section-subtitle">Panoramica completa del sistema con PUN/PSV e gestione documenti</p>
-                </div>
-
-                <div class="section-actions">
-                    <button class="btn btn-primary" onclick="exportOffersPDF()">
-                        📄 Esporta Offerte PDF
-                    </button>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">📋</div>
-                        <div class="stat-value" id="total-offers">0</div>
-                        <div class="stat-label">Offerte Totali</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🏠</div>
-                        <div class="stat-value" id="domestico-count">0</div>
-                        <div class="stat-label">Domestico</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🏢</div>
-                        <div class="stat-value" id="micro-count">0</div>
-                        <div class="stat-label">Micro</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🏭</div>
-                        <div class="stat-value" id="pmi-count">0</div>
-                        <div class="stat-label">PMI</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">📁</div>
-                        <div class="stat-value" id="total-documents">0</div>
-                        <div class="stat-label">Documenti</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2 style="margin-bottom: 1.5rem; color: #1e293b;">🏆 Migliori Offerte per Categoria</h2>
-                    <div id="top-offers" class="stats-grid">
-                        <!-- Popolato dinamicamente -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- UPLOAD OCR -->
-            <section id="section-upload" class="section">
-                <div class="section-header">
-                    <h1 class="section-title">📄 Upload OCR Premium</h1>
-                    <p class="section-subtitle">Estrazione automatica dati con supporto PUN/PSV</p>
-                </div>
-                
-                <div style="max-width: 600px; margin: 0 auto;">
-                    <div id="upload-area" class="upload-area">
-                        <div class="upload-icon">📄</div>
-                        <h3 class="upload-title">Trascina qui il file PDF/Immagine</h3>
-                        <p class="upload-subtitle">oppure clicca per selezionare</p>
-                        <div style="font-size: 0.9rem; color: #64748b;">
-                            <strong>Supporta:</strong> PDF, JPG, PNG • Max 10MB<br>
-                            <strong>OCR AI:</strong> Google Vision + estrazione automatica PUN/PSV
-                        </div>
-                        <input id="pdf-file" type="file" accept="application/pdf,image/*" style="display: none;">
-                    </div>
-
-                    <form id="ocr-form" style="display: none; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem;">
-                        <h3 style="text-align: center; margin-bottom: 2rem;">🤖 Dati Estratti con OCR</h3>
-                        
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Fornitore</label>
-                                <input type="text" name="fornitore" class="form-input" placeholder="es. ENEL Energia" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Nome Offerta</label>
-                                <input type="text" name="nome_offerta" class="form-input" placeholder="es. Offerta Casa Verde" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Categoria</label>
-                                <select name="categoria" class="form-select">
-                                    <option value="Domestico">Domestico</option>
-                                    <option value="Micro">Micro</option>
-                                    <option value="PMI">PMI</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Tipo Prezzo</label>
-                                <select name="tipo_prezzo" class="form-select">
-                                    <option value="Fisso">Fisso</option>
-                                    <option value="Variabile">Variabile</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Prezzo Luce (€/kWh) o PUN</label>
-                                <input type="text" name="prezzo_luce" class="form-input" placeholder="0.2500 o PUN">
-                                <small style="color: #64748b; font-size: 0.8rem;">Scrivi "PUN" per offerte indicizzate</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Spread Luce (€/kWh)</label>
-                                <input type="number" name="spread_luce" class="form-input" step="0.0001" placeholder="0.0150">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Prezzo Gas (€/Smc) o PSV</label>
-                                <input type="text" name="prezzo_gas" class="form-input" placeholder="0.8500 o PSV">
-                                <small style="color: #64748b; font-size: 0.8rem;">Scrivi "PSV" per offerte indicizzate</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Spread Gas (€/Smc)</label>
-                                <input type="number" name="spread_gas" class="form-input" step="0.0001" placeholder="0.0200">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Quota Fissa Luce (€/mese)</label>
-                                <input type="number" name="quota_fissa_luce" class="form-input" step="0.01" placeholder="12.50">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Quota Fissa Gas (€/mese)</label>
-                                <input type="number" name="quota_fissa_gas" class="form-input" step="0.01" placeholder="10.00">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Scadenza</label>
-                                <input type="date" name="scadenza" class="form-input">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Durata (mesi)</label>
-                                <input type="number" name="durata_mesi" class="form-input" min="1" max="60" placeholder="12" value="12">
-                            </div>
-                        </div>
-                        
-                        <div style="text-align: center;">
-                            <button type="submit" class="btn btn-primary">
-                                💾 Salva su Database Cloud
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- GESTIONE OFFERTE -->
-            <section id="section-offers" class="section">
-                <div class="section-header">
-                    <h1 class="section-title">📋 Gestione Offerte</h1>
-                    <p class="section-subtitle">Tabella completa con supporto PUN/PSV</p>
-                </div>
-
-                <div class="section-actions">
-                    <button class="btn btn-primary" onclick="exportOffersPDF()">
-                        📄 Esporta PDF
-                    </button>
-                </div>
-                
-                <div class="table-container">
-                    <div class="filters">
-                        <select id="filter-categoria" class="form-select">
-                            <option value="">Tutte le categorie</option>
-                            <option value="Domestico">Domestico</option>
-                            <option value="Micro">Micro</option>
-                            <option value="PMI">PMI</option>
-                        </select>
-                        
-                        <select id="filter-fornitore" class="form-select">
-                            <option value="">Tutti i fornitori</option>
-                        </select>
-                        
-                        <select id="filter-tipo-prezzo" class="form-select">
-                            <option value="">Tutti i tipi</option>
-                            <option value="Fisso">Fisso</option>
-                            <option value="Variabile">Variabile</option>
-                        </select>
-                        
-                        <input type="text" id="search-offers" class="form-input" placeholder="Cerca offerte...">
-                    </div>
-
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fornitore</th>
-                                <th>Nome Offerta</th>
-                                <th>Categoria</th>
-                                <th>Tipo</th>
-                                <th>Commodity</th>
-                                <th>Prezzo/Spread</th>
-                                <th>Scadenza</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="offers-tbody">
-                            <!-- Popolato dinamicamente -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- GESTIONE DOCUMENTI -->
-            <section id="section-documents" class="section">
-                <div class="section-header">
-                    <h1 class="section-title">📁 Gestione Documenti Clienti</h1>
-                    <p class="section-subtitle">Carica e organizza le cartelle dei tuoi clienti</p>
-                </div>
-
-                <div class="section-actions">
-                    <button class="btn btn-primary" onclick="showUploadDocumentModal()">
-                        ➕ Carica Documento
-                    </button>
-                </div>
-                
-                <div class="table-container">
-                    <div class="filters">
-                        <input type="text" id="search-client" class="form-input" placeholder="Cerca per cliente...">
-                        
-                        <select id="filter-document-type" class="form-select">
-                            <option value="">Tutti i tipi</option>
-                            <option value="Generale">Generale</option>
-                            <option value="Contratto">Contratto</option>
-                            <option value="Bolletta">Bolletta</option>
-                            <option value="Documento Identità">Documento Identità</option>
-                            <option value="Visura">Visura</option>
-                            <option value="Dichiarazione">Dichiarazione</option>
-                            <option value="Comunicazione">Comunicazione</option>
-                            <option value="Offerta">Offerta</option>
-                            <option value="Altro">Altro</option>
-                        </select>
-                    </div>
-
-                    <div id="documents-grid" class="documents-grid">
-                        <!-- Popolato dinamicamente -->
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- UPLOAD DOCUMENT MODAL -->
-    <div id="upload-document-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">📁 Carica Documento Cliente</h3>
-                <button class="modal-close" onclick="closeUploadDocumentModal()">✕</button>
-            </div>
-            
-            <div class="modal-body">
-                <form id="upload-document-form">
-                    <div class="form-group">
-                        <label class="form-label">Nome Cliente *</label>
-                        <input type="text" name="client_name" class="form-input" placeholder="Mario Rossi" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Tipo Documento *</label>
-                        <select name="document_type" class="form-select" required>
-                            <option value="Generale">Generale</option>
-                            <option value="Contratto">Contratto</option>
-                            <option value="Bolletta">Bolletta</option>
-                            <option value="Documento Identità">Documento Identità</option>
-                            <option value="Visura">Visura</option>
-                            <option value="Dichiarazione">Dichiarazione</option>
-                            <option value="Comunicazione">Comunicazione</option>
-                            <option value="Offerta">Offerta</option>
-                            <option value="Altro">Altro</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Descrizione</label>
-                        <input type="text" name="description" class="form-input" placeholder="Descrizione del documento">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">File *</label>
-                        <div id="document-upload-area" class="upload-area">
-                            <div class="upload-icon">📎</div>
-                            <h4>Seleziona file da caricare</h4>
-                            <p>PDF, DOC, DOCX, JPG, PNG • Max 50MB</p>
-                            <input id="document-file" type="file" style="display: none;" required>
-                        </div>
-                        <div id="selected-file-info" style="margin-top: 1rem; display: none;">
-                            <strong>File selezionato:</strong> <span id="selected-file-name"></span>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeUploadDocumentModal()">
-                    ❌ Annulla
-                </button>
-                <button type="button" class="btn btn-primary" onclick="uploadDocument()">
-                    📁 Carica Documento
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT -->
-    <script>
-        // ===== GLOBAL VARIABLES =====
-        let currentUser = null;
-        let supabase = null;
-        let currentOffers = [];
-        let currentDocuments = [];
-        
-        // ===== SUPABASE CONFIG =====
-        const SUPABASE_CONFIG = {
-            url: 'https://ozmqftibxuspznnqaayh.supabase.co',
-            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96bXFmdGlieHVzcHpubnFhYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDUwNTQsImV4cCI6MjA3MjIyMTA1NH0._Z8pGoW_Yc6PiazF-6jxwVknmJ9vh4WLotN6bPRK1Kk'
-        };
-
-        // ===== INITIALIZATION =====
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 EnergiaCorp Cloud Premium inizializzato');
-            
-            // Initialize Supabase
-            supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-            
-            // Setup auth
-            setupAuthSystem();
-            
-            // Setup navigation
-            setupNavigation();
-            
-            // Setup upload
-            setupUpload();
-            
-            // Setup document upload
-            setupDocumentUpload();
-        });
-
-        // ===== AUTH SYSTEM =====
-        function setupAuthSystem() {
-            const loginForm = document.getElementById('login-form');
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                
-                showLoadingOverlay(true, 'Accesso in corso...');
-                
-                try {
-                    if (email === 'demo@energiacorp.it' && password === 'demo123') {
-                        // Demo user
-                        currentUser = {
-                            id: 'demo',
-                            email: email,
-                            displayName: 'Demo User',
-                            azienda: 'EnergiaCorp Demo'
-                        };
-                        showMainApp();
-                        await initMainApp();
-                    } else {
-                        const { data, error } = await supabase.auth.signInWithPassword({
-                            email: email,
-                            password: password
-                        });
-
-                        if (error) throw error;
-
-                        currentUser = {
-                            id: data.user.id,
-                            email: data.user.email,
-                            displayName: data.user.user_metadata?.display_name || data.user.email.split('@')[0],
-                            azienda: data.user.user_metadata?.azienda || 'Consulenza Energetica'
-                        };
-
-                        showMainApp();
-                        await initMainApp();
-                    }
-                } catch (error) {
-                    showNotification('Errore login: ' + error.message, 'error');
-                }
-                
-                showLoadingOverlay(false);
-            });
-        }
-
-        function showMainApp() {
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('app-container').style.display = 'block';
-            document.getElementById('user-display').textContent = currentUser.displayName;
-        }
-
-        async function handleLogout() {
-            if (confirm('Sei sicuro di voler uscire?')) {
-                currentUser = null;
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-container').style.display = 'none';
-                showNotification('Logout effettuato', 'success');
-            }
-        }
-
-        // ===== NAVIGATION =====
-        function setupNavigation() {
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const section = e.currentTarget.dataset.section;
-                    showSection(section);
-                });
-            });
-        }
-
-        function showSection(sectionName) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            const targetSection = document.getElementById(`section-${sectionName}`);
-            const targetButton = document.querySelector(`[data-section="${sectionName}"]`);
-
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
-            if (targetButton) {
-                targetButton.classList.add('active');
-            }
-
-            if (sectionName === 'dashboard') {
-                loadDashboard();
-            } else if (sectionName === 'offers') {
-                loadOffers();
-            } else if (sectionName === 'documents') {
-                loadDocuments();
-            }
-        }
-
-        // ===== MAIN APP INITIALIZATION =====
-        async function initMainApp() {
-            console.log('🚀 Inizializzazione app principale...');
-            await loadDashboard();
-            console.log('✅ App inizializzata');
-        }
-
-        // ===== DASHBOARD =====
-        async function loadDashboard() {
-            try {
-                const [offers, documents] = await Promise.all([
-                    loadOffersData(),
-                    loadDocumentsData()
-                ]);
-                
-                updateDashboardStats(offers, documents);
-                renderTopOffers(offers);
-            } catch (error) {
-                console.error('Errore caricamento dashboard:', error);
-                showNotification('Errore caricamento dashboard', 'error');
-            }
-        }
-
-        function updateDashboardStats(offers, documents) {
-            const stats = {
-                total: offers.length,
-                domestico: offers.filter(o => o.categoria === 'Domestico').length,
-                micro: offers.filter(o => o.categoria === 'Micro').length,
-                pmi: offers.filter(o => o.categoria === 'PMI').length,
-                documents: documents.length
-            };
-
-            document.getElementById('total-offers').textContent = stats.total;
-            document.getElementById('domestico-count').textContent = stats.domestico;
-            document.getElementById('micro-count').textContent = stats.micro;
-            document.getElementById('pmi-count').textContent = stats.pmi;
-            document.getElementById('total-documents').textContent = stats.documents;
-        }
-
-        function renderTopOffers(offers) {
-            const container = document.getElementById('top-offers');
-            
-            if (offers.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><h3 class="empty-title">Nessuna offerta disponibile</h3><p class="empty-subtitle">Carica la tua prima offerta!</p></div>';
-                return;
-            }
-
-            const categories = ['Domestico', 'Micro', 'PMI'];
-            container.innerHTML = '';
-            
-            categories.forEach(categoria => {
-                const categoryOffers = offers.filter(o => o.categoria === categoria);
-                if (categoryOffers.length === 0) return;
-
-                const bestOffer = categoryOffers[0]; // Semplificato per demo
-
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <h4>${categoria}</h4>
-                    <div><strong>${bestOffer.fornitore || 'N/D'}</strong></div>
-                    <div>${bestOffer.nome_offerta || 'N/D'}</div>
-                    ${bestOffer.indice_luce === 'PUN' ? '<span class="badge badge-pun">PUN</span>' : ''}
-                    ${bestOffer.indice_gas === 'PSV' ? '<span class="badge badge-psv">PSV</span>' : ''}
-                `;
-                
-                container.appendChild(card);
-            });
-        }
-
-        // ===== DATA LOADING =====
-        async function loadOffersData() {
-            if (currentUser.id === 'demo') {
-                return [
-                    { id: 1, fornitore: 'ENEL Energia', nome_offerta: 'Casa Verde', categoria: 'Domestico', tipo_prezzo: 'Fisso', prezzo_luce: 0.22 },
-                    { id: 2, fornitore: 'ENI Plenitude', nome_offerta: 'Business PUN', categoria: 'Micro', tipo_prezzo: 'Variabile', indice_luce: 'PUN', spread_luce: 0.015 }
-                ];
-            }
-            
-            try {
-                const { data, error } = await supabase
-                    .from('offers')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                return data || [];
-            } catch (error) {
-                console.error('Errore caricamento offerte:', error);
-                return [];
-            }
-        }
-
-        async function loadDocumentsData() {
-            if (currentUser.id === 'demo') {
-                return [
-                    { id: 1, client_name: 'Mario Rossi', document_type: 'Contratto', filename: 'contratto_rossi.pdf' },
-                    { id: 2, client_name: 'Anna Bianchi', document_type: 'Bolletta', filename: 'bolletta_bianchi.pdf' }
-                ];
-            }
-            
-            try {
-                const { data, error } = await supabase
-                    .from('client_documents')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                return data || [];
-            } catch (error) {
-                console.error('Errore caricamento documenti:', error);
-                return [];
-            }
-        }
-
-        // ===== OFFERS SECTION =====
-        async function loadOffers() {
-            try {
-                showLoadingOverlay(true, 'Caricamento offerte...');
-                
-                const offers = await loadOffersData();
-                currentOffers = offers;
-                
-                renderOffersTable(offers);
-                setupOffersFilters();
-                
-            } catch (error) {
-                console.error('Errore caricamento offerte:', error);
-                showNotification('Errore caricamento offerte', 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        function renderOffersTable(offers) {
-            const tbody = document.getElementById('offers-tbody');
-            tbody.innerHTML = '';
-            
-            if (offers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">📦</div><h3 class="empty-title">Nessuna offerta trovata</h3></td></tr>';
-                return;
-            }
-
-            offers.forEach(offer => {
-                const tr = document.createElement('tr');
-                
-                let commodityBadges = '';
-                if (offer.indice_luce === 'PUN') {
-                    commodityBadges += '<span class="badge badge-pun">PUN</span> ';
-                }
-                if (offer.indice_gas === 'PSV') {
-                    commodityBadges += '<span class="badge badge-psv">PSV</span> ';
-                }
-                if (offer.prezzo_luce || offer.spread_luce) {
-                    commodityBadges += '<span class="badge badge-luce">Luce</span> ';
-                }
-                if (offer.prezzo_gas || offer.spread_gas) {
-                    commodityBadges += '<span class="badge badge-gas">Gas</span> ';
-                }
-                
-                let priceDisplay = '';
-                if (offer.indice_luce === 'PUN' && offer.spread_luce) {
-                    priceDisplay = `PUN + ${formatCurrency(offer.spread_luce, 4)} €/kWh`;
-                } else if (offer.indice_gas === 'PSV' && offer.spread_gas) {
-                    priceDisplay = `PSV + ${formatCurrency(offer.spread_gas, 4)} €/Smc`;
-                } else if (offer.prezzo_luce) {
-                    priceDisplay = `${formatCurrency(offer.prezzo_luce, 4)} €/kWh`;
-                } else if (offer.prezzo_gas) {
-                    priceDisplay = `${formatCurrency(offer.prezzo_gas, 4)} €/Smc`;
-                }
-                
-                tr.innerHTML = `
-                    <td><strong>${offer.fornitore || '—'}</strong></td>
-                    <td>${offer.nome_offerta || '—'}</td>
-                    <td><span class="badge badge-${(offer.categoria || 'domestico').toLowerCase()}">${offer.categoria || 'Domestico'}</span></td>
-                    <td><span class="badge badge-${(offer.tipo_prezzo || 'fisso').toLowerCase()}">${offer.tipo_prezzo || 'Fisso'}</span></td>
-                    <td>${commodityBadges}</td>
-                    <td>${priceDisplay}</td>
-                    <td>${formatDate(offer.scadenza)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editOffer('${offer.id}')">✏️</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteOffer('${offer.id}')">🗑️</button>
-                    </td>
-                `;
-                
-                tbody.appendChild(tr);
-            });
-        }
-
-        function setupOffersFilters() {
-            // Setup filter listeners
-            ['filter-categoria', 'filter-fornitore', 'filter-tipo-prezzo', 'search-offers'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener('change', filterOffers);
-                    element.addEventListener('input', filterOffers);
-                }
-            });
-            
-            // Populate fornitore filter
-            const fornitori = [...new Set(currentOffers.map(o => o.fornitore).filter(Boolean))].sort();
-            const fornitoreSelect = document.getElementById('filter-fornitore');
-            fornitoreSelect.innerHTML = '<option value="">Tutti i fornitori</option>' +
-                fornitori.map(f => `<option value="${f}">${f}</option>`).join('');
-        }
-
-        function filterOffers() {
-            const categoria = document.getElementById('filter-categoria')?.value;
-            const fornitore = document.getElementById('filter-fornitore')?.value;
-            const tipoPrezzo = document.getElementById('filter-tipo-prezzo')?.value;
-            const searchTerm = document.getElementById('search-offers')?.value?.toLowerCase();
-
-            let filtered = currentOffers.filter(offer => {
-                if (categoria && offer.categoria !== categoria) return false;
-                if (fornitore && offer.fornitore !== fornitore) return false;
-                if (tipoPrezzo && offer.tipo_prezzo !== tipoPrezzo) return false;
-                if (searchTerm) {
-                    const searchableText = [offer.fornitore, offer.nome_offerta].join(' ').toLowerCase();
-                    if (!searchableText.includes(searchTerm)) return false;
-                }
-                return true;
-            });
-
-            renderOffersTable(filtered);
-        }
-
-        // ===== DOCUMENTS SECTION =====
-        async function loadDocuments() {
-            try {
-                showLoadingOverlay(true, 'Caricamento documenti...');
-                
-                const documents = await loadDocumentsData();
-                currentDocuments = documents;
-                
-                renderDocumentsGrid(documents);
-                setupDocumentsFilters();
-                
-            } catch (error) {
-                console.error('Errore caricamento documenti:', error);
-                showNotification('Errore caricamento documenti', 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        function renderDocumentsGrid(documents) {
-            const container = document.getElementById('documents-grid');
-            container.innerHTML = '';
-            
-            if (documents.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-icon">📁</div>
-                        <h3 class="empty-title">Nessun documento caricato</h3>
-                        <p class="empty-subtitle">Carica il primo documento cliente!</p>
-                        <button class="btn btn-primary" onclick="showUploadDocumentModal()">➕ Carica Documento</button>
-                    </div>
-                `;
-                return;
-            }
-
-            documents.forEach(doc => {
-                const card = document.createElement('div');
-                card.className = 'document-card';
-                
-                const iconClass = getDocumentIconClass(doc.filename || doc.original_filename);
-                
-                card.innerHTML = `
-                    <div class="document-header">
-                        <div class="document-icon ${iconClass}">
-                            ${getDocumentIcon(doc.filename || doc.original_filename)}
-                        </div>
-                        <div class="document-info">
-                            <div class="document-name">${doc.original_filename || doc.filename}</div>
-                            <div class="document-client">👤 ${doc.client_name}</div>
-                            <div class="document-type">📄 ${doc.document_type}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="document-meta">
-                        <span>📅 ${formatDate(doc.created_at)}</span>
-                        ${doc.file_size ? `<span>💾 ${formatFileSize(doc.file_size)}</span>` : ''}
-                    </div>
-                    
-                    ${doc.description ? `<div style="margin-bottom: 1rem; font-size: 0.9rem; color: #64748b;">${doc.description}</div>` : ''}
-                    
-                    <div class="document-actions">
-                        <button class="btn btn-sm btn-primary" onclick="downloadDocument('${doc.id}')">
-                            ⬇️ Download
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteDocument('${doc.id}')">
-                            🗑️ Elimina
-                        </button>
-                    </div>
-                `;
-                
-                container.appendChild(card);
-            });
-        }
-
-        function getDocumentIconClass(filename) {
-            if (!filename) return 'doc-default';
-            
-            const ext = filename.split('.').pop()?.toLowerCase();
-            if (['pdf'].includes(ext)) return 'doc-pdf';
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'doc-image';
-            if (['doc', 'docx', 'txt'].includes(ext)) return 'doc-doc';
-            return 'doc-default';
-        }
-
-        function getDocumentIcon(filename) {
-            if (!filename) return '📄';
-            
-            const ext = filename.split('.').pop()?.toLowerCase();
-            if (['pdf'].includes(ext)) return 'PDF';
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️';
-            if (['doc', 'docx', 'txt'].includes(ext)) return '📝';
-            return '📄';
-        }
-
-        function setupDocumentsFilters() {
-            ['search-client', 'filter-document-type'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener('change', filterDocuments);
-                    element.addEventListener('input', filterDocuments);
-                }
-            });
-        }
-
-        function filterDocuments() {
-            const clientSearch = document.getElementById('search-client')?.value?.toLowerCase();
-            const docType = document.getElementById('filter-document-type')?.value;
-
-            let filtered = currentDocuments.filter(doc => {
-                if (clientSearch && !doc.client_name?.toLowerCase().includes(clientSearch)) return false;
-                if (docType && doc.document_type !== docType) return false;
-                return true;
-            });
-
-            renderDocumentsGrid(filtered);
-        }
-
-        // ===== DOCUMENT UPLOAD =====
-        function setupDocumentUpload() {
-            const uploadArea = document.getElementById('document-upload-area');
-            const fileInput = document.getElementById('document-file');
-
-            uploadArea.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    document.getElementById('selected-file-name').textContent = file.name;
-                    document.getElementById('selected-file-info').style.display = 'block';
-                }
-            });
-        }
-
-        function showUploadDocumentModal() {
-            document.getElementById('upload-document-modal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeUploadDocumentModal() {
-            document.getElementById('upload-document-modal').classList.remove('active');
-            document.body.style.overflow = '';
-            
-            // Reset form
-            document.getElementById('upload-document-form').reset();
-            document.getElementById('selected-file-info').style.display = 'none';
-        }
-
-        async function uploadDocument() {
-            const form = document.getElementById('upload-document-form');
-            const formData = new FormData(form);
-            const file = document.getElementById('document-file').files[0];
-            
-            if (!file) {
-                showNotification('Seleziona un file', 'error');
-                return;
-            }
-
-            if (!formData.get('client_name')) {
-                showNotification('Inserisci il nome del cliente', 'error');
-                return;
-            }
-
-            try {
-                showLoadingOverlay(true, 'Caricamento documento...');
-                
-                if (currentUser.id === 'demo') {
-                    // Demo mode - simulate upload
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    showNotification('Documento caricato (modalità demo)', 'success');
-                    closeUploadDocumentModal();
-                    loadDocuments();
-                    return;
-                }
-
-                // Real upload with Supabase (would need Storage setup)
-                const documentData = {
-                    user_id: currentUser.id,
-                    client_name: formData.get('client_name'),
-                    document_type: formData.get('document_type'),
-                    description: formData.get('description'),
-                    original_filename: file.name,
-                    filename: `${currentUser.id}/${Date.now()}_${file.name}`,
-                    file_size: file.size,
-                    mime_type: file.type,
-                    storage_path: `documents/${currentUser.id}/${Date.now()}_${file.name}`
-                };
-
-                // Would upload to Supabase Storage first, then save record
-                const { data, error } = await supabase
-                    .from('client_documents')
-                    .insert([documentData])
-                    .select();
-
-                if (error) throw error;
-
-                showNotification('Documento caricato con successo!', 'success');
-                closeUploadDocumentModal();
-                loadDocuments();
-
-            } catch (error) {
-                console.error('Errore upload documento:', error);
-                showNotification('Errore caricamento documento: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        async function downloadDocument(id) {
-            if (currentUser.id === 'demo') {
-                showNotification('Download simulato (modalità demo)', 'info');
-                return;
-            }
-
-            try {
-                showLoadingOverlay(true, 'Download in corso...');
-                
-                // In real implementation, would download from Supabase Storage
-                showNotification('Download completato!', 'success');
-                
-            } catch (error) {
-                console.error('Errore download:', error);
-                showNotification('Errore download: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        async function deleteDocument(id) {
-            if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
-
-            try {
-                showLoadingOverlay(true, 'Eliminazione...');
-                
-                if (currentUser.id === 'demo') {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    showNotification('Documento eliminato (modalità demo)', 'success');
-                } else {
-                    const { error } = await supabase
-                        .from('client_documents')
-                        .delete()
-                        .eq('id', id)
-                        .eq('user_id', currentUser.id);
-
-                    if (error) throw error;
-                    showNotification('Documento eliminato', 'success');
-                }
-                
-                loadDocuments();
-                
-            } catch (error) {
-                console.error('Errore eliminazione:', error);
-                showNotification('Errore eliminazione: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        // ===== PDF EXPORT =====
-        async function exportOffersPDF() {
-            try {
-                showLoadingOverlay(true, 'Generazione PDF...');
-                
-                const offers = await loadOffersData();
-                
-                if (offers.length === 0) {
-                    showNotification('Nessuna offerta da esportare', 'error');
-                    return;
-                }
-
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Intestazione
-                doc.setFontSize(20);
-                doc.text('EnergiaCorp - Report Offerte', 20, 20);
-                
-                doc.setFontSize(12);
-                doc.text(`Generato il: ${new Date().toLocaleDateString('it-IT')}`, 20, 35);
-                doc.text(`Consulente: ${currentUser.displayName}`, 20, 45);
-                doc.text(`Totale offerte: ${offers.length}`, 20, 55);
-                
-                // Tabella offerte
-                const tableData = offers.map(offer => [
-                    offer.fornitore || '—',
-                    offer.nome_offerta || '—',
-                    offer.categoria || 'Domestico',
-                    offer.tipo_prezzo || 'Fisso',
-                    offer.indice_luce === 'PUN' ? 'PUN' : offer.indice_gas === 'PSV' ? 'PSV' : 
-                        offer.prezzo_luce ? 'Luce' : offer.prezzo_gas ? 'Gas' : '—',
-                    offer.indice_luce === 'PUN' ? `PUN+${formatCurrency(offer.spread_luce, 4)}` :
-                        offer.indice_gas === 'PSV' ? `PSV+${formatCurrency(offer.spread_gas, 4)}` :
-                        offer.prezzo_luce ? `${formatCurrency(offer.prezzo_luce, 4)} €/kWh` :
-                        offer.prezzo_gas ? `${formatCurrency(offer.prezzo_gas, 4)} €/Smc` : '—',
-                    formatDate(offer.scadenza)
-                ]);
-
-                doc.autoTable({
-                    head: [['Fornitore', 'Offerta', 'Categoria', 'Tipo', 'Commodity', 'Prezzo', 'Scadenza']],
-                    body: tableData,
-                    startY: 70,
-                    styles: {
-                        fontSize: 8,
-                        cellPadding: 3
-                    },
-                    headStyles: {
-                        fillColor: [59, 130, 246],
-                        textColor: 255
-                    }
-                });
-
-                // Salva PDF
-                doc.save(`EnergiaCorp_Offerte_${new Date().toISOString().split('T')[0]}.pdf`);
-                
-                showNotification('PDF esportato con successo!', 'success');
-                
-            } catch (error) {
-                console.error('Errore esportazione PDF:', error);
-                showNotification('Errore esportazione PDF', 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        // ===== UPLOAD OCR =====
-        function setupUpload() {
-            const fileInput = document.getElementById('pdf-file');
-            const uploadArea = document.getElementById('upload-area');
-
-            uploadArea.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    showOCRForm();
-                }
-            });
-
-            const form = document.getElementById('ocr-form');
-            form.addEventListener('submit', handleOCRSubmit);
-        }
-
-        function showOCRForm() {
-            document.getElementById('ocr-form').style.display = 'block';
-            document.getElementById('ocr-form').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function handleOCRSubmit(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const offerData = {};
-            
-            for (const [key, value] of formData.entries()) {
-                offerData[key] = value;
-            }
-            
-            // Handle PUN/PSV
-            offerData.indice_luce = null;
-            offerData.indice_gas = null;
-            
-            if (isPun(offerData.prezzo_luce)) {
-                offerData.indice_luce = 'PUN';
-                offerData.prezzo_luce = null;
-            }
-            if (isPsv(offerData.prezzo_gas)) {
-                offerData.indice_gas = 'PSV';
-                offerData.prezzo_gas = null;
-            }
-            
-            // Convert numbers
-            ['prezzo_luce', 'spread_luce', 'prezzo_gas', 'spread_gas', 'quota_fissa_luce', 'quota_fissa_gas', 'durata_mesi'].forEach(field => {
-                if (offerData[field]) {
-                    const num = parseFloat(offerData[field]);
-                    offerData[field] = isNaN(num) ? null : num;
-                } else {
-                    offerData[field] = null;
-                }
-            });
-
-            // Validation for PUN/PSV
-            if (offerData.indice_luce === 'PUN' && (!offerData.spread_luce || offerData.spread_luce <= 0)) {
-                showNotification('Devi inserire lo spread luce quando usi PUN', 'error');
-                return;
-            }
-            if (offerData.indice_gas === 'PSV' && (!offerData.spread_gas || offerData.spread_gas <= 0)) {
-                showNotification('Devi inserire lo spread gas quando usi PSV', 'error');
-                return;
-            }
-
-            if (!offerData.fornitore || !offerData.nome_offerta) {
-                showNotification('Campi obbligatori mancanti', 'error');
-                return;
-            }
-
-            try {
-                showLoadingOverlay(true, 'Salvataggio offerta...');
-                
-                offerData.user_id = currentUser.id;
-                
-                if (currentUser.id === 'demo') {
-                    // Demo mode
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    showNotification('Offerta salvata (modalità demo)!', 'success');
-                } else {
-                    const { data, error } = await supabase
-                        .from('offers')
-                        .insert([offerData])
-                        .select();
-
-                    if (error) throw error;
-                    showNotification('Offerta salvata nel database cloud!', 'success');
-                }
-                
-                e.target.reset();
-                e.target.style.display = 'none';
-                
-                // Aggiorna dashboard se attiva
-                if (document.getElementById('section-dashboard').classList.contains('active')) {
-                    loadDashboard();
-                }
-                
-            } catch (error) {
-                console.error('Errore salvataggio:', error);
-                showNotification('Errore salvataggio: ' + error.message, 'error');
-            } finally {
-                showLoadingOverlay(false);
-            }
-        }
-
-        // ===== UTILITY FUNCTIONS =====
-        function isPun(value) {
-            return typeof value === 'string' && value.trim().toUpperCase() === 'PUN';
-        }
-
-        function isPsv(value) {
-            return typeof value === 'string' && value.trim().toUpperCase() === 'PSV';
-        }
-
-        function formatCurrency(value, decimals = 2) {
-            if (value == null || isNaN(value)) return '—';
-            return Number(value).toLocaleString('it-IT', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '—';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('it-IT');
-            } catch {
-                return dateString;
-            }
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        function showNotification(message, type = 'info') {
-            // Remove existing notifications
-            document.querySelectorAll('.notification').forEach(n => n.remove());
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        function showLoadingOverlay(show, message = 'Caricamento...') {
-            const overlay = document.getElementById('loading-overlay');
-            const messageEl = overlay.querySelector('div:last-child');
-            
-            if (show) {
-                messageEl.textContent = message;
-                overlay.classList.add('active');
-            } else {
-                overlay.classList.remove('active');
-            }
-        }
-
-        // Placeholder functions for demo
-        function editOffer(id) { showNotification('Modifica offerta (demo)', 'info'); }
-        function deleteOffer(id) { showNotification('Elimina offerta (demo)', 'info'); }
-
-        console.log('📜 EnergiaCorp Cloud Premium caricato! 🚀');
-    </script>
+  </div>
+</section>
+
+<section id="section-offerte" style="display:none;">
+  <h2>📋 Offerte Energia</h2>
+  <div id="offerte-list">
+    <!-- Offerte popolate dinamicamente -->
+  </div>
+</section>
+
+<section id="section-gestione" style="display:none;">
+  <h2>📝 Gestione Offerte</h2>
+  <table class="offers-table" id="offers-table">
+    <thead>
+      <tr>
+        <th class="col-fornitore">Fornitore</th>
+        <th class="col-nome">Nome Offerta</th>
+        <th class="col-categoria">Categoria</th>
+        <th class="col-tipo">Tipo Prezzo</th>
+        <th class="col-commodity">Commodity</th>
+        <th class="col-valore">Prezzo / Spread</th>
+        <th class="col-quota">Quota Fissa</th>
+        <th class="col-scadenza">Scadenza</th>
+        <th class="col-azioni">Azioni</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <!-- Pulsanti per paginazione, filtri, ecc. -->
+</section>
+
+<section id="section-documenti" style="display:none;">
+  <h2>📁 Documenti Clienti</h2>
+  <button id="btn-carica-cartella"><i class="fas fa-upload"></i> Carica Cartella</button>
+  <div id="cartelle-container" style="margin-top:var(--space-md);"></div>
+</section>
+
+<!-- Pop-up overlay per upload e export PDF -->
+<div class="progress-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- Modale di modifica offerta -->
+<div id="modale" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:999;">
+  <div style="background:#fff; padding:var(--space-lg); border-radius:8px; max-width:600px; width:90%; max-height:90%; overflow:auto; position:relative;">
+    <h2>✏️ Modifica Offerta</h2>
+    <form id="form-modifica-offerta" style="display:flex; flex-direction:column; gap:var(--space-md);">
+      <!-- Campi dinamici -->
+      <input type="hidden" name="id" />
+      <label>Fornitore <input type="text" name="fornitore" required /></label>
+      <label>Nome Offerta <input type="text" name="nome_offerta" required /></label>
+      <label>Categoria 
+        <select name="categoria" required>
+          <option value="Domestico">Domestico</option>
+          <option value="Micro">Micro</option>
+          <option value="PMI">PMI</option>
+        </select>
+      </label>
+      <label>Tipo Prezzo
+        <select name="tipo_prezzo" required>
+          <option value="Fisso">Fisso</option>
+          <option value="Variabile">Variabile</option>
+        </select>
+      </label>
+      <label>Prezzo Luce
+        <input type="text" name="prezzo_luce" pattern="[\d.,PUNpsv]+"/>
+      </label>
+      <label>Spread Luce
+        <input type="text" name="spread_luce" pattern="[\d.,PUNpsv]+"/>
+      </label>
+      <label>Prezzo Gas
+        <input type="text" name="prezzo_gas" pattern="[\d.,PUNpsv]+"/>
+      </label>
+      <label>Spread Gas
+        <input type="text" name="spread_gas" pattern="[\d.,PUNpsv]+"/>
+      </label>
+      <label>Quota Fissa Luce <input type="number" step="0.01" name="quota_fissa_luce" /></label>
+      <label>Quota Fissa Gas <input type="number" step="0.01" name="quota_fissa_gas" /></label>
+      <label>Commissioni <input type="number" step="0.01" name="commissioni" /></label>
+      <label>Scadenza <input type="date" name="scadenza" /></label>
+      <label>Durata Mesi <input type="number" name="durata_mesi" min="1" max="60" /></label>
+      <div style="display:flex; gap:var(--space-md); justify-content:flex-end;">
+        <button type="button" id="btn-cancella">Annulla</button>
+        <button type="submit">✅ Salva</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script>
+const API_URL = "https://ozmqftibxuspznnqaayh.supabase.co";
+const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ...
+const SUPABASE_URL = API_URL;
+const SUPABASE_ANON_KEY = API_KEY;
+
+let currentSection = '';
+
+/* --- Funzioni di gestione --- */
+function showSection(section) {
+  // nascondi tutte
+  document.querySelectorAll('section').forEach(sec => sec.style.display='none');
+  // mostra quella richiesta
+  document.getElementById('section-'+section).style.display='block';
+  currentSection = section;
+  if (section==='gestione') initGestione();
+  if (section==='offerte') loadOfferte();
+  if(section==='documenti') loadDocumenti();
+}
+
+// Gestione menu
+document.querySelectorAll('#header .menu-buttons button').forEach(btn => {
+  btn.onclick = () => {
+    const sect = btn.dataset.section;
+    showSection(sect);
+  }
+});
+// default
+showSection('dashboard');
+
+/* --- Gestione Offerte --- */
+async function initGestione() {
+  await loadOfferte();
+  setupEditing();
+}
+
+// Carica offerte dal database (potresti usare fetch su API)
+async function loadOfferte() {
+  const tbody = document.querySelector('#offers-table tbody');
+  tbody.innerHTML = '';
+  // Esempio: caricamento statico
+  // Per completare, integra con supabase
+  // Puoi usare fetch o SDK di Supabase
+  // qui un esempio fittizio
+  // ...implementa fetching reale
+}
+
+/* --- Modifica offerta --- */
+function setupEditing() {
+  document.querySelector('#offers-table').onclick = (e) => {
+    if(e.target.tagName==='BUTTON'){
+      const btn = e.target;
+      if(btn.dataset.action==='edit') {
+        const row = btn.closest('tr');
+        const id = row.dataset.id;
+        apriModale(id);
+      }
+    }
+  };
+}
+function apriModale(id) {
+  // recupera dati offerta e popola form
+  // mostra modale
+}
+function chiudiModale() {
+  document.getElementById('modale').style.display='none';
+}
+document.getElementById('btn-cancella').onclick=chiudiModale;
+document.getElementById('form-modifica-offerta').onsubmit = (e) => {
+  e.preventDefault();
+  // salva modifiche
+  chiudiModale();
+  loadOfferte();
+};
+
+/* --- Upload cartelle clienti --- */
+document.getElementById('btn-carica-cartella').onclick=() => {
+  const input = document.createElement('input');
+  input.type='file';
+  input.webkitdirectory=true;
+  input.multiple=true;
+  input.onchange=() => {
+    const files = Array.from(input.files);
+    // gestisci upload
+  }
+  input.click();
+};
+
+/* --- Export PDF OFFERTE --- */
+function exportOffertePDF() {
+  // usa jsPDF o altro per generare PDF con offerte
+}
+
+/* --- Gestione immagini commodity --- */
+function getCommodityIcon(type) {
+  if(type==='luce') return 'https://img.icons8.com/material-outlined/40/sky--v3.png';
+  if(type==='gas') return 'https://img.icons8.com/material-outlined/40/fire.png';
+  return '';
+}
+
+/* --- Caricamento e gestione immagini commodity in tabella --- */
+// esempio:
+// in loadOfferte() inserisci la colonna con <img src="...." />
+
+/* --- Gestione documenti cliente (cartelle) --- */
+const cartelle = [];
+function loadDocumenti() {
+  // esempio visualizzazione
+}
+</script>
 </body>
 </html>
